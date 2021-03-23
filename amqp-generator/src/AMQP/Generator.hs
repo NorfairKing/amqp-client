@@ -33,6 +33,7 @@ generateFrom :: FilePath -> IO ()
 generateFrom fp = do
   xmlDoc <- XML.readFile def fp
   mapM_ pPrint (parseConstants xmlDoc)
+  mapM_ pPrint (parseDomainTypes xmlDoc)
 
 nodeElement :: Node -> Maybe Element
 nodeElement = \case
@@ -51,24 +52,12 @@ parseConstants =
     . elementNodes
     . documentRoot
 
-parseConstant :: Element -> Maybe Constant
-parseConstant e = do
-  guard $ elementName e == "constant"
-  constantName <- M.lookup "name" $ elementAttributes e
-  constantValueText <- M.lookup "value" $ elementAttributes e
-  constantValue <- readMaybe (T.unpack constantValueText)
-  constantClass <- M.lookup "class" $ elementAttributes e
-  let constantDoc = parseConstantDoc e
-  pure Constant {..}
-
-parseConstantDoc :: Element -> Maybe Text
-parseConstantDoc =
-  listToMaybe
-    . mapMaybe nodeContent
-    . concatMap elementNodes
-    . filter ((== "doc") . elementName)
+parseDomainTypes :: Document -> [DomainType]
+parseDomainTypes =
+  mapMaybe parseDomainType
     . mapMaybe nodeElement
     . elementNodes
+    . documentRoot
 
 data AMQPSpec = AMQPSpec
   { amqpSpecConstants :: ![Constant]
@@ -82,3 +71,61 @@ data Constant = Constant
     constantDoc :: !(Maybe Text)
   }
   deriving (Show, Eq, Generic)
+
+parseConstant :: Element -> Maybe Constant
+parseConstant e = do
+  guard $ elementName e == "constant"
+  constantName <- M.lookup "name" $ elementAttributes e
+  constantValueText <- M.lookup "value" $ elementAttributes e
+  constantValue <- readMaybe (T.unpack constantValueText)
+  constantClass <- M.lookup "class" $ elementAttributes e
+  let constantDoc = parseDocUnder e
+  pure Constant {..}
+
+data DomainType = DomainType
+  { domainTypeName :: !Text,
+    domainTypeType :: !Text,
+    domainTypeLabel :: !Text,
+    domainTypeDoc :: !(Maybe Text),
+    domainTypeAssertions :: ![Assertion]
+  }
+  deriving (Show, Eq, Generic)
+
+parseDomainType :: Element -> Maybe DomainType
+parseDomainType e = do
+  guard $ elementName e == "domain"
+  domainTypeName <- M.lookup "name" $ elementAttributes e
+  domainTypeType <- M.lookup "type" $ elementAttributes e
+  domainTypeLabel <- M.lookup "label" $ elementAttributes e
+  let domainTypeDoc = parseDocUnder e
+  let domainTypeAssertions = mapMaybe parseAssertion (mapMaybe nodeElement $ elementNodes e)
+  pure DomainType {..}
+
+data Assertion = AssertNotNull | AssertLength !Word | AssertRegex !Text
+  deriving (Show, Eq, Generic)
+
+parseAssertion :: Element -> Maybe Assertion
+parseAssertion e = do
+  guard $ elementName e == "assert"
+  check <- M.lookup "check" $ elementAttributes e
+  case check of
+    "length" -> do
+      valueText <- M.lookup "value" (elementAttributes e)
+      AssertLength <$> readMaybe (T.unpack valueText)
+    "regexp" -> do
+      valueText <- M.lookup "value" (elementAttributes e)
+      AssertRegex <$> readMaybe (T.unpack valueText)
+    "notnull" -> pure AssertNotNull
+
+parseDocUnder :: Element -> Maybe Text
+parseDocUnder =
+  fmap stripDoc
+    . listToMaybe
+    . mapMaybe nodeContent
+    . concatMap elementNodes
+    . filter ((== "doc") . elementName)
+    . mapMaybe nodeElement
+    . elementNodes
+
+stripDoc :: Text -> Text
+stripDoc = T.strip . T.unlines . map T.strip . T.lines
