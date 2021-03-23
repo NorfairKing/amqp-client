@@ -117,6 +117,36 @@ parseAssertion e = do
       AssertRegex <$> readMaybe (T.unpack valueText)
     "notnull" -> pure AssertNotNull
 
+data Class = Class
+  { className :: !Text,
+    classHandler :: !Text,
+    classIndex :: !Word,
+    classlabel :: !Text,
+    classDoc :: !(Maybe Text),
+    classFields :: ![Field],
+    classMethods :: ![Method]
+  }
+  deriving (Show, Eq, Generic)
+
+data Method = Method
+  { methodName :: !Text,
+    methodSynchronous :: !Bool,
+    methodIndex :: !Word,
+    methodLabel :: !Text,
+    methodDoc :: !(Maybe Text),
+    methodArguments :: ![Field],
+    methodResponse :: !Text
+  }
+  deriving (Show, Eq, Generic)
+
+data Field = Field
+  { fieldName :: !Text,
+    fieldDomain :: !Text,
+    fieldLabel :: !Text,
+    fieldDoc :: !(Maybe Text)
+  }
+  deriving (Show, Eq, Generic)
+
 parseDocUnder :: Element -> Maybe Text
 parseDocUnder =
   fmap stripDoc
