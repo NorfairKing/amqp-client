@@ -23,7 +23,7 @@ instance GenValid FrameType where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid Frame where
+instance GenValid RawFrame where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
@@ -46,9 +46,9 @@ spec = do
     it "can parse whatever 'buildFrameType' builds'" $
       roundtrips buildFrameType parseFrameType
 
-  describe "parseFrame" $
-    it "can parse whatever 'buildFrame' builds'" $
-      roundtrips buildFrame parseFrame
+  describe "parseRawFrame" $
+    it "can parse whatever 'buildRawFrame' builds'" $
+      roundtrips buildRawFrame parseRawFrame
 
 roundtrips :: (Show a, Eq a, GenValid a) => (a -> ByteString.Builder) -> Parser a -> Property
 roundtrips builder parser =

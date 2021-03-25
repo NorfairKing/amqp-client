@@ -84,53 +84,53 @@ parseFrameType = do
     8 -> pure HeartbeatFrame
     _ -> fail $ "Unknown frame type: " <> show w
 
-data Frame = Frame
-  { frameType :: !FrameType,
-    frameChannel :: !Word16,
-    framePayload :: !ByteString
+data RawFrame = RawFrame
+  { rawFrameType :: !FrameType,
+    rawFrameChannel :: !Word16,
+    rawFramePayload :: !ByteString
   }
   deriving (Show, Eq, Generic)
 
-instance Validity Frame
+instance Validity RawFrame
 
-buildFrame :: Frame -> ByteString.Builder
-buildFrame Frame {..} =
+buildRawFrame :: RawFrame -> ByteString.Builder
+buildRawFrame RawFrame {..} =
   mconcat
-    [ buildFrameType frameType,
+    [ buildFrameType rawFrameType,
       -- QUESTION: Should this be little-endian?
       -- ANSWER: No, the spec says that it must be network byte order, or big-endian.
-      SBB.word16BE frameChannel,
+      SBB.word16BE rawFrameChannel,
       -- QUESTION: Should this be little-endian?
       -- ANSWER: the spec says that it must be network byte order, or big-endian.
       --
       -- The 'fromIntegral' should be safe because we cast from Int to Word32.
-      SBB.word32BE (fromIntegral (SB.length framePayload)),
-      SBB.byteString framePayload,
-      SBB.word8 frameEnd
+      SBB.word32BE (fromIntegral (SB.length rawFramePayload)),
+      SBB.byteString rawFramePayload,
+      SBB.word8 rawFrameEnd
     ]
 
-frameEnd :: Word8
-frameEnd = 206 -- TODO get this from the spec
+rawFrameEnd :: Word8
+rawFrameEnd = 206 -- TODO get this from the spec
 
-parseFrame :: Parser Frame
-parseFrame = do
-  frameType <- parseFrameType
-  frameChannel <- anyWord16be
-  frameLength <- anyWord32be
-  framePayload <- Parse.take (fromIntegral frameLength)
-  void $ Parse.word8 frameEnd
-  pure Frame {..}
+parseRawFrame :: Parser RawFrame
+parseRawFrame = do
+  rawFrameType <- parseFrameType
+  rawFrameChannel <- anyWord16be
+  rawFrameLength <- anyWord32be
+  rawFramePayload <- Parse.take (fromIntegral rawFrameLength)
+  void $ Parse.word8 rawFrameEnd
+  pure RawFrame {..}
 
 data ProtocolNegotiationResponse
   = ProtocolRejected ProtocolHeader
   | -- TODO replace this frame with the more specific Connection.Start method
     -- frame once we generate code for that.
-    ProtocolProposed Frame
+    ProtocolProposed RawFrame
   deriving (Show, Eq, Generic)
 
 parseProtocolNegotiationResponse :: Parser ProtocolNegotiationResponse
 parseProtocolNegotiationResponse =
   choice
     [ ProtocolRejected <$> parseProtocolHeader,
-      ProtocolProposed <$> parseFrame
+      ProtocolProposed <$> parseRawFrame
     ]
