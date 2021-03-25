@@ -14,6 +14,8 @@ library:
     - attoparsec
     - attoparsec-binary
     - bytestring
+    - containers
+    - reinterpret-cast
     - text
     - validity
     - validity-bytestring
