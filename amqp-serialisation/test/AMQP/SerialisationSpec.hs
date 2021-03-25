@@ -4,12 +4,14 @@ module AMQP.SerialisationSpec (spec) where
 import AMQP.Serialisation
 import Control.Monad
 import Data.Attoparsec.ByteString
+import Data.ByteString (ByteString)
 import Data.ByteString.Builder as ByteString (Builder)
 import qualified Data.ByteString.Builder as SBB
 import qualified Data.ByteString.Lazy as LB
 import Data.Char as Char
 import Data.GenValidity
 import Data.GenValidity.ByteString ()
+import Data.GenValidity.Containers ()
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
@@ -24,6 +26,10 @@ instance GenValid FrameType where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid RawFrame where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
+instance GenValid FieldTableValue where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
@@ -53,6 +59,18 @@ spec = do
   describe "parseRawFrame" $
     it "can parse whatever 'buildRawFrame' builds'" $
       roundtrips buildRawFrame parseRawFrame
+
+  describe "parseFieldTable" $
+    it "can parse whatever 'buildFieldTable' builds'" $
+      roundtripsWithFloat buildFieldTable parseFieldTable
+
+  describe "parseFieldTableArray" $
+    it "can parse whatever 'buildFieldTableArray' builds'" $
+      roundtripsWithFloat buildFieldTableArray parseFieldTableArray
+
+  describe "parseFieldTableValue" $
+    it "can parse whatever 'buildFieldTableValue' builds'" $
+      roundtripsWithFloat buildFieldTableValue parseFieldTableValue
 
   describe "parseBit" $
     it "can parse whatever 'buildBit' builds'" $
@@ -120,17 +138,32 @@ spec = do
 
 roundtrips :: (Show a, Eq a, GenValid a) => (a -> ByteString.Builder) -> Parser a -> Property
 roundtrips builder parser =
-  forAllValid $ \ft ->
-    parseOnly parser (LB.toStrict (SBB.toLazyByteString (builder ft))) `shouldBe` Right ft
+  forAllValid $ \expected -> do
+    let errOrRes = parseOnly parser (builderToByteString (builder expected))
+    case errOrRes of
+      Left err -> expectationFailure err
+      Right actual -> actual `shouldBe` expected
+
+-- This re-encodes before comparing for equality so that NaN values don't cause trouble
+roundtripsWithFloat :: (Show a, Eq a, GenValid a) => (a -> ByteString.Builder) -> Parser a -> Property
+roundtripsWithFloat builder parser =
+  forAllValid $ \expected -> do
+    let errOrRes = parseOnly parser (builderToByteString (builder expected))
+    case errOrRes of
+      Left err -> expectationFailure err
+      Right actual -> builderToByteString (builder actual) `shouldBe` builderToByteString (builder expected)
 
 -- Needed because NaN /= NaN
 roundtripsFloat :: (Show a, Eq a, RealFloat a, GenValid a) => (a -> ByteString.Builder) -> Parser a -> Property
 roundtripsFloat builder parser =
   forAllValid $ \f -> do
-    let errOrRes = parseOnly parser (LB.toStrict (SBB.toLazyByteString (builder f)))
+    let errOrRes = parseOnly parser (builderToByteString (builder f))
     case errOrRes of
       Left err -> expectationFailure err
       Right f' ->
         if isNaN f'
           then pure ()
           else f' `shouldBe` f
+
+builderToByteString :: ByteString.Builder -> ByteString
+builderToByteString = LB.toStrict . SBB.toLazyByteString

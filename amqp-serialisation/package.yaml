@@ -19,6 +19,7 @@ library:
     - text
     - validity
     - validity-bytestring
+    - validity-containers
 
 tests:
   amqp-serialisation-test:
@@ -36,5 +37,6 @@ tests:
     - bytestring
     - genvalidity
     - genvalidity-bytestring
+    - genvalidity-containers
     - genvalidity-sydtest
     - sydtest

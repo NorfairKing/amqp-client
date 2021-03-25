@@ -12,11 +12,14 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as SB
 import Data.ByteString.Builder as ByteString (Builder)
 import qualified Data.ByteString.Builder as SBB
+import Data.Char
 import Data.Int
 import Data.Map (Map)
+import qualified Data.Map as M
 import qualified Data.ReinterpretCast as Cast
 import Data.Validity
 import Data.Validity.ByteString ()
+import Data.Validity.Containers ()
 import Data.Word
 import GHC.Generics (Generic)
 
@@ -166,10 +169,94 @@ data FieldTableValue
   | FieldTableDecimal !DecimalValue
   | FieldTableShortString !ShortString
   | FieldTableLongString !LongString
-  | FieldTableArray ![FieldTableValue]
   | FieldTableTimestamp !Timestamp
+  | FieldTableArray ![FieldTableValue]
+  | FieldTableFieldTable !FieldTable
   | FieldTableVoid
   deriving (Show, Eq, Generic)
+
+instance Validity FieldTableValue
+
+parseFieldTable :: Parser FieldTable
+parseFieldTable = do
+  lu <- parseLongUInt
+  -- fromIntegral is safe because it's Word32 -> Int
+  fmap M.fromList $
+    replicateM (fromIntegral lu) $ do
+      ss <- parseShortString
+      ftv <- parseFieldTableValue
+      pure (ss, ftv)
+
+buildFieldTable :: FieldTable -> ByteString.Builder
+buildFieldTable m =
+  let tups = M.toList m
+      buildFieldTablePair ss ftv = mconcat [buildShortString ss, buildFieldTableValue ftv]
+   in -- TODO This fromIntegral is not safe, use a newtype with a validity constraint
+      mconcat $ buildLongUInt (fromIntegral (length tups)) : map (uncurry buildFieldTablePair) tups
+
+parseFieldTableValue :: Parser FieldTableValue
+parseFieldTableValue = do
+  w <- anyWord8
+  case chr (fromIntegral w) of -- Safe because it is Word8 -> Int
+    't' -> FieldTableBit <$> parseBit
+    'b' -> FieldTableShortShortInt <$> parseShortShortInt
+    'B' -> FieldTableShortShortUInt <$> parseShortShortUInt
+    'U' -> FieldTableShortInt <$> parseShortInt
+    'u' -> FieldTableShortUInt <$> parseShortUInt
+    'I' -> FieldTableLongInt <$> parseLongInt
+    'i' -> FieldTableLongUInt <$> parseLongUInt
+    'L' -> FieldTableLongLongInt <$> parseLongLongInt
+    'l' -> FieldTableLongLongUInt <$> parseLongLongUInt
+    'f' -> FieldTableFloat <$> parseFloat
+    'd' -> FieldTableDouble <$> parseDouble
+    'D' -> FieldTableDecimal <$> parseDecimalValue
+    's' -> FieldTableShortString <$> parseShortString
+    'S' -> FieldTableLongString <$> parseLongString
+    'T' -> FieldTableTimestamp <$> parseTimestamp
+    'A' -> FieldTableArray <$> parseFieldTableArray
+    'F' -> FieldTableFieldTable <$> parseFieldTable
+    'V' -> pure FieldTableVoid
+    -- fromIntegral is safe because it's Word8 -> Int
+    _ -> fail $ "Unknown field table value type: " <> show (chr (fromIntegral w))
+
+buildFieldTableValue :: FieldTableValue -> ByteString.Builder
+buildFieldTableValue =
+  let p c b =
+        mconcat
+          [ SBB.char8 c,
+            b
+          ]
+   in \case
+        FieldTableBit b -> p 't' (buildBit b)
+        FieldTableShortShortInt ssi -> p 'b' (buildShortShortInt ssi)
+        FieldTableShortShortUInt ssu -> p 'B' (buildShortShortUInt ssu)
+        FieldTableShortInt si -> p 'U' (buildShortInt si)
+        FieldTableShortUInt su -> p 'u' (buildShortUInt su)
+        FieldTableLongInt li -> p 'I' (buildLongInt li)
+        FieldTableLongUInt lu -> p 'i' (buildLongUInt lu)
+        FieldTableLongLongInt lli -> p 'L' (buildLongLongInt lli)
+        FieldTableLongLongUInt llu -> p 'l' (buildLongLongUInt llu)
+        FieldTableFloat f -> p 'f' (buildFloat f)
+        FieldTableDouble d -> p 'd' (buildDouble d)
+        FieldTableDecimal dv -> p 'D' (buildDecimalValue dv)
+        FieldTableShortString ss -> p 's' (buildShortString ss)
+        FieldTableLongString ls -> p 'S' (buildLongString ls)
+        FieldTableTimestamp ts -> p 'T' (buildTimestamp ts)
+        FieldTableArray a -> p 'A' (buildFieldTableArray a)
+        FieldTableFieldTable ft -> p 'F' (buildFieldTable ft)
+        FieldTableVoid -> p 'V' mempty
+
+parseFieldTableArray :: Parser [FieldTableValue]
+parseFieldTableArray = do
+  i <- parseLongInt
+  -- Safe because it is Int32 -> Int
+  replicateM (fromIntegral i) parseFieldTableValue
+
+buildFieldTableArray :: [FieldTableValue] -> ByteString.Builder
+buildFieldTableArray vs =
+  mconcat $
+    -- TODO not safe, use a newtype instead
+    buildLongInt (fromIntegral (length vs)) : map buildFieldTableValue vs
 
 type Bit = Bool
 

@@ -34,6 +34,7 @@ library
     , text
     , validity
     , validity-bytestring
+    , validity-containers
   default-language: Haskell2010
 
 test-suite amqp-serialisation-test
@@ -55,6 +56,7 @@ test-suite amqp-serialisation-test
     , bytestring
     , genvalidity
     , genvalidity-bytestring
+    , genvalidity-containers
     , genvalidity-sydtest
     , sydtest
   default-language: Haskell2010
