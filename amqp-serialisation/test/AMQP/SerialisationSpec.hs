@@ -1,9 +1,9 @@
+{-# OPTIONS -fno-warn-orphans #-}
 module AMQP.SerialisationSpec (spec) where
 
 import AMQP.Serialisation
 import Control.Monad
 import Data.Attoparsec.ByteString
-import qualified Data.ByteString as SB
 import Data.ByteString.Builder as ByteString (Builder)
 import qualified Data.ByteString.Builder as SBB
 import qualified Data.ByteString.Lazy as LB
@@ -13,6 +13,11 @@ import Data.GenValidity.ByteString ()
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
+
+-- TODO move thees instances into their own package
+instance GenValid ProtocolHeader where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid FrameType where
   genValid = genValidStructurallyWithoutExtraChecking
@@ -24,9 +29,13 @@ instance GenValid Frame where
 
 spec :: Spec
 spec = do
-  describe "protocolHeader" $ do
-    it "is 8 octets long" $ LB.length (SBB.toLazyByteString protocolHeader) `shouldBe` 8
-    it "stays the same" $ pureGoldenByteStringBuilderFile "test_resources/protocol-header.dat" protocolHeader
+  describe "buildProtocolHeader" $ do
+    it "is 8 octets long" $ LB.length (SBB.toLazyByteString (buildProtocolHeader protocolHeader)) `shouldBe` 8
+    it "stays the same" $ pureGoldenByteStringBuilderFile "test_resources/protocol-header.dat" (buildProtocolHeader protocolHeader)
+
+  describe "parseProtocolHeader" $
+    it "can parse whatever 'buildProtocolHeader' builds'" $
+      roundtrips buildProtocolHeader parseProtocolHeader
 
   describe "buildFrameType" $
     forM_ [minBound .. maxBound] $ \ft ->

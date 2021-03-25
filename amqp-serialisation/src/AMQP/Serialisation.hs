@@ -17,16 +17,42 @@ import Data.Validity.ByteString ()
 import Data.Word
 import GHC.Generics (Generic)
 
+data ProtocolHeader = ProtocolHeader
+  { protocolHeaderMajor :: !Word8,
+    protocolHeaderMinor :: !Word8,
+    protocolHeaderRevision :: !Word8
+  }
+  deriving (Show, Eq, Generic)
+
+instance Validity ProtocolHeader
+
 -- TODO get this from the spec.
-protocolHeader :: ByteString.Builder
+protocolHeader :: ProtocolHeader
 protocolHeader =
+  ProtocolHeader
+    { protocolHeaderMajor = 0,
+      protocolHeaderMinor = 9,
+      protocolHeaderRevision = 1
+    }
+
+buildProtocolHeader :: ProtocolHeader -> ByteString.Builder
+buildProtocolHeader ProtocolHeader {..} =
   mconcat
     [ SBB.byteString "AMQP",
       SBB.word8 0,
-      SBB.word8 0,
-      SBB.word8 9,
-      SBB.word8 1
+      SBB.word8 protocolHeaderMajor,
+      SBB.word8 protocolHeaderMinor,
+      SBB.word8 protocolHeaderRevision
     ]
+
+parseProtocolHeader :: Parser ProtocolHeader
+parseProtocolHeader = do
+  void $ Parse.string "AMQP"
+  void $ Parse.word8 0
+  protocolHeaderMajor <- Parse.anyWord8
+  protocolHeaderMinor <- Parse.anyWord8
+  protocolHeaderRevision <- Parse.anyWord8
+  pure ProtocolHeader {..}
 
 data FrameType
   = MethodFrame
@@ -94,3 +120,17 @@ parseFrame = do
   framePayload <- Parse.take (fromIntegral frameLength)
   void $ Parse.word8 frameEnd
   pure Frame {..}
+
+data ProtocolNegotiationResponse
+  = ProtocolRejected ProtocolHeader
+  | -- TODO replace this frame with the more specific Connection.Start method
+    -- frame once we generate code for that.
+    ProtocolProposed Frame
+  deriving (Show, Eq, Generic)
+
+parseProtocolNegotiationResponse :: Parser ProtocolNegotiationResponse
+parseProtocolNegotiationResponse =
+  choice
+    [ ProtocolRejected <$> parseProtocolHeader,
+      ProtocolProposed <$> parseFrame
+    ]
