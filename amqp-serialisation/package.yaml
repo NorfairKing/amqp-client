@@ -12,6 +12,7 @@ library:
   source-dirs: src
   dependencies:
     - attoparsec
+    - attoparsec-binary
     - bytestring
     - text
     - validity
@@ -27,7 +28,11 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - QuickCheck
     - amqp-serialisation
     - attoparsec
     - bytestring
+    - genvalidity
+    - genvalidity-bytestring
+    - genvalidity-sydtest
     - sydtest
