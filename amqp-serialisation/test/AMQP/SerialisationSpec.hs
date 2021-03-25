@@ -10,6 +10,7 @@ import qualified Data.ByteString.Lazy as LB
 import Data.Char as Char
 import Data.GenValidity
 import Data.GenValidity.ByteString ()
+import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
 
@@ -34,10 +35,13 @@ spec = do
 
   describe "parseFrameType" $
     it "can parse whatever 'buildFrameType' builds'" $
-      forAllValid $ \ft ->
-        parseOnly parseFrameType (LB.toStrict (SBB.toLazyByteString (buildFrameType ft))) `shouldBe` Right ft
+      roundtrips buildFrameType parseFrameType
 
   describe "parseFrame" $
     it "can parse whatever 'buildFrame' builds'" $
-      forAllValid $ \ft ->
-        parseOnly parseFrame (LB.toStrict (SBB.toLazyByteString (buildFrame ft))) `shouldBe` Right ft
+      roundtrips buildFrame parseFrame
+
+roundtrips :: (Show a, Eq a, GenValid a) => (a -> ByteString.Builder) -> Parser a -> Property
+roundtrips builder parser =
+  forAllValid $ \ft ->
+    parseOnly parser (LB.toStrict (SBB.toLazyByteString (builder ft))) `shouldBe` Right ft
