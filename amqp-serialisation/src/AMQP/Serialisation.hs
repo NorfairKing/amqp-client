@@ -61,10 +61,10 @@ parseProtocolHeader = do
   pure ProtocolHeader {..}
 
 data FrameType
-  = MethodFrame
-  | HeaderFrame
-  | BodyFrame
-  | HeartbeatFrame
+  = MethodFrameType
+  | HeaderFrameType
+  | BodyFrameType
+  | HeartbeatFrameType
   deriving (Show, Eq, Generic, Enum, Bounded)
 
 instance Validity FrameType
@@ -72,27 +72,35 @@ instance Validity FrameType
 -- TODO get these from the spec
 buildFrameType :: FrameType -> ByteString.Builder
 buildFrameType = \case
-  MethodFrame -> SBB.word8 1
-  HeaderFrame -> SBB.word8 2
-  BodyFrame -> SBB.word8 3
+  MethodFrameType -> SBB.word8 1
+  HeaderFrameType -> SBB.word8 2
+  BodyFrameType -> SBB.word8 3
   -- QUESTION: The pdf says 4 but the spec says 8, which is it?
   -- ANSWER: We'll go with what the spec says.
-  HeartbeatFrame -> SBB.word8 8
+  HeartbeatFrameType -> SBB.word8 8
 
 parseFrameType :: Parser FrameType
 parseFrameType = do
   w <- Parse.anyWord8
   -- TODO get these from the spec
   case w of
-    1 -> pure MethodFrame
-    2 -> pure HeaderFrame
-    3 -> pure BodyFrame
-    8 -> pure HeartbeatFrame
+    1 -> pure MethodFrameType
+    2 -> pure HeaderFrameType
+    3 -> pure BodyFrameType
+    8 -> pure HeartbeatFrameType
     _ -> fail $ "Unknown frame type: " <> show w
+
+type ChannelNumber = Word16
+
+parseChannelNumber :: Parser Word16
+parseChannelNumber = anyWord16be
+
+buildChannelNumber :: Word16 -> ByteString.Builder
+buildChannelNumber = SBB.word16BE
 
 data RawFrame = RawFrame
   { rawFrameType :: !FrameType,
-    rawFrameChannel :: !Word16,
+    rawFrameChannel :: !ChannelNumber,
     rawFramePayload :: !ByteString
   }
   deriving (Show, Eq, Generic)
@@ -105,7 +113,7 @@ buildRawFrame RawFrame {..} =
     [ buildFrameType rawFrameType,
       -- QUESTION: Should this be little-endian?
       -- ANSWER: No, the spec says that it must be network byte order, or big-endian.
-      SBB.word16BE rawFrameChannel,
+      buildChannelNumber rawFrameChannel,
       -- QUESTION: Should this be little-endian?
       -- ANSWER: the spec says that it must be network byte order, or big-endian.
       --
@@ -121,7 +129,7 @@ rawFrameEnd = 206 -- TODO get this from the spec
 parseRawFrame :: Parser RawFrame
 parseRawFrame = do
   rawFrameType <- parseFrameType
-  rawFrameChannel <- anyWord16be
+  rawFrameChannel <- parseChannelNumber
   rawFrameLength <- anyWord32be
   rawFramePayload <- Parse.take (fromIntegral rawFrameLength)
   void $ Parse.word8 rawFrameEnd
@@ -131,7 +139,7 @@ data ProtocolNegotiationResponse
   = ProtocolRejected ProtocolHeader
   | -- TODO replace this frame with the more specific Connection.Start method
     -- frame once we generate code for that.
-    ProtocolProposed RawFrame
+    ProtocolProposed !RawFrame
   deriving (Show, Eq, Generic)
 
 parseProtocolNegotiationResponse :: Parser ProtocolNegotiationResponse
@@ -140,6 +148,16 @@ parseProtocolNegotiationResponse =
     [ ProtocolRejected <$> parseProtocolHeader,
       ProtocolProposed <$> parseRawFrame
     ]
+
+data MethodFrame = MethodFrame
+  { methodFrameChannel :: !ChannelNumber,
+    methodFramePayload :: !MethodFramePayload
+  }
+  deriving (Show, Eq, Generic)
+
+data MethodFramePayload
+  = ConnectionStartMethodFramePayload !ConnectionStartMethodFrame
+  deriving (Show, Eq, Generic)
 
 data ConnectionStartMethodFrame = ConnectionStartMethodFrame
   { connectionStartMethodFrameVersionMajor :: !Octet,
@@ -150,7 +168,47 @@ data ConnectionStartMethodFrame = ConnectionStartMethodFrame
   }
   deriving (Show, Eq, Generic)
 
+parseConnectionStartMethodFrame :: Parser ConnectionStartMethodFrame
+parseConnectionStartMethodFrame = parseMethodFrame 10 10 parseConnectionStartMethodFramePayload
+
+parseConnectionStartMethodFramePayload :: Parser ConnectionStartMethodFrame
+parseConnectionStartMethodFramePayload = do
+  connectionStartMethodFrameVersionMajor <- parseOctet
+  connectionStartMethodFrameVersionMinor <- parseOctet
+  connectionStartMethodFrameServerProperties <- parseFieldTable
+  connectionStartMethodFrameMechanism <- parseLongString
+  connectionStartMethodFrameLocales <- parseLongString
+  pure ConnectionStartMethodFrame {..}
+
+parseMethodFrame :: ClassId -> MethodId -> Parser a -> Parser a
+parseMethodFrame cid mid p = do
+  RawFrame {..} <- parseRawFrame
+  case rawFrameType of
+    MethodFrameType -> case parseOnly (parseMethodPayload cid mid p) rawFramePayload of
+      Left err -> fail err
+      Right r -> pure r
+    ft -> fail $ unwords ["Got a frame of type", show ft, "instead of a method frame."]
+
+parseMethodPayload :: ClassId -> MethodId -> Parser a -> Parser a
+parseMethodPayload cid mid p = do
+  void $ Parse.word16be cid
+  void $ Parse.word16be mid
+  p
+
 type PeerProperties = FieldTable
+
+buildMethodPayload :: ClassId -> MethodId -> [Argument] -> ByteString.Builder
+buildMethodPayload cid mid as =
+  mconcat $
+    buildShortUInt cid :
+    buildShortUInt mid :
+    map buildFieldTableValue as
+
+type ClassId = ShortUInt
+
+type MethodId = ShortUInt
+
+type Argument = FieldTableValue
 
 type FieldTable = Map ShortString FieldTableValue
 

@@ -59,7 +59,8 @@ withConnection ConnectionSettings {..} callback = do
         Left err -> throwIO $ ProtocolNegotiationFailed err
         Right (ProtocolRejected ph) -> throwIO $ ProtocolNegotiationRejected ph
         Right (ProtocolProposed f) -> pure f
-      liftIO $ print (f :: Frame)
+      liftIO $ print f
+      liftIO $ print $ Attoparsec.eitherResult $ Attoparsec.parse (parseMethodPayload 10 10 parseConnectionStartMethodFramePayload) (rawFramePayload f)
       let amqpConnection =
             Connection
               { connectionNetworkConnection = networkConnection,
