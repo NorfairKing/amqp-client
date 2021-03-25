@@ -11,8 +11,11 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
+    - attoparsec
     - bytestring
     - text
+    - validity
+    - validity-bytestring
 
 tests:
   amqp-generator-test:
@@ -25,5 +28,6 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - amqp-serialisation
-    - sydtest
+    - attoparsec
     - bytestring
+    - sydtest
