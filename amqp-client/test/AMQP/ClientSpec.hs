@@ -10,5 +10,5 @@ spec :: Spec
 spec = rabbitMQSpec $ do
   itWithOuter "can make a connection and then do nothing" $ \RabbitMQHandle {..} -> do
     let settings = ConnectionSettings {connectionSettingHostName = "127.0.0.1", connectionSettingPort = rabbitMQHandlePort}
-    withConnection settings $ \conn -> do
+    withConnection settings $ \_ -> do
       pure () :: IO ()

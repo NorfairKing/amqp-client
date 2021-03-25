@@ -55,7 +55,11 @@ withConnection ConnectionSettings {..} callback = do
       connectionPutBuilder networkConnection (buildProtocolHeader protocolHeader)
       leftoversVar <- newMVar SB.empty
       frame <- connectionParse networkConnection leftoversVar parseProtocolNegotiationResponse
-      liftIO $ print (frame :: Either String ProtocolNegotiationResponse)
+      f <- case frame of
+        Left err -> throwIO $ ProtocolNegotiationFailed err
+        Right (ProtocolRejected ph) -> throwIO $ ProtocolNegotiationRejected ph
+        Right (ProtocolProposed f) -> pure f
+      liftIO $ print (f :: Frame)
       let amqpConnection =
             Connection
               { connectionNetworkConnection = networkConnection,
@@ -79,3 +83,12 @@ connectionParse conn leftoversVar parser = modifyMVar leftoversVar $ \leftovers 
 -- | How many bytes to read at a time, at most
 chunkSize :: Int
 chunkSize = 4098
+
+data ClientException
+  = -- | The protocol negotiation was rejected because the server sent back a protocol header instead of a Connection.start method frame.
+    ProtocolNegotiationRejected ProtocolHeader
+  | -- | The protocol negotion failed because the server just did not follow the protocol and sent over something other than a protocol header during negotiation
+    ProtocolNegotiationFailed String
+  deriving (Show, Eq, Generic)
+
+instance Exception ClientException
