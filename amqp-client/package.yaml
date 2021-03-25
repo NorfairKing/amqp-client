@@ -1,4 +1,4 @@
-name: amqp-generator
+name: amqp-client
 version: 0.0.0.0
 github: "NorfairKing/amqp-client"
 author: "Tom Sydney Kerckhove"
@@ -11,18 +11,24 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
-    - containers
-    - pretty-show
-    - text
-    - xml-conduit
+    - amqp-serialisation
+    - attoparsec
+    - bytestring
+    - connection
+    - network
+    - unliftio
 
-executables:
-  amqp-generator:
-    main:                Main.hs
-    source-dirs:         app
+tests:
+  amqp-client-test:
+    main: Spec.hs
+    build-tools: sydtest-discover
+    source-dirs: test
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - amqp-generator
+    - amqp-client
+    - amqp-serialisation
+    - sydtest
+    - sydtest-rabbitmq

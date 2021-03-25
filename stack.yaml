@@ -2,8 +2,11 @@ resolver: lts-16.31
 packages:
 - amqp-generator
 - amqp-serialisation
+- amqp-client
 - /home/syd/src/sydtest/sydtest
 - /home/syd/src/sydtest/sydtest-discover
+- /home/syd/src/sydtest/sydtest-rabbitmq
+- /home/syd/src/sydtest/sydtest-typed-process
 extra-deps:
     # - github: NorfairKing/sydtest
     #   commit: 71f4421ca6d17300fcbceb1d6407eabd7e6086e3
@@ -66,3 +69,4 @@ extra-deps:
 nix:
   packages:
     - zlib
+    - rabbitmq-server

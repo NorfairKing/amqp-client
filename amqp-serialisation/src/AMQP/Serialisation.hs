@@ -13,12 +13,20 @@ import qualified Data.ByteString as SB
 import Data.ByteString.Builder as ByteString (Builder)
 import qualified Data.ByteString.Builder as SBB
 import Data.Validity
-import Data.Validity.ByteString
+import Data.Validity.ByteString ()
 import Data.Word
 import GHC.Generics (Generic)
 
+-- TODO get this from the spec.
 protocolHeader :: ByteString.Builder
-protocolHeader = "AMQP0091"
+protocolHeader =
+  mconcat
+    [ SBB.byteString "AMQP",
+      SBB.word8 0,
+      SBB.word8 0,
+      SBB.word8 9,
+      SBB.word8 1
+    ]
 
 data FrameType
   = MethodFrame
