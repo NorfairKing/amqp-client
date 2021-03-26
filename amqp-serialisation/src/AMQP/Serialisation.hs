@@ -24,9 +24,9 @@ import Data.Word
 import GHC.Generics (Generic)
 
 data ProtocolHeader = ProtocolHeader
-  { protocolHeaderMajor :: !Word8,
-    protocolHeaderMinor :: !Word8,
-    protocolHeaderRevision :: !Word8
+  { protocolHeaderMajor :: !Octet,
+    protocolHeaderMinor :: !Octet,
+    protocolHeaderRevision :: !Octet
   }
   deriving (Show, Eq, Generic)
 
@@ -45,19 +45,19 @@ buildProtocolHeader :: ProtocolHeader -> ByteString.Builder
 buildProtocolHeader ProtocolHeader {..} =
   mconcat
     [ SBB.byteString "AMQP",
-      SBB.word8 0,
-      SBB.word8 protocolHeaderMajor,
-      SBB.word8 protocolHeaderMinor,
-      SBB.word8 protocolHeaderRevision
+      buildOctet 0,
+      buildOctet protocolHeaderMajor,
+      buildOctet protocolHeaderMinor,
+      buildOctet protocolHeaderRevision
     ]
 
 parseProtocolHeader :: Parser ProtocolHeader
 parseProtocolHeader = do
   void $ Parse.string "AMQP"
   void $ Parse.word8 0
-  protocolHeaderMajor <- Parse.anyWord8
-  protocolHeaderMinor <- Parse.anyWord8
-  protocolHeaderRevision <- Parse.anyWord8
+  protocolHeaderMajor <- parseOctet
+  protocolHeaderMinor <- parseOctet
+  protocolHeaderRevision <- parseOctet
   pure ProtocolHeader {..}
 
 data FrameType
@@ -210,7 +210,54 @@ type MethodId = ShortUInt
 
 type Argument = FieldTableValue
 
-type FieldTable = Map ShortString FieldTableValue
+newtype FieldTable = FieldTable {fieldTableMap :: Map FieldTableKey FieldTableValue}
+  deriving (Show, Eq, Generic)
+
+instance Validity FieldTable where
+  validate ft@FieldTable {..} =
+    mconcat
+      [ genericValidate ft,
+        declare "there are fewer than a long uint worth of values in the field table" $
+          M.size fieldTableMap <= word32ToInt (maxBound :: LongUInt)
+      ]
+
+parseFieldTable :: Parser FieldTable
+parseFieldTable = do
+  lu <- parseLongUInt
+  -- fromIntegral is safe because it's Word32 -> Int
+  fmap (FieldTable . M.fromList) $
+    replicateM (word32ToInt lu) $ do
+      ss <- parseFieldTableKey
+      ftv <- parseFieldTableValue
+      pure (ss, ftv)
+
+buildFieldTable :: FieldTable -> ByteString.Builder
+buildFieldTable (FieldTable m) =
+  let tups = M.toList m
+      buildFieldTablePair ss ftv = mconcat [buildFieldTableKey ss, buildFieldTableValue ftv]
+   in -- This fromIntegral is safe because of the validity constraint on FieldTable.
+      mconcat $ buildLongUInt (fromIntegral (length tups)) : map (uncurry buildFieldTablePair) tups
+
+newtype FieldTableKey = FieldTableKey {fieldTableKeyString :: ShortString}
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity FieldTableKey where
+  validate ftk =
+    mconcat
+      [ genericValidate ftk,
+        declare "The field table key has a valid name" $ do
+          -- TODO add the name constraint:
+          -- Field names MUST start with a letter, '$' or '#' and may continue
+          -- with letters, '$' or '#', digits, or underlines, to a maximum
+          -- length of 128 characters.
+          True
+      ]
+
+parseFieldTableKey :: Parser FieldTableKey
+parseFieldTableKey = FieldTableKey <$> parseShortString
+
+buildFieldTableKey :: FieldTableKey -> ByteString.Builder
+buildFieldTableKey = buildShortString . fieldTableKeyString
 
 data FieldTableValue
   = FieldTableBit !Bit
@@ -234,23 +281,6 @@ data FieldTableValue
   deriving (Show, Eq, Generic)
 
 instance Validity FieldTableValue
-
-parseFieldTable :: Parser FieldTable
-parseFieldTable = do
-  lu <- parseLongUInt
-  -- fromIntegral is safe because it's Word32 -> Int
-  fmap M.fromList $
-    replicateM (fromIntegral lu) $ do
-      ss <- parseShortString
-      ftv <- parseFieldTableValue
-      pure (ss, ftv)
-
-buildFieldTable :: FieldTable -> ByteString.Builder
-buildFieldTable m =
-  let tups = M.toList m
-      buildFieldTablePair ss ftv = mconcat [buildShortString ss, buildFieldTableValue ftv]
-   in -- TODO This fromIntegral is not safe, use a newtype with a validity constraint
-      mconcat $ buildLongUInt (fromIntegral (length tups)) : map (uncurry buildFieldTablePair) tups
 
 parseFieldTableValue :: Parser FieldTableValue
 parseFieldTableValue = do
@@ -476,3 +506,14 @@ parseTimestamp = parseLongLongUInt
 
 buildTimestamp :: Timestamp -> ByteString.Builder
 buildTimestamp = buildLongLongUInt
+
+parseValid :: (Show a, Validity a) => Parser a -> Parser a
+parseValid func = do
+  r <- func
+  case prettyValidate r of
+    Left err -> fail $ unlines ["Value was invalid: " <> show r, err]
+    Right r -> pure r
+
+-- Safe
+word32ToInt :: Word32 -> Int
+word32ToInt = fromIntegral

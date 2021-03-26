@@ -37,6 +37,14 @@ instance GenValid DecimalValue where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
+instance GenValid FieldTableKey where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
+instance GenValid FieldTable where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
 spec :: Spec
 spec = do
   describe "buildProtocolHeader" $ do
@@ -60,9 +68,9 @@ spec = do
     it "can parse whatever 'buildRawFrame' builds'" $
       roundtrips buildRawFrame parseRawFrame
 
-  describe "parseFieldTable" $
-    it "can parse whatever 'buildFieldTable' builds'" $
-      roundtripsWithFloat buildFieldTable parseFieldTable
+  describe "parseFieldTableKey" $
+    it "can parse whatever 'buildFieldTableKey' builds'" $
+      roundtripsWithFloat buildFieldTableKey parseFieldTableKey
 
   describe "parseFieldTableArray" $
     it "can parse whatever 'buildFieldTableArray' builds'" $
@@ -71,6 +79,10 @@ spec = do
   describe "parseFieldTableValue" $
     it "can parse whatever 'buildFieldTableValue' builds'" $
       roundtripsWithFloat buildFieldTableValue parseFieldTableValue
+
+  describe "parseFieldTable" $
+    it "can parse whatever 'buildFieldTable' builds'" $
+      roundtripsWithFloat buildFieldTable parseFieldTable
 
   describe "parseBit" $
     it "can parse whatever 'buildBit' builds'" $
