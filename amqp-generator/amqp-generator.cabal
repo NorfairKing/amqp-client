@@ -27,8 +27,11 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , casing
     , containers
+    , pretty
     , pretty-show
+    , template-haskell
     , text
     , xml-conduit
   default-language: Haskell2010

@@ -11,8 +11,11 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
+    - casing
     - containers
+    - pretty
     - pretty-show
+    - template-haskell
     - text
     - xml-conduit
 
