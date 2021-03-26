@@ -1,7 +1,10 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 {-# OPTIONS -fno-warn-orphans #-}
 module AMQP.SerialisationSpec (spec) where
 
 import AMQP.Serialisation
+import AMQP.Serialisation.Base
 import AMQP.Serialisation.TestUtils
 import Control.Monad
 import Data.Attoparsec.ByteString
@@ -12,6 +15,7 @@ import Data.Char as Char
 import Data.GenValidity
 import Data.GenValidity.ByteString ()
 import Data.GenValidity.Containers ()
+import qualified Data.Map as M
 import Test.Syd
 
 -- TODO move thees instances into their own package
@@ -53,11 +57,48 @@ spec = do
   describe "parseConnectionStartMethodFramePayload" $
     it "can parse the example that we got from the rabbitmq server" $ do
       payload <- SB.readFile "test_resources/connection-start.dat"
-      case parseOnly parseConnectionStartMethodFramePayload payload of
+      case parseOnly parseMethodFramePayload payload of
         Left err ->
           expectationFailure $
             unlines
               [ "Parsing the connection start method frame payload failed: ",
                 err
               ]
-        Right _ -> pure ()
+        Right cs ->
+          cs
+            `shouldBe` ConnectionStart
+              { connectionStartVersionMajor = 0,
+                connectionStartVersionMinor = 9,
+                connectionStartServerProperties =
+                  FieldTable
+                    { fieldTableMap =
+                        M.fromList
+                          [ ( "capabilities",
+                              FieldTableFieldTable
+                                ( FieldTable
+                                    { fieldTableMap =
+                                        M.fromList
+                                          [ ("authentication_failure_close", FieldTableBit True),
+                                            ("basic.nack", FieldTableBit True),
+                                            ("connection.blocked", FieldTableBit True),
+                                            ("consumer_cancel_notify", FieldTableBit True),
+                                            ("consumer_priorities", FieldTableBit True),
+                                            ("direct_reply_to", FieldTableBit True),
+                                            ("exchange_exchange_bindings", FieldTableBit True),
+                                            ("per_consumer_qos", FieldTableBit True),
+                                            ("publisher_confirms", FieldTableBit True)
+                                          ]
+                                    }
+                                )
+                            ),
+                            ("cluster_name", "rabbit@nona"),
+                            ("copyright", "Copyright (c) 2007-2020 VMware, Inc. or its affiliates."),
+                            ("information", "Licensed under the MPL 1.1. Website: https://rabbitmq.com"),
+                            ("platform", "Erlang/OTP 22.3"),
+                            ("product", "RabbitMQ"),
+                            ("version", "3.8.5")
+                          ]
+                    },
+                connectionStartMechanism = LongString {longStringBytes = "PLAIN AMQPLAIN"},
+                connectionStartLocales = LongString {longStringBytes = "en_US"}
+              }

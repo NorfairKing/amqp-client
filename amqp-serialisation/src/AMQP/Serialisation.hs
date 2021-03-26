@@ -2,6 +2,8 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module AMQP.Serialisation where
 
@@ -14,6 +16,7 @@ import qualified Data.ByteString as SB
 import Data.ByteString.Builder as ByteString (Builder)
 import qualified Data.ByteString.Builder as SBB
 import qualified Data.ByteString.Lazy as LB
+import Data.Proxy
 import Data.Validity
 import Data.Validity.ByteString ()
 import Data.Validity.Containers ()
@@ -126,9 +129,7 @@ parseRawFrame = label "RawFrame" $ do
 
 data ProtocolNegotiationResponse
   = ProtocolRejected ProtocolHeader
-  | -- TODO replace this frame with the more specific Connection.Start method
-    -- frame once we generate code for that.
-    ProtocolProposed !ConnectionStartMethodFrame
+  | ProtocolProposed !ConnectionStart
   deriving (Show, Eq, Generic)
 
 parseProtocolNegotiationResponse :: Parser ProtocolNegotiationResponse
@@ -136,7 +137,7 @@ parseProtocolNegotiationResponse =
   label "ProtocolNegotiationResponse" $
     choice
       [ ProtocolRejected <$> parseProtocolHeader,
-        ProtocolProposed <$> parseConnectionStartMethodFrame
+        ProtocolProposed <$> parseMethodFrame
       ]
 
 data MethodFrame = MethodFrame
@@ -146,83 +147,23 @@ data MethodFrame = MethodFrame
   deriving (Show, Eq, Generic)
 
 data MethodFramePayload
-  = ConnectionStartMethodFramePayload !ConnectionStartMethodFrame
+  = ConnectionStartFrame !ConnectionStart
   deriving (Show, Eq, Generic)
 
-data ConnectionStartMethodFrame = ConnectionStartMethodFrame
-  { connectionStartMethodFrameVersionMajor :: !Octet,
-    connectionStartMethodFrameVersionMinor :: !Octet,
-    connectionStartMethodFrameServerProperties :: !PeerProperties,
-    connectionStartMethodFrameMechanism :: !LongString,
-    connectionStartMethodFrameLocales :: !LongString
-  }
-  deriving (Show, Eq, Generic)
-
-parseConnectionStartMethodFrame :: Parser ConnectionStartMethodFrame
-parseConnectionStartMethodFrame = parseMethodFrame 10 10 parseConnectionStartMethodFramePayload'
-
-parseConnectionStartMethodFramePayload :: Parser ConnectionStartMethodFrame
-parseConnectionStartMethodFramePayload = parseMethodFramePayload 10 10 parseConnectionStartMethodFramePayload'
-
-parseConnectionStartMethodFramePayload' :: Parser ConnectionStartMethodFrame
-parseConnectionStartMethodFramePayload' = label "ConnectionStartMethodFrame" $ do
-  connectionStartMethodFrameVersionMajor <- parseOctet
-  connectionStartMethodFrameVersionMinor <- parseOctet
-  connectionStartMethodFrameServerProperties <- parseFieldTable
-  connectionStartMethodFrameMechanism <- parseLongString
-  connectionStartMethodFrameLocales <- parseLongString
-  pure ConnectionStartMethodFrame {..}
-
-data ConnectionStartOkMethodFrame = ConnectionStartOkMethodFrame
-  { connectionStartOkMethodFrameClientProperties :: !PeerProperties,
-    connectionStartOkMethodFrameMechanism :: !ShortString,
-    connectionStartOkMethodFrameResponse :: !LongString,
-    connectionStartOkMethodFrameLocale :: !ShortString
-  }
-  deriving (Show, Eq, Generic)
-
-parseConnectionStartOkMethodFrame :: Parser ConnectionStartOkMethodFrame
-parseConnectionStartOkMethodFrame = parseMethodFrame 10 11 parseConnectionStartOkMethodFrameArguments
-
-parseConnectionStartOkMethodFramePayload :: Parser ConnectionStartOkMethodFrame
-parseConnectionStartOkMethodFramePayload = parseMethodFramePayload 10 11 parseConnectionStartOkMethodFrameArguments
-
-parseConnectionStartOkMethodFrameArguments :: Parser ConnectionStartOkMethodFrame
-parseConnectionStartOkMethodFrameArguments = label "ConnectionStartOkMethodFrame" $ do
-  connectionStartOkMethodFrameClientProperties <- parseFieldTable
-  connectionStartOkMethodFrameMechanism <- parseShortString
-  connectionStartOkMethodFrameResponse <- parseLongString
-  connectionStartOkMethodFrameLocale <- parseShortString
-  pure ConnectionStartOkMethodFrame {..}
-
-buildConnectionStartOkMethodFrame :: ConnectionStartOkMethodFrame -> ByteString.Builder
-buildConnectionStartOkMethodFrame = buildMethodFrame 0 10 11 . connectionStartOkMethodFrameArguments
-
-buildConnectionStartOkMethodFramePayload :: ConnectionStartOkMethodFrame -> ByteString.Builder
-buildConnectionStartOkMethodFramePayload = buildMethodFramePayload 10 11 . connectionStartOkMethodFrameArguments
-
-connectionStartOkMethodFrameArguments :: ConnectionStartOkMethodFrame -> [Argument]
-connectionStartOkMethodFrameArguments ConnectionStartOkMethodFrame {..} =
-  [ ArgumentFieldTable connectionStartOkMethodFrameClientProperties,
-    ArgumentShortString connectionStartOkMethodFrameMechanism,
-    ArgumentLongString connectionStartOkMethodFrameResponse,
-    ArgumentShortString connectionStartOkMethodFrameLocale
-  ]
-
-parseMethodFrame :: ClassId -> MethodId -> Parser a -> Parser a
-parseMethodFrame cid mid p = label "Method Frame" $ do
+parseMethodFrame :: Method a => Parser a
+parseMethodFrame = label "Method Frame" $ do
   RawFrame {..} <- parseRawFrame
   case rawFrameType of
-    MethodFrameType -> case parseOnly (parseMethodFramePayload cid mid p) rawFramePayload of
+    MethodFrameType -> case parseOnly parseMethodFramePayload rawFramePayload of
       Left err -> fail err
       Right r -> pure r
     ft -> fail $ unwords ["Got a frame of type", show ft, "instead of a method frame."]
 
-parseMethodFramePayload :: ClassId -> MethodId -> Parser a -> Parser a
-parseMethodFramePayload cid mid p = label "Method Payload" $ do
-  label "class" $ void $ Parse.word16be cid
-  label "method" $ void $ Parse.word16be mid
-  label "arguments" p
+parseMethodFramePayload :: forall a. Method a => Parser a
+parseMethodFramePayload = label "Method Payload" $ do
+  label "class" $ void $ Parse.word16be $ methodClassId (Proxy :: Proxy a)
+  label "method" $ void $ Parse.word16be $ methodMethodId (Proxy :: Proxy a)
+  label "arguments" parseMethodArguments
 
 buildMethodFrame :: ChannelNumber -> ClassId -> MethodId -> [Argument] -> ByteString.Builder
 buildMethodFrame chan cid mid as =
@@ -239,3 +180,92 @@ buildMethodFramePayload cid mid as =
     buildShortUInt cid :
     buildShortUInt mid :
     map buildArgument as
+
+class Method a where
+  methodClassId :: Proxy a -> ClassId
+  methodMethodId :: Proxy a -> MethodId
+  buildMethodArguments :: a -> [Argument]
+  parseMethodArguments :: Parser a
+
+class IsArgument a where
+  toArgument :: a -> Argument
+  parseArgument :: Parser a
+
+instance IsArgument Bit where
+  toArgument = ArgumentBit
+  parseArgument = parseBit
+
+instance IsArgument Octet where
+  toArgument = ArgumentOctet
+  parseArgument = parseOctet
+
+instance IsArgument LongUInt where
+  toArgument = ArgumentLongUInt
+  parseArgument = parseLongUInt
+
+instance IsArgument LongLongUInt where
+  toArgument = ArgumentLongLongUInt
+  parseArgument = parseLongLongUInt
+
+instance IsArgument ShortString where
+  toArgument = ArgumentShortString
+  parseArgument = parseShortString
+
+instance IsArgument LongString where
+  toArgument = ArgumentLongString
+  parseArgument = parseLongString
+
+instance IsArgument Timestamp where
+  toArgument = ArgumentTimestamp
+  parseArgument = parseTimestamp
+
+instance IsArgument FieldTable where
+  toArgument = ArgumentFieldTable
+  parseArgument = parseFieldTable
+
+data ConnectionStart = ConnectionStart
+  { connectionStartVersionMajor :: !Octet,
+    connectionStartVersionMinor :: !Octet,
+    connectionStartServerProperties :: !PeerProperties,
+    connectionStartMechanism :: !LongString,
+    connectionStartLocales :: !LongString
+  }
+  deriving (Show, Eq, Generic)
+
+instance Method ConnectionStart where
+  methodClassId Proxy = 10
+  methodMethodId Proxy = 10
+  buildMethodArguments ConnectionStart {..} =
+    [toArgument connectionStartVersionMajor, toArgument connectionStartVersionMinor, toArgument connectionStartServerProperties, toArgument connectionStartMechanism, toArgument connectionStartLocales]
+  parseMethodArguments =
+    ConnectionStart
+      <$> parseArgument
+      <*> parseArgument
+      <*> parseArgument
+      <*> parseArgument
+      <*> parseArgument
+
+data ConnectionStartOk = ConnectionStartOk
+  { connectionStartOkClientProperties :: !PeerProperties,
+    connectionStartOkMechanism :: !ShortString,
+    connectionStartOkResponse :: !LongString,
+    connectionStartOkLocale :: !ShortString
+  }
+  deriving (Show, Eq, Generic)
+
+-- These should be easy to generate
+instance Method ConnectionStartOk where
+  methodClassId Proxy = 10
+  methodMethodId Proxy = 11
+  buildMethodArguments ConnectionStartOk {..} =
+    [ toArgument connectionStartOkClientProperties,
+      toArgument connectionStartOkMechanism,
+      toArgument connectionStartOkResponse,
+      toArgument connectionStartOkLocale
+    ]
+  parseMethodArguments =
+    ConnectionStartOk
+      <$> parseArgument
+      <*> parseArgument
+      <*> parseArgument
+      <*> parseArgument

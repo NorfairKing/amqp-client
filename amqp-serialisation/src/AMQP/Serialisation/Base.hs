@@ -18,6 +18,7 @@ import Data.Int
 import Data.Map (Map)
 import qualified Data.Map as M
 import qualified Data.ReinterpretCast as Cast
+import Data.String
 import Data.Validity
 import Data.Validity.ByteString ()
 import Data.Validity.Containers ()
@@ -41,8 +42,8 @@ type PeerProperties = FieldTable -- TODO get this from the spec
 data Argument
   = ArgumentBit !Bit
   | ArgumentOctet !Octet
-  | ArgumentLongUint !LongUInt
-  | ArgumentLongLongUint !LongLongUInt
+  | ArgumentLongUInt !LongUInt
+  | ArgumentLongLongUInt !LongLongUInt
   | ArgumentShortString !ShortString
   | ArgumentLongString !LongString
   | ArgumentTimestamp !Timestamp
@@ -55,8 +56,8 @@ buildArgument :: Argument -> ByteString.Builder
 buildArgument = \case
   ArgumentBit b -> buildBit b
   ArgumentOctet o -> buildOctet o
-  ArgumentLongUint lu -> buildLongUInt lu
-  ArgumentLongLongUint llu -> buildLongLongUInt llu
+  ArgumentLongUInt lu -> buildLongUInt lu
+  ArgumentLongLongUInt llu -> buildLongLongUInt llu
   ArgumentShortString ss -> buildShortString ss
   ArgumentLongString ls -> buildLongString ls
   ArgumentTimestamp ts -> buildTimestamp ts
@@ -126,6 +127,10 @@ instance Validity FieldTableKey where
           True
       ]
 
+-- | Not safe, you could invalidate the constraints
+instance IsString FieldTableKey where
+  fromString = FieldTableKey . fromString
+
 parseFieldTableKey :: Parser FieldTableKey
 parseFieldTableKey = label "FieldTableKey" $ FieldTableKey <$> parseShortString
 
@@ -154,6 +159,9 @@ data FieldTableValue
   deriving (Show, Eq, Generic)
 
 instance Validity FieldTableValue
+
+instance IsString FieldTableValue where
+  fromString = FieldTableLongString . fromString
 
 parseFieldTableValue :: Parser FieldTableValue
 parseFieldTableValue = label "FieldTableValue" $ do
@@ -352,6 +360,10 @@ instance Validity ShortString where
         declare "The short string does not contain zero bytes" $ SB.all (/= 0) shortStringBytes
       ]
 
+-- | Not safe, you could invalidate the constraints.
+instance IsString ShortString where
+  fromString = ShortString . fromString
+
 parseShortString :: Parser ShortString
 parseShortString = label "ShortString" $ do
   o <- parseOctet
@@ -377,6 +389,10 @@ instance Validity LongString where
           SB.length longStringBytes <= word32ToInt (maxBound :: LongUInt)
       ]
 
+-- | Unsafe, you could make a 'LongString' that is not valid, but good luck with that.
+instance IsString LongString where
+  fromString = LongString . fromString
+
 parseLongString :: Parser LongString
 parseLongString = label "LongString" $ do
   o <- parseLongUInt
@@ -390,13 +406,16 @@ buildLongString LongString {..} =
       SBB.byteString longStringBytes
     ]
 
-type Timestamp = Word64
+newtype Timestamp = Timestamp {timestampWord :: Word64}
+  deriving (Show, Eq, Generic)
+
+instance Validity Timestamp
 
 parseTimestamp :: Parser Timestamp
-parseTimestamp = label "Timestamp" parseLongLongUInt
+parseTimestamp = label "Timestamp" $ Timestamp <$> parseLongLongUInt
 
 buildTimestamp :: Timestamp -> ByteString.Builder
-buildTimestamp = buildLongLongUInt
+buildTimestamp = buildLongLongUInt . timestampWord
 
 parseValid :: (Show a, Validity a) => Parser a -> Parser a
 parseValid func = do

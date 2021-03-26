@@ -28,6 +28,10 @@ instance GenValid LongString where
   genValid = genValidStructurally
   shrinkValid = shrinkValidStructurally
 
+instance GenValid Timestamp where
+  genValid = genValidStructurally
+  shrinkValid = shrinkValidStructurally
+
 instance GenValid FieldTableKey where
   genValid = genValidStructurally
   shrinkValid = shrinkValidStructurally

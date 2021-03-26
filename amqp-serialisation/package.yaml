@@ -35,6 +35,7 @@ tests:
     - amqp-serialisation
     - attoparsec
     - bytestring
+    - containers
     - genvalidity
     - genvalidity-bytestring
     - genvalidity-containers
