@@ -12,6 +12,7 @@ import Data.ByteString.Builder as ByteString (Builder)
 import qualified Data.ByteString.Builder as SBB
 import qualified Data.ByteString.Lazy as LB
 import Data.List
+import qualified Data.Map as M
 import GHC.Generics (Generic)
 import qualified Network.Connection as Network
 import qualified Network.Socket as Socket
@@ -61,6 +62,16 @@ withConnection ConnectionSettings {..} callback = do
         Right (ProtocolRejected ph) -> throwIO $ ProtocolNegotiationRejected ph
         Right (ProtocolProposed f) -> pure f
       liftIO $ print f
+      let connectionOk =
+            ConnectionStartOkMethodFrame
+              { connectionStartOkMethodFrameClientProperties = FieldTable M.empty,
+                connectionStartOkMethodFrameMechanism = ShortString SB.empty,
+                connectionStartOkMethodFrameResponse = LongString SB.empty,
+                connectionStartOkMethodFrameLocale = ShortString SB.empty
+              }
+      connectionPutBuilder networkConnection (buildConnectionStartOkMethodFrame connectionOk)
+      frame <- connectionParse networkConnection leftoversVar parseRawFrame
+      liftIO $ print frame
 
       let amqpConnection =
             Connection

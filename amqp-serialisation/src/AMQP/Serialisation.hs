@@ -13,6 +13,7 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as SB
 import Data.ByteString.Builder as ByteString (Builder)
 import qualified Data.ByteString.Builder as SBB
+import qualified Data.ByteString.Lazy as LB
 import Data.Char
 import Data.Int
 import Data.Map (Map)
@@ -186,6 +187,44 @@ parseConnectionStartMethodFramePayload' = label "ConnectionStartMethodFrame" $ d
   connectionStartMethodFrameLocales <- parseLongString
   pure ConnectionStartMethodFrame {..}
 
+data ConnectionStartOkMethodFrame = ConnectionStartOkMethodFrame
+  { connectionStartOkMethodFrameClientProperties :: !PeerProperties,
+    connectionStartOkMethodFrameMechanism :: !ShortString,
+    connectionStartOkMethodFrameResponse :: !LongString,
+    connectionStartOkMethodFrameLocale :: !ShortString
+  }
+  deriving (Show, Eq, Generic)
+
+parseConnectionStartOkMethodFrame :: Parser ConnectionStartOkMethodFrame
+parseConnectionStartOkMethodFrame = parseMethodFrame 10 11 parseConnectionStartOkMethodFrameArguments
+
+parseConnectionStartOkMethodFramePayload :: Parser ConnectionStartOkMethodFrame
+parseConnectionStartOkMethodFramePayload = parseMethodFramePayload 10 11 parseConnectionStartOkMethodFrameArguments
+
+parseConnectionStartOkMethodFrameArguments :: Parser ConnectionStartOkMethodFrame
+parseConnectionStartOkMethodFrameArguments = label "ConnectionStartOkMethodFrame" $ do
+  connectionStartOkMethodFrameClientProperties <- parseFieldTable
+  connectionStartOkMethodFrameMechanism <- parseShortString
+  connectionStartOkMethodFrameResponse <- parseLongString
+  connectionStartOkMethodFrameLocale <- parseShortString
+  pure ConnectionStartOkMethodFrame {..}
+
+buildConnectionStartOkMethodFrame :: ConnectionStartOkMethodFrame -> ByteString.Builder
+buildConnectionStartOkMethodFrame = buildMethodFrame 0 10 11 . connectionStartOkMethodFrameArguments
+
+buildConnectionStartOkMethodFramePayload :: ConnectionStartOkMethodFrame -> ByteString.Builder
+buildConnectionStartOkMethodFramePayload = buildMethodFramePayload 10 11 . connectionStartOkMethodFrameArguments
+
+connectionStartOkMethodFrameArguments :: ConnectionStartOkMethodFrame -> [Argument]
+connectionStartOkMethodFrameArguments ConnectionStartOkMethodFrame {..} =
+  [ FieldTableFieldTable connectionStartOkMethodFrameClientProperties,
+    FieldTableShortString connectionStartOkMethodFrameMechanism,
+    FieldTableLongString connectionStartOkMethodFrameResponse,
+    FieldTableShortString connectionStartOkMethodFrameLocale
+  ]
+
+type PeerProperties = FieldTable
+
 parseMethodFrame :: ClassId -> MethodId -> Parser a -> Parser a
 parseMethodFrame cid mid p = label "Method Frame" $ do
   RawFrame {..} <- parseRawFrame
@@ -201,10 +240,17 @@ parseMethodFramePayload cid mid p = label "Method Payload" $ do
   label "method" $ void $ Parse.word16be mid
   label "arguments" p
 
-type PeerProperties = FieldTable
+buildMethodFrame :: ChannelNumber -> ClassId -> MethodId -> [Argument] -> ByteString.Builder
+buildMethodFrame chan cid mid as =
+  buildRawFrame $
+    RawFrame
+      { rawFrameType = MethodFrameType,
+        rawFrameChannel = chan,
+        rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildMethodFramePayload cid mid as
+      }
 
-buildMethodPayload :: ClassId -> MethodId -> [Argument] -> ByteString.Builder
-buildMethodPayload cid mid as =
+buildMethodFramePayload :: ClassId -> MethodId -> [Argument] -> ByteString.Builder
+buildMethodFramePayload cid mid as =
   mconcat $
     buildShortUInt cid :
     buildShortUInt mid :
@@ -258,8 +304,12 @@ buildFieldTable :: FieldTable -> ByteString.Builder
 buildFieldTable (FieldTable m) =
   let tups = M.toList m
       buildFieldTablePair ss ftv = mconcat [buildFieldTableKey ss, buildFieldTableValue ftv]
+      buildFieldTablePairBytes = SBB.toLazyByteString $ mconcat $ map (uncurry buildFieldTablePair) tups
    in -- This fromIntegral is safe because of the validity constraint on FieldTable.
-      mconcat $ buildLongUInt (fromIntegral (length tups)) : map (uncurry buildFieldTablePair) tups
+      mconcat
+        [ buildLongUInt (fromIntegral (LB.length buildFieldTablePairBytes)),
+          SBB.lazyByteString buildFieldTablePairBytes
+        ]
 
 newtype FieldTableKey = FieldTableKey {fieldTableKeyString :: ShortString}
   deriving (Show, Eq, Ord, Generic)

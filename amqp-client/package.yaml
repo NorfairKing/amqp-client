@@ -15,6 +15,7 @@ library:
     - attoparsec
     - bytestring
     - connection
+    - containers
     - network
     - unliftio
 
