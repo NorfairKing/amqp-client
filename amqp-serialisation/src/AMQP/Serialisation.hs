@@ -8,6 +8,7 @@ module AMQP.Serialisation where
 import Control.Monad
 import Data.Attoparsec.Binary as Parse
 import Data.Attoparsec.ByteString as Parse
+import Data.Attoparsec.ByteString.Char8 as ParseChar8
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as SB
 import Data.ByteString.Builder as ByteString (Builder)
@@ -21,6 +22,7 @@ import Data.Validity
 import Data.Validity.ByteString ()
 import Data.Validity.Containers ()
 import Data.Word
+import Debug.Trace
 import GHC.Generics (Generic)
 
 data ProtocolHeader = ProtocolHeader
@@ -52,7 +54,7 @@ buildProtocolHeader ProtocolHeader {..} =
     ]
 
 parseProtocolHeader :: Parser ProtocolHeader
-parseProtocolHeader = do
+parseProtocolHeader = label "ProtocolHeader" $ do
   void $ Parse.string "AMQP"
   void $ Parse.word8 0
   protocolHeaderMajor <- parseOctet
@@ -80,7 +82,7 @@ buildFrameType = \case
   HeartbeatFrameType -> SBB.word8 8
 
 parseFrameType :: Parser FrameType
-parseFrameType = do
+parseFrameType = label "FrameType" $ do
   w <- Parse.anyWord8
   -- TODO get these from the spec
   case w of
@@ -92,10 +94,10 @@ parseFrameType = do
 
 type ChannelNumber = Word16
 
-parseChannelNumber :: Parser Word16
-parseChannelNumber = anyWord16be
+parseChannelNumber :: Parser ChannelNumber
+parseChannelNumber = label "ChannelNumber" anyWord16be
 
-buildChannelNumber :: Word16 -> ByteString.Builder
+buildChannelNumber :: ChannelNumber -> ByteString.Builder
 buildChannelNumber = SBB.word16BE
 
 data RawFrame = RawFrame
@@ -127,7 +129,7 @@ rawFrameEnd :: Word8
 rawFrameEnd = 206 -- TODO get this from the spec
 
 parseRawFrame :: Parser RawFrame
-parseRawFrame = do
+parseRawFrame = label "RawFrame" $ do
   rawFrameType <- parseFrameType
   rawFrameChannel <- parseChannelNumber
   rawFrameLength <- anyWord32be
@@ -139,15 +141,16 @@ data ProtocolNegotiationResponse
   = ProtocolRejected ProtocolHeader
   | -- TODO replace this frame with the more specific Connection.Start method
     -- frame once we generate code for that.
-    ProtocolProposed !RawFrame
+    ProtocolProposed !ConnectionStartMethodFrame
   deriving (Show, Eq, Generic)
 
 parseProtocolNegotiationResponse :: Parser ProtocolNegotiationResponse
 parseProtocolNegotiationResponse =
-  choice
-    [ ProtocolRejected <$> parseProtocolHeader,
-      ProtocolProposed <$> parseRawFrame
-    ]
+  label "ProtocolNegotiationResponse" $
+    choice
+      [ ProtocolRejected <$> parseProtocolHeader,
+        ProtocolProposed <$> parseConnectionStartMethodFrame
+      ]
 
 data MethodFrame = MethodFrame
   { methodFrameChannel :: !ChannelNumber,
@@ -169,10 +172,13 @@ data ConnectionStartMethodFrame = ConnectionStartMethodFrame
   deriving (Show, Eq, Generic)
 
 parseConnectionStartMethodFrame :: Parser ConnectionStartMethodFrame
-parseConnectionStartMethodFrame = parseMethodFrame 10 10 parseConnectionStartMethodFramePayload
+parseConnectionStartMethodFrame = parseMethodFrame 10 10 parseConnectionStartMethodFramePayload'
 
 parseConnectionStartMethodFramePayload :: Parser ConnectionStartMethodFrame
-parseConnectionStartMethodFramePayload = do
+parseConnectionStartMethodFramePayload = parseMethodFramePayload 10 10 parseConnectionStartMethodFramePayload'
+
+parseConnectionStartMethodFramePayload' :: Parser ConnectionStartMethodFrame
+parseConnectionStartMethodFramePayload' = label "ConnectionStartMethodFrame" $ do
   connectionStartMethodFrameVersionMajor <- parseOctet
   connectionStartMethodFrameVersionMinor <- parseOctet
   connectionStartMethodFrameServerProperties <- parseFieldTable
@@ -181,19 +187,19 @@ parseConnectionStartMethodFramePayload = do
   pure ConnectionStartMethodFrame {..}
 
 parseMethodFrame :: ClassId -> MethodId -> Parser a -> Parser a
-parseMethodFrame cid mid p = do
+parseMethodFrame cid mid p = label "Method Frame" $ do
   RawFrame {..} <- parseRawFrame
   case rawFrameType of
-    MethodFrameType -> case parseOnly (parseMethodPayload cid mid p) rawFramePayload of
+    MethodFrameType -> case parseOnly (parseMethodFramePayload cid mid p) rawFramePayload of
       Left err -> fail err
       Right r -> pure r
     ft -> fail $ unwords ["Got a frame of type", show ft, "instead of a method frame."]
 
-parseMethodPayload :: ClassId -> MethodId -> Parser a -> Parser a
-parseMethodPayload cid mid p = do
-  void $ Parse.word16be cid
-  void $ Parse.word16be mid
-  p
+parseMethodFramePayload :: ClassId -> MethodId -> Parser a -> Parser a
+parseMethodFramePayload cid mid p = label "Method Payload" $ do
+  label "class" $ void $ Parse.word16be cid
+  label "method" $ void $ Parse.word16be mid
+  label "arguments" p
 
 type PeerProperties = FieldTable
 
@@ -222,14 +228,31 @@ instance Validity FieldTable where
       ]
 
 parseFieldTable :: Parser FieldTable
-parseFieldTable = do
-  lu <- parseLongUInt
-  -- fromIntegral is safe because it's Word32 -> Int
-  fmap (FieldTable . M.fromList) $
-    replicateM (word32ToInt lu) $ do
-      ss <- parseFieldTableKey
-      ftv <- parseFieldTableValue
-      pure (ss, ftv)
+parseFieldTable = label "FieldTable" $ do
+  lu <- parseLongUInt -- This is the number of bytes that the fields take up, not the number of fields.
+  fieldTableBytes <- Parse.take (word32ToInt lu)
+  case parseOnly parseManyFieldTablePairs fieldTableBytes of
+    Left err -> fail err
+    Right r -> pure $ FieldTable $ M.fromList r
+
+-- This parser assumes that the entire input is filled with field table pairs.
+-- The list will be ordered backwards.
+parseManyFieldTablePairs :: Parser [(FieldTableKey, FieldTableValue)]
+parseManyFieldTablePairs = go []
+  where
+    go acc = do
+      atEnd <- Parse.atEnd
+      if atEnd
+        then pure acc
+        else do
+          pair <- parseFieldTablePair
+          go (pair : acc)
+
+parseFieldTablePair :: Parser (FieldTableKey, FieldTableValue)
+parseFieldTablePair = do
+  ss <- label "value name" parseFieldTableKey
+  ftv <- label (unwords ["value with name", show ss]) $ parseFieldTableValue
+  pure (ss, ftv)
 
 buildFieldTable :: FieldTable -> ByteString.Builder
 buildFieldTable (FieldTable m) =
@@ -254,7 +277,7 @@ instance Validity FieldTableKey where
       ]
 
 parseFieldTableKey :: Parser FieldTableKey
-parseFieldTableKey = FieldTableKey <$> parseShortString
+parseFieldTableKey = label "FieldTableKey" $ FieldTableKey <$> parseShortString
 
 buildFieldTableKey :: FieldTableKey -> ByteString.Builder
 buildFieldTableKey = buildShortString . fieldTableKeyString
@@ -283,9 +306,10 @@ data FieldTableValue
 instance Validity FieldTableValue
 
 parseFieldTableValue :: Parser FieldTableValue
-parseFieldTableValue = do
-  w <- anyWord8
-  case chr (fromIntegral w) of -- Safe because it is Word8 -> Int
+parseFieldTableValue = label "FieldTableValue" $ do
+  w8 <- Parse.anyWord8
+  let c = chr (fromIntegral w8)
+  case c of
     't' -> FieldTableBit <$> parseBit
     'b' -> FieldTableShortShortInt <$> parseShortShortInt
     'B' -> FieldTableShortShortUInt <$> parseShortShortUInt
@@ -304,8 +328,7 @@ parseFieldTableValue = do
     'A' -> FieldTableArray <$> parseFieldTableArray
     'F' -> FieldTableFieldTable <$> parseFieldTable
     'V' -> pure FieldTableVoid
-    -- fromIntegral is safe because it's Word8 -> Int
-    _ -> fail $ "Unknown field table value type: " <> show (chr (fromIntegral w))
+    _ -> fail $ "Unknown field table value type: " <> show c
 
 buildFieldTableValue :: FieldTableValue -> ByteString.Builder
 buildFieldTableValue =
@@ -335,10 +358,11 @@ buildFieldTableValue =
         FieldTableVoid -> p 'V' mempty
 
 parseFieldTableArray :: Parser [FieldTableValue]
-parseFieldTableArray = do
-  i <- parseLongInt
+parseFieldTableArray = label "FieldTableArray" $ do
+  numberOfFields <- parseLongInt
   -- Safe because it is Int32 -> Int
-  replicateM (fromIntegral i) parseFieldTableValue
+  forM [1 .. fromIntegral numberOfFields] $ \ix ->
+    label (unwords ["value", show ix, "of", show numberOfFields]) parseFieldTableValue
 
 buildFieldTableArray :: [FieldTableValue] -> ByteString.Builder
 buildFieldTableArray vs =
@@ -349,7 +373,7 @@ buildFieldTableArray vs =
 type Bit = Bool
 
 parseBit :: Parser Bit
-parseBit = do
+parseBit = label "Bit" $ do
   w <- Parse.anyWord8
   case w of
     0 -> pure False
@@ -365,7 +389,7 @@ buildBit b =
 type Octet = Word8
 
 parseOctet :: Parser Octet
-parseOctet = Parse.anyWord8
+parseOctet = label "Octet" Parse.anyWord8
 
 buildOctet :: Octet -> ByteString.Builder
 buildOctet = SBB.word8
@@ -373,7 +397,7 @@ buildOctet = SBB.word8
 type ShortShortInt = Int8
 
 parseShortShortInt :: Parser ShortShortInt
-parseShortShortInt = fromIntegral <$> Parse.anyWord8 -- Safe fromintegral Word8 -> Int8
+parseShortShortInt = label "ShortShortInt" $ fromIntegral <$> Parse.anyWord8 -- Safe fromintegral Word8 -> Int8
 
 buildShortShortInt :: ShortShortInt -> ByteString.Builder
 buildShortShortInt = SBB.int8
@@ -381,7 +405,7 @@ buildShortShortInt = SBB.int8
 type ShortShortUInt = Word8
 
 parseShortShortUInt :: Parser ShortShortUInt
-parseShortShortUInt = Parse.anyWord8
+parseShortShortUInt = label "ShortShortUInt" Parse.anyWord8
 
 buildShortShortUInt :: ShortShortUInt -> ByteString.Builder
 buildShortShortUInt = SBB.word8
@@ -389,7 +413,7 @@ buildShortShortUInt = SBB.word8
 type ShortInt = Int16
 
 parseShortInt :: Parser ShortInt
-parseShortInt = fromIntegral <$> Parse.anyWord16be -- Safe fromintegral Word16 -> Int16
+parseShortInt = label "ShortInt" $ fromIntegral <$> Parse.anyWord16be -- Safe fromintegral Word16 -> Int16
 
 buildShortInt :: ShortInt -> ByteString.Builder
 buildShortInt = SBB.int16BE
@@ -397,7 +421,7 @@ buildShortInt = SBB.int16BE
 type ShortUInt = Word16
 
 parseShortUInt :: Parser ShortUInt
-parseShortUInt = Parse.anyWord16be
+parseShortUInt = label "ShortUInt" Parse.anyWord16be
 
 buildShortUInt :: ShortUInt -> ByteString.Builder
 buildShortUInt = SBB.word16BE
@@ -405,7 +429,7 @@ buildShortUInt = SBB.word16BE
 type LongInt = Int32
 
 parseLongInt :: Parser LongInt
-parseLongInt = fromIntegral <$> Parse.anyWord32be -- Safe fromintegral Word32 -> Int32
+parseLongInt = label "LongUInt" $ fromIntegral <$> Parse.anyWord32be -- Safe fromintegral Word32 -> Int32
 
 buildLongInt :: LongInt -> ByteString.Builder
 buildLongInt = SBB.int32BE
@@ -413,7 +437,7 @@ buildLongInt = SBB.int32BE
 type LongUInt = Word32
 
 parseLongUInt :: Parser LongUInt
-parseLongUInt = Parse.anyWord32be
+parseLongUInt = label "LongUInt" Parse.anyWord32be
 
 buildLongUInt :: LongUInt -> ByteString.Builder
 buildLongUInt = SBB.word32BE
@@ -421,7 +445,7 @@ buildLongUInt = SBB.word32BE
 type LongLongInt = Int64
 
 parseLongLongInt :: Parser LongLongInt
-parseLongLongInt = fromIntegral <$> Parse.anyWord64be -- Safe fromintegral Word64 -> Int64
+parseLongLongInt = label "LongLongInt" $ fromIntegral <$> Parse.anyWord64be -- Safe fromintegral Word64 -> Int64
 
 buildLongLongInt :: LongLongInt -> ByteString.Builder
 buildLongLongInt = SBB.int64BE
@@ -429,19 +453,19 @@ buildLongLongInt = SBB.int64BE
 type LongLongUInt = Word64
 
 parseLongLongUInt :: Parser LongLongUInt
-parseLongLongUInt = Parse.anyWord64be
+parseLongLongUInt = label "LongLongUInt" Parse.anyWord64be
 
 buildLongLongUInt :: LongLongUInt -> ByteString.Builder
 buildLongLongUInt = SBB.word64BE
 
 parseFloat :: Parser Float
-parseFloat = Cast.wordToFloat <$> parseLongUInt
+parseFloat = label "Float" $ Cast.wordToFloat <$> parseLongUInt
 
 buildFloat :: Float -> ByteString.Builder
 buildFloat = SBB.floatBE
 
 parseDouble :: Parser Double
-parseDouble = Cast.wordToDouble <$> parseLongLongUInt
+parseDouble = label "Double" $ Cast.wordToDouble <$> parseLongLongUInt
 
 buildDouble :: Double -> ByteString.Builder
 buildDouble = SBB.doubleBE
@@ -455,7 +479,7 @@ data DecimalValue
 instance Validity DecimalValue
 
 parseDecimalValue :: Parser DecimalValue
-parseDecimalValue = do
+parseDecimalValue = label "DecimalValue" $ do
   scale <- parseOctet
   mantissa <- parseLongUInt
   pure $ DecimalValue scale mantissa
@@ -479,7 +503,7 @@ instance Validity ShortString where
       ]
 
 parseShortString :: Parser ShortString
-parseShortString = do
+parseShortString = label "ShortString" $ do
   o <- parseOctet
   shortStringBytes <- Parse.take (word8ToInt o)
   guard $ SB.all (/= 0) shortStringBytes
@@ -504,7 +528,7 @@ instance Validity LongString where
       ]
 
 parseLongString :: Parser LongString
-parseLongString = do
+parseLongString = label "LongString" $ do
   o <- parseLongUInt
   longStringBytes <- Parse.take (word32ToInt o)
   pure LongString {..}
@@ -519,7 +543,7 @@ buildLongString LongString {..} =
 type Timestamp = Word64
 
 parseTimestamp :: Parser Timestamp
-parseTimestamp = parseLongLongUInt
+parseTimestamp = label "Timestamp" parseLongLongUInt
 
 buildTimestamp :: Timestamp -> ByteString.Builder
 buildTimestamp = buildLongLongUInt
@@ -529,7 +553,10 @@ parseValid func = do
   r <- func
   case prettyValidate r of
     Left err -> fail $ unlines ["Value was invalid: " <> show r, err]
-    Right r -> pure r
+    Right res -> pure res
+
+label :: String -> Parser a -> Parser a
+label = flip (Parse.<?>)
 
 -- TODO while these are safe, they might be slow.
 -- look into this if we ever have performance issues

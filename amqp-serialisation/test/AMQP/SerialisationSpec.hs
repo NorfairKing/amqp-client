@@ -5,6 +5,7 @@ import AMQP.Serialisation
 import Control.Monad
 import Data.Attoparsec.ByteString
 import Data.ByteString (ByteString)
+import qualified Data.ByteString as SB
 import Data.ByteString.Builder as ByteString (Builder)
 import qualified Data.ByteString.Builder as SBB
 import qualified Data.ByteString.Lazy as LB
@@ -155,6 +156,18 @@ spec = do
   describe "parseTimestamp" $
     it "can parse whatever 'buildTimestamp' builds'" $
       roundtrips buildTimestamp parseTimestamp
+
+  describe "parseConnectionStartMethodFramePayload" $
+    it "can parse the example that we got from the rabbitmq server" $ do
+      payload <- SB.readFile "test_resources/connection-start.dat"
+      case parseOnly parseConnectionStartMethodFramePayload payload of
+        Left err ->
+          expectationFailure $
+            unlines
+              [ "Parsing the connection start method frame payload failed: ",
+                err
+              ]
+        Right _ -> pure ()
 
 roundtrips :: (Show a, Eq a, GenValid a) => (a -> ByteString.Builder) -> Parser a -> Property
 roundtrips builder parser =

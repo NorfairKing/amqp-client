@@ -5,6 +5,7 @@ module AMQP.Client where
 
 import AMQP.Serialisation
 import qualified Data.Attoparsec.ByteString as Attoparsec
+import qualified Data.Attoparsec.ByteString.Char8 as Attoparsec
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as SB
 import Data.ByteString.Builder as ByteString (Builder)
@@ -60,7 +61,7 @@ withConnection ConnectionSettings {..} callback = do
         Right (ProtocolRejected ph) -> throwIO $ ProtocolNegotiationRejected ph
         Right (ProtocolProposed f) -> pure f
       liftIO $ print f
-      liftIO $ print $ Attoparsec.eitherResult $ Attoparsec.parse (parseMethodPayload 10 10 parseConnectionStartMethodFramePayload) (rawFramePayload f)
+
       let amqpConnection =
             Connection
               { connectionNetworkConnection = networkConnection,
