@@ -20,6 +20,7 @@ source-repository head
 library
   exposed-modules:
       AMQP.Generator
+      AMQP.Generator.Parse
   other-modules:
       Paths_amqp_generator
   hs-source-dirs:
