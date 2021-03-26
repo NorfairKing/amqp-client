@@ -20,6 +20,7 @@ source-repository head
 library
   exposed-modules:
       AMQP.Serialisation
+      AMQP.Serialisation.Base
   other-modules:
       Paths_amqp_serialisation
   hs-source-dirs:
@@ -41,6 +42,7 @@ test-suite amqp-serialisation-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      AMQP.Serialisation.BaseSpec
       AMQP.SerialisationSpec
       Paths_amqp_serialisation
   hs-source-dirs:
