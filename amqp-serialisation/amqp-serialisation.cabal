@@ -21,6 +21,7 @@ library
   exposed-modules:
       AMQP.Serialisation
       AMQP.Serialisation.Base
+      AMQP.Serialisation.Generated
   other-modules:
       Paths_amqp_serialisation
   hs-source-dirs:
