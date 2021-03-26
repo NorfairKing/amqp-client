@@ -37,9 +37,17 @@ instance GenValid DecimalValue where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
+instance GenValid ShortString where
+  genValid = genValidStructurally
+  shrinkValid = shrinkValidStructurally
+
+instance GenValid LongString where
+  genValid = genValidStructurally
+  shrinkValid = shrinkValidStructurally
+
 instance GenValid FieldTableKey where
-  genValid = genValidStructurallyWithoutExtraChecking
-  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = genValidStructurally
+  shrinkValid = shrinkValidStructurally
 
 instance GenValid FieldTable where
   genValid = genValidStructurallyWithoutExtraChecking

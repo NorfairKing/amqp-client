@@ -467,36 +467,53 @@ buildDecimalValue (DecimalValue scale mantissa) =
       buildLongUInt mantissa
     ]
 
--- TODO newtype with validity constraint.
-type ShortString = ByteString
+newtype ShortString = ShortString {shortStringBytes :: ByteString}
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity ShortString where
+  validate ss@ShortString {..} =
+    mconcat
+      [ genericValidate ss,
+        declare "The short string is shorter than 256 bytes" $ SB.length shortStringBytes <= (word8ToInt (maxBound :: Octet)),
+        declare "The short string does not contain zero bytes" $ SB.all (/= 0) shortStringBytes
+      ]
 
 parseShortString :: Parser ShortString
 parseShortString = do
   o <- parseOctet
-  -- Safe fromintegral because it's a Octet -> Int
-  Parse.take (fromIntegral o)
+  shortStringBytes <- Parse.take (word8ToInt o)
+  guard $ SB.all (/= 0) shortStringBytes
+  pure ShortString {..}
 
 buildShortString :: ShortString -> ByteString.Builder
-buildShortString sb =
+buildShortString ShortString {..} =
   mconcat
-    [ buildOctet (fromIntegral (SB.length sb)), -- TODO not safe, use a newtype with validity constraint instead.
-      SBB.byteString sb
+    [ buildOctet (fromIntegral (SB.length shortStringBytes)), -- Safe because of the validity constraint on 'ShortString'.
+      SBB.byteString shortStringBytes
     ]
 
--- TODO newtype with validity constraint.
-type LongString = ByteString
+newtype LongString = LongString {longStringBytes :: ByteString}
+  deriving (Show, Eq, Generic)
+
+instance Validity LongString where
+  validate ls@LongString {..} =
+    mconcat
+      [ genericValidate ls,
+        declare "The long string contains fewer than a long uint's worth of bytes" $
+          SB.length longStringBytes <= word32ToInt (maxBound :: LongUInt)
+      ]
 
 parseLongString :: Parser LongString
 parseLongString = do
   o <- parseLongUInt
-  -- Safe fromintegral because it's a Octet -> Int
-  Parse.take (fromIntegral o)
+  longStringBytes <- Parse.take (word32ToInt o)
+  pure LongString {..}
 
-buildLongString :: ShortString -> ByteString.Builder
-buildLongString sb =
+buildLongString :: LongString -> ByteString.Builder
+buildLongString LongString {..} =
   mconcat
-    [ buildLongUInt (fromIntegral (SB.length sb)), -- TODO not safe, use a newtype with validity constraint instead.
-      SBB.byteString sb
+    [ buildLongUInt (fromIntegral (SB.length longStringBytes)), -- safe because of the validity constraint on 'LongString'.
+      SBB.byteString longStringBytes
     ]
 
 type Timestamp = Word64
@@ -514,6 +531,13 @@ parseValid func = do
     Left err -> fail $ unlines ["Value was invalid: " <> show r, err]
     Right r -> pure r
 
+-- TODO while these are safe, they might be slow.
+-- look into this if we ever have performance issues
+
 -- Safe
 word32ToInt :: Word32 -> Int
 word32ToInt = fromIntegral
+
+-- Safe
+word8ToInt :: Word8 -> Int
+word8ToInt = fromIntegral
