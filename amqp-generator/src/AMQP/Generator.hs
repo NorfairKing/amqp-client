@@ -47,6 +47,7 @@ genGeneratedModule :: AMQP.AMQPSpec -> Doc
 genGeneratedModule AMQP.AMQPSpec {..} =
   vcat
     [ text "module AMQP.Serialisation.Generated where",
+      text "import Data.Word",
       text "import AMQP.Serialisation.Base",
       genConstantsDoc amqpSpecConstants,
       genDomainTypesDoc amqpSpecDomainTypes
@@ -65,12 +66,17 @@ genConstantDoc c@AMQP.Constant {..} =
 constantDecs :: Constant -> [Dec]
 constantDecs AMQP.Constant {..} =
   let n = mkHaskellVarName constantName
-   in [ SigD n (ConT (mkName "Word")),
+   in [ SigD n (ConT (makeConstantType constantValue)),
         FunD
           n
           [ Clause [] (NormalB (LitE (IntegerL (fromIntegral constantValue)))) []
           ]
       ]
+
+makeConstantType :: Word -> Name
+makeConstantType w
+  | w < 256 = mkName "Word8"
+  | otherwise = mkName "Word"
 
 genHaddocks :: Text -> Maybe AMQP.Doc -> Doc
 genHaddocks intro mDoc =

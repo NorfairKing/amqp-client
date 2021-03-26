@@ -17,6 +17,7 @@ import qualified Data.ByteString as SB
 import Data.ByteString.Builder as ByteString (Builder)
 import qualified Data.ByteString.Builder as SBB
 import qualified Data.ByteString.Lazy as LB
+import Data.Maybe
 import Data.Proxy
 import Data.Validity
 import Data.Validity.ByteString ()
@@ -70,26 +71,29 @@ data FrameType
 
 instance Validity FrameType
 
--- TODO get these from the spec
 buildFrameType :: FrameType -> ByteString.Builder
 buildFrameType = \case
-  MethodFrameType -> SBB.word8 1
-  HeaderFrameType -> SBB.word8 2
-  BodyFrameType -> SBB.word8 3
+  MethodFrameType -> SBB.word8 frameMethod
+  HeaderFrameType -> SBB.word8 frameHeader
+  BodyFrameType -> SBB.word8 frameBody
   -- QUESTION: The pdf says 4 but the spec says 8, which is it?
   -- ANSWER: We'll go with what the spec says.
-  HeartbeatFrameType -> SBB.word8 8
+  HeartbeatFrameType -> SBB.word8 frameHeartbeat
 
 parseFrameType :: Parser FrameType
 parseFrameType = label "FrameType" $ do
   w <- Parse.anyWord8
-  -- TODO get these from the spec
-  case w of
-    1 -> pure MethodFrameType
-    2 -> pure HeaderFrameType
-    3 -> pure BodyFrameType
-    8 -> pure HeartbeatFrameType
-    _ -> fail $ "Unknown frame type: " <> show w
+  tableCaseMatch
+    w
+    (fail ("Unknown frame type: " <> show w))
+    [ (frameMethod, pure MethodFrameType),
+      (frameHeader, pure HeaderFrameType),
+      (frameBody, pure BodyFrameType),
+      (frameHeader, pure HeartbeatFrameType)
+    ]
+
+tableCaseMatch :: Eq a => a -> b -> [(a, b)] -> b
+tableCaseMatch a def vals = fromMaybe def $ lookup a vals
 
 data RawFrame = RawFrame
   { rawFrameType :: !FrameType,
@@ -113,11 +117,8 @@ buildRawFrame RawFrame {..} =
       -- The 'fromIntegral' should be safe because we cast from Int to Word32.
       SBB.word32BE (fromIntegral (SB.length rawFramePayload)),
       SBB.byteString rawFramePayload,
-      SBB.word8 rawFrameEnd
+      SBB.word8 frameEnd
     ]
-
-rawFrameEnd :: Word8
-rawFrameEnd = 206 -- TODO get this from the spec
 
 parseRawFrame :: Parser RawFrame
 parseRawFrame = label "RawFrame" $ do
@@ -125,7 +126,7 @@ parseRawFrame = label "RawFrame" $ do
   rawFrameChannel <- parseChannelNumber
   rawFrameLength <- anyWord32be
   rawFramePayload <- Parse.take (fromIntegral rawFrameLength)
-  void $ Parse.word8 rawFrameEnd
+  void $ Parse.word8 frameEnd
   pure RawFrame {..}
 
 data ProtocolNegotiationResponse

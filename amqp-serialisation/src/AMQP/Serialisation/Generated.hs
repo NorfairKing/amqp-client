@@ -1,21 +1,22 @@
 module AMQP.Serialisation.Generated where
 
 import AMQP.Serialisation.Base
+import Data.Word
 
 -- | frame-method
-frameMethod :: Word
+frameMethod :: Word8
 frameMethod = 1
 
 -- | frame-header
-frameHeader :: Word
+frameHeader :: Word8
 frameHeader = 2
 
 -- | frame-body
-frameBody :: Word
+frameBody :: Word8
 frameBody = 3
 
 -- | frame-heartbeat
-frameHeartbeat :: Word
+frameHeartbeat :: Word8
 frameHeartbeat = 8
 
 -- | frame-min-size
@@ -23,7 +24,7 @@ frameMinSize :: Word
 frameMinSize = 4096
 
 -- | frame-end
-frameEnd :: Word
+frameEnd :: Word8
 frameEnd = 206
 
 -- | reply-success
@@ -31,7 +32,7 @@ frameEnd = 206
 -- Indicates that the method completed successfully. This reply code is
 -- reserved for future use - the current protocol design does not use positive
 -- confirmation and reply codes are sent only in case of an error.
-replySuccess :: Word
+replySuccess :: Word8
 replySuccess = 200
 
 -- | content-too-large
