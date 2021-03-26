@@ -43,6 +43,7 @@ test-suite amqp-serialisation-test
   main-is: Spec.hs
   other-modules:
       AMQP.Serialisation.BaseSpec
+      AMQP.Serialisation.TestUtils
       AMQP.SerialisationSpec
       Paths_amqp_serialisation
   hs-source-dirs:

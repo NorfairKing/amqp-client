@@ -14,11 +14,6 @@ import qualified Data.ByteString as SB
 import Data.ByteString.Builder as ByteString (Builder)
 import qualified Data.ByteString.Builder as SBB
 import qualified Data.ByteString.Lazy as LB
-import Data.Char
-import Data.Int
-import Data.Map (Map)
-import qualified Data.Map as M
-import qualified Data.ReinterpretCast as Cast
 import Data.Validity
 import Data.Validity.ByteString ()
 import Data.Validity.Containers ()
@@ -208,10 +203,10 @@ buildConnectionStartOkMethodFramePayload = buildMethodFramePayload 10 11 . conne
 
 connectionStartOkMethodFrameArguments :: ConnectionStartOkMethodFrame -> [Argument]
 connectionStartOkMethodFrameArguments ConnectionStartOkMethodFrame {..} =
-  [ FieldTableFieldTable connectionStartOkMethodFrameClientProperties,
-    FieldTableShortString connectionStartOkMethodFrameMechanism,
-    FieldTableLongString connectionStartOkMethodFrameResponse,
-    FieldTableShortString connectionStartOkMethodFrameLocale
+  [ ArgumentFieldTable connectionStartOkMethodFrameClientProperties,
+    ArgumentShortString connectionStartOkMethodFrameMechanism,
+    ArgumentLongString connectionStartOkMethodFrameResponse,
+    ArgumentShortString connectionStartOkMethodFrameLocale
   ]
 
 parseMethodFrame :: ClassId -> MethodId -> Parser a -> Parser a
@@ -243,4 +238,4 @@ buildMethodFramePayload cid mid as =
   mconcat $
     buildShortUInt cid :
     buildShortUInt mid :
-    map buildFieldTableValue as
+    map buildArgument as

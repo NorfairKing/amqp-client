@@ -26,19 +26,41 @@ import GHC.Generics (Generic)
 
 type ChannelNumber = Word16
 
+type ClassId = ShortUInt
+
+type MethodId = ShortUInt
+
 parseChannelNumber :: Parser ChannelNumber
 parseChannelNumber = label "ChannelNumber" anyWord16be
 
 buildChannelNumber :: ChannelNumber -> ByteString.Builder
 buildChannelNumber = SBB.word16BE
 
-type PeerProperties = FieldTable
+type PeerProperties = FieldTable -- TODO get this from the spec
 
-type ClassId = ShortUInt
+data Argument
+  = ArgumentBit !Bit
+  | ArgumentOctet !Octet
+  | ArgumentLongUint !LongUInt
+  | ArgumentLongLongUint !LongLongUInt
+  | ArgumentShortString !ShortString
+  | ArgumentLongString !LongString
+  | ArgumentTimestamp !Timestamp
+  | ArgumentFieldTable !FieldTable
+  deriving (Show, Eq, Generic)
 
-type MethodId = ShortUInt
+instance Validity Argument
 
-type Argument = FieldTableValue
+buildArgument :: Argument -> ByteString.Builder
+buildArgument = \case
+  ArgumentBit b -> buildBit b
+  ArgumentOctet o -> buildOctet o
+  ArgumentLongUint lu -> buildLongUInt lu
+  ArgumentLongLongUint llu -> buildLongLongUInt llu
+  ArgumentShortString ss -> buildShortString ss
+  ArgumentLongString ls -> buildLongString ls
+  ArgumentTimestamp ts -> buildTimestamp ts
+  ArgumentFieldTable ft -> buildFieldTable ft
 
 newtype FieldTable = FieldTable {fieldTableMap :: Map FieldTableKey FieldTableValue}
   deriving (Show, Eq, Generic)
