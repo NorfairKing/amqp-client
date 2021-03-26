@@ -8,6 +8,7 @@
 module AMQP.Serialisation where
 
 import AMQP.Serialisation.Base
+import AMQP.Serialisation.Generated
 import Control.Monad
 import Data.Attoparsec.Binary as Parse
 import Data.Attoparsec.ByteString as Parse
@@ -165,21 +166,21 @@ parseMethodFramePayload = label "Method Payload" $ do
   label "method" $ void $ Parse.word16be $ methodMethodId (Proxy :: Proxy a)
   label "arguments" parseMethodArguments
 
-buildMethodFrame :: ChannelNumber -> ClassId -> MethodId -> [Argument] -> ByteString.Builder
-buildMethodFrame chan cid mid as =
+buildMethodFrame :: forall a. Method a => ChannelNumber -> a -> ByteString.Builder
+buildMethodFrame chan a =
   buildRawFrame $
     RawFrame
       { rawFrameType = MethodFrameType,
         rawFrameChannel = chan,
-        rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildMethodFramePayload cid mid as
+        rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildMethodFramePayload a
       }
 
-buildMethodFramePayload :: ClassId -> MethodId -> [Argument] -> ByteString.Builder
-buildMethodFramePayload cid mid as =
+buildMethodFramePayload :: forall a. Method a => a -> ByteString.Builder
+buildMethodFramePayload a =
   mconcat $
-    buildShortUInt cid :
-    buildShortUInt mid :
-    map buildArgument as
+    buildShortUInt (methodClassId (Proxy :: Proxy a)) :
+    buildShortUInt (methodMethodId (Proxy :: Proxy a)) :
+    map buildArgument (buildMethodArguments a)
 
 class Method a where
   methodClassId :: Proxy a -> ClassId

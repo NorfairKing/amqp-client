@@ -1,9 +1,13 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module AMQP.Client where
 
 import AMQP.Serialisation
+import AMQP.Serialisation.Base
+import AMQP.Serialisation.Generated
+import Control.Monad
 import qualified Data.Attoparsec.ByteString as Attoparsec
 import qualified Data.Attoparsec.ByteString.Char8 as Attoparsec
 import Data.ByteString (ByteString)
@@ -62,14 +66,17 @@ withConnection ConnectionSettings {..} callback = do
         Right (ProtocolRejected ph) -> throwIO $ ProtocolNegotiationRejected ph
         Right (ProtocolProposed f) -> pure f
       liftIO $ print f
+      let locales = SB.split 0x20 (longStringBytes (connectionStartLocales f))
+          ourLocaleSupported = ourLocale `elem` locales
+      when (not ourLocaleSupported) $ throwIO LocaleNotSupported
       let connectionOk =
-            ConnectionStartOkMethodFrame
-              { connectionStartOkMethodFrameClientProperties = FieldTable M.empty,
-                connectionStartOkMethodFrameMechanism = ShortString SB.empty,
-                connectionStartOkMethodFrameResponse = LongString SB.empty,
-                connectionStartOkMethodFrameLocale = ShortString SB.empty
+            ConnectionStartOk
+              { connectionStartOkClientProperties = FieldTable M.empty,
+                connectionStartOkMechanism = ShortString SB.empty,
+                connectionStartOkResponse = LongString SB.empty,
+                connectionStartOkLocale = ShortString ourLocale
               }
-      connectionPutBuilder networkConnection (buildConnectionStartOkMethodFrame connectionOk)
+      connectionPutBuilder networkConnection (buildMethodFrame 0 connectionOk)
       frame <- connectionParse networkConnection leftoversVar parseRawFrame
       liftIO $ print frame
 
@@ -97,11 +104,16 @@ connectionParse conn leftoversVar parser = modifyMVar leftoversVar $ \leftovers 
 chunkSize :: Int
 chunkSize = 4098
 
+ourLocale :: ByteString
+ourLocale = "en_US"
+
 data ClientException
   = -- | The protocol negotiation was rejected because the server sent back a protocol header instead of a Connection.start method frame.
     ProtocolNegotiationRejected ProtocolHeader
   | -- | The protocol negotion failed because the server just did not follow the protocol and sent over something other than a protocol header during negotiation
     ProtocolNegotiationFailed String
+  | -- | The server does not support our locale
+    LocaleNotSupported
   deriving (Show, Eq, Generic)
 
 instance Exception ClientException

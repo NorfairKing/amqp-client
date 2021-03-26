@@ -27,17 +27,11 @@ import GHC.Generics (Generic)
 
 type ChannelNumber = Word16
 
-type ClassId = ShortUInt
-
-type MethodId = ShortUInt
-
 parseChannelNumber :: Parser ChannelNumber
 parseChannelNumber = label "ChannelNumber" anyWord16be
 
 buildChannelNumber :: ChannelNumber -> ByteString.Builder
 buildChannelNumber = SBB.word16BE
-
-type PeerProperties = FieldTable -- TODO get this from the spec
 
 data Argument
   = ArgumentBit !Bit
