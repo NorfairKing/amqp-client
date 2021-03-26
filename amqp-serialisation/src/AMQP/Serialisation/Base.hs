@@ -98,7 +98,7 @@ parseManyFieldTablePairs = go []
 parseFieldTablePair :: Parser (FieldTableKey, FieldTableValue)
 parseFieldTablePair = do
   ss <- label "value name" parseFieldTableKey
-  ftv <- label (unwords ["value with name", show ss]) $ parseFieldTableValue
+  ftv <- label (unwords ["value with name", show ss]) parseFieldTableValue
   pure (ss, ftv)
 
 buildFieldTable :: FieldTable -> ByteString.Builder
@@ -356,7 +356,7 @@ instance Validity ShortString where
   validate ss@ShortString {..} =
     mconcat
       [ genericValidate ss,
-        declare "The short string is shorter than 256 bytes" $ SB.length shortStringBytes <= (word8ToInt (maxBound :: Octet)),
+        declare "The short string is shorter than 256 bytes" $ SB.length shortStringBytes <= word8ToInt (maxBound :: Octet),
         declare "The short string does not contain zero bytes" $ SB.all (/= 0) shortStringBytes
       ]
 
