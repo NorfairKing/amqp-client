@@ -19,16 +19,18 @@ import GHC.Generics (Generic)
 -- a server, and for both peers to operate the connection thereafter.
 --
 -- Grammar:
--- > connection          = open-connection *use-connection close-connection
--- > open-connection     = C:protocol-header
--- > S:START C:START-OK
--- > *challenge
--- > S:TUNE C:TUNE-OK
--- > C:OPEN S:OPEN-OK
--- > challenge           = S:SECURE C:SECURE-OK
--- > use-connection      = *channel
--- > close-connection    = C:CLOSE S:CLOSE-OK
--- > / S:CLOSE C:CLOSE-OK
+-- >
+-- >       connection          = open-connection *use-connection close-connection
+-- >       open-connection     = C:protocol-header
+-- >                             S:START C:START-OK
+-- >                             *challenge
+-- >                             S:TUNE C:TUNE-OK
+-- >                             C:OPEN S:OPEN-OK
+-- >       challenge           = S:SECURE C:SECURE-OK
+-- >       use-connection      = *channel
+-- >       close-connection    = C:CLOSE S:CLOSE-OK
+-- >                           / S:CLOSE C:CLOSE-OK
+-- >
 
 -- | The @start@ method: start connection negotiation
 --
@@ -199,13 +201,15 @@ instance IsMethod ConnectionCloseOk where
 -- server and for both peers to operate the channel thereafter.
 --
 -- Grammar:
--- > channel             = open-channel *use-channel close-channel
--- > open-channel        = C:OPEN S:OPEN-OK
--- > use-channel         = C:FLOW S:FLOW-OK
--- > / S:FLOW C:FLOW-OK
--- > / functional-class
--- > close-channel       = C:CLOSE S:CLOSE-OK
--- > / S:CLOSE C:CLOSE-OK
+-- >
+-- >       channel             = open-channel *use-channel close-channel
+-- >       open-channel        = C:OPEN S:OPEN-OK
+-- >       use-channel         = C:FLOW S:FLOW-OK
+-- >                           / S:FLOW C:FLOW-OK
+-- >                           / functional-class
+-- >       close-channel       = C:CLOSE S:CLOSE-OK
+-- >                           / S:CLOSE C:CLOSE-OK
+-- >
 
 -- | The @open@ method: open a channel for use
 --
@@ -297,8 +301,10 @@ instance IsMethod ChannelCloseOk where
 -- the server or declared at runtime.
 --
 -- Grammar:
--- > exchange            = C:DECLARE  S:DECLARE-OK
--- > / C:DELETE   S:DELETE-OK
+-- >
+-- >       exchange            = C:DECLARE  S:DECLARE-OK
+-- >                           / C:DELETE   S:DELETE-OK
+-- >
 
 -- | The @declare@ method: verify exchange exists, create if needed
 --
@@ -375,11 +381,13 @@ instance IsMethod ExchangeDeleteOk where
 -- from publishers.
 --
 -- Grammar:
--- > queue               = C:DECLARE  S:DECLARE-OK
--- > / C:BIND     S:BIND-OK
--- > / C:UNBIND   S:UNBIND-OK
--- > / C:PURGE    S:PURGE-OK
--- > / C:DELETE   S:DELETE-OK
+-- >
+-- >       queue               = C:DECLARE  S:DECLARE-OK
+-- >                           / C:BIND     S:BIND-OK
+-- >                           / C:UNBIND   S:UNBIND-OK
+-- >                           / C:PURGE    S:PURGE-OK
+-- >                           / C:DELETE   S:DELETE-OK
+-- >
 
 -- | The @declare@ method: declare queue, create if needed
 --
@@ -549,17 +557,19 @@ instance IsMethod QueueDeleteOk where
 -- The Basic class provides methods that support an industry-standard messaging model.
 --
 -- Grammar:
--- > basic               = C:QOS S:QOS-OK
--- > / C:CONSUME S:CONSUME-OK
--- > / C:CANCEL S:CANCEL-OK
--- > / C:PUBLISH content
--- > / S:RETURN content
--- > / S:DELIVER content
--- > / C:GET ( S:GET-OK content / S:GET-EMPTY )
--- > / C:ACK
--- > / C:REJECT
--- > / C:RECOVER-ASYNC
--- > / C:RECOVER S:RECOVER-OK
+-- >
+-- >       basic               = C:QOS S:QOS-OK
+-- >                           / C:CONSUME S:CONSUME-OK
+-- >                           / C:CANCEL S:CANCEL-OK
+-- >                           / C:PUBLISH content
+-- >                           / S:RETURN content
+-- >                           / S:DELIVER content
+-- >                           / C:GET ( S:GET-OK content / S:GET-EMPTY )
+-- >                           / C:ACK
+-- >                           / C:REJECT
+-- >                           / C:RECOVER-ASYNC
+-- >                           / C:RECOVER S:RECOVER-OK
+-- >
 
 -- | The @qos@ method: specify quality of service
 --
@@ -858,9 +868,11 @@ instance IsMethod BasicRecoverOk where
 -- mandatory flags on Basic.Publish methods is not defined.
 --
 -- Grammar:
--- > tx                  = C:SELECT S:SELECT-OK
--- > / C:COMMIT S:COMMIT-OK
--- > / C:ROLLBACK S:ROLLBACK-OK
+-- >
+-- >       tx                  = C:SELECT S:SELECT-OK
+-- >                           / C:COMMIT S:COMMIT-OK
+-- >                           / C:ROLLBACK S:ROLLBACK-OK
+-- >
 
 -- | The @select@ method: select standard transaction mode
 --

@@ -6,6 +6,7 @@
 module AMQP.Client where
 
 import AMQP.Serialisation
+import AMQP.Serialisation.Argument
 import AMQP.Serialisation.Base
 import AMQP.Serialisation.Frame
 import AMQP.Serialisation.Generated.Methods
@@ -46,7 +47,10 @@ data Connection = Connection
     -- This matters in case the server pipelines multiple frames, for example.
     --
     -- Full whenever the connection is ready to parse the next piece
-    connectionLeftoversVar :: !(MVar ByteString)
+    connectionLeftoversVar :: !(MVar ByteString),
+    connectionMaximumNumberOfChannels :: !ShortUInt,
+    connectionMaximumFrameSize :: !LongUInt,
+    connectionHeartbeatInterval :: !ShortUInt
   }
   deriving (Generic)
 
@@ -70,14 +74,15 @@ withConnection ConnectionSettings {..} callback = do
     (liftIO $ Network.connectTo connectionContext connectionParams)
     (liftIO . Network.connectionClose)
     $ \networkConnection -> do
+      -- C: protocol-header
       connectionPutBuilder networkConnection (buildProtocolHeader protocolHeader)
       leftoversVar <- newMVar SB.empty
+      -- S: START
       frame <- connectionParse networkConnection leftoversVar parseProtocolNegotiationResponse
       f <- case frame of
         Left err -> throwIO $ ProtocolNegotiationFailed err
         Right (ProtocolRejected ph) -> throwIO $ ProtocolNegotiationRejected ph
         Right (ProtocolProposed f) -> pure f
-      liftIO $ print f
       let locales = SB.split 0x20 (longStringBytes (connectionStartLocales f))
           ourLocaleSupported = ourLocale `elem` locales
       when (not ourLocaleSupported) $ throwIO LocaleNotSupported
@@ -93,18 +98,54 @@ withConnection ConnectionSettings {..} callback = do
                 connectionStartOkResponse = saslMechanismResponse connectionSettingSASLMechanism,
                 connectionStartOkLocale = ShortString ourLocale
               }
-      liftIO $ putStrLn "Answering: "
-      liftIO $ print connectionOk
+      -- C: START-OK
       connectionPutBuilder networkConnection (buildGivenMethodFrame 0 connectionOk)
-      errOrRes <- connectionParseMethod networkConnection leftoversVar
-      liftIO $ print (errOrRes :: Either String Method)
+      -- TODO: Implement the challenge part of the protocol
+      -- S: TUNE
+      ConnectionTune {..} <- connectionParseGivenMethodOrViolation networkConnection leftoversVar
+      -- QUESTION: do we want to negotiate down any of these?
+      --
+      -- NOTE: We can only negotiate down, so if we ever make these
+      -- configurable then we want to make sure of that.
+      let maxChannels = connectionTuneChannelMax
+          maxFrameSize = connectionTuneFrameMax
+          heartbeatInterval = connectionTuneHeartbeat
+      let connectionTuneOk =
+            ConnectionTuneOk
+              { connectionTuneOkChannelMax = maxChannels,
+                connectionTuneOkFrameMax = maxFrameSize,
+                connectionTuneOkHeartbeat = heartbeatInterval
+              }
+      -- C: TUNE-OK
+      connectionPutBuilder networkConnection (buildGivenMethodFrame 0 connectionTuneOk)
+      let connectionOpen =
+            ConnectionOpen
+              { connectionOpenVirtualHost = "/",
+                connectionOpenReserved1 = "",
+                connectionOpenReserved2 = False
+              }
+      -- C: OPEN
+      connectionPutBuilder networkConnection (buildGivenMethodFrame 0 connectionOpen)
+      -- S: OPEN-OK
+      ConnectionOpenOk {..} <- connectionParseGivenMethodOrViolation networkConnection leftoversVar
+      -- errOrRes <- connectionParseMethod networkConnection leftoversVar
+      -- liftIO $ print (errOrRes :: Either String Method)
 
       let amqpConnection =
             Connection
               { connectionNetworkConnection = networkConnection,
-                connectionLeftoversVar = leftoversVar
+                connectionLeftoversVar = leftoversVar,
+                connectionMaximumNumberOfChannels = maxChannels,
+                connectionMaximumFrameSize = maxFrameSize,
+                connectionHeartbeatInterval = heartbeatInterval
               }
       callback amqpConnection
+
+-- TODO deal with forceful disconnection. (Via exceptions?)
+-- C: CLOSE
+-- S: CLOSE-OK
+-- S: CLOSE
+-- C: CLOSE-OK
 
 saslMechanismName :: SASLMechanism -> ByteString
 saslMechanismName = \case
@@ -136,6 +177,16 @@ connectionPutBuilder conn b = liftIO $ mapM_ (Network.connectionPut conn) (LB.to
 connectionParseMethod :: (MonadUnliftIO m) => Network.Connection -> MVar ByteString -> m (Either String Method)
 connectionParseMethod conn leftoversVar = connectionParse conn leftoversVar parseMethodFrame
 
+connectionParseGivenMethod :: (IsMethod a, MonadUnliftIO m) => Network.Connection -> MVar ByteString -> m (Either String a)
+connectionParseGivenMethod conn leftoversVar = connectionParse conn leftoversVar parseGivenMethodFrame
+
+connectionParseGivenMethodOrViolation :: (IsMethod a, MonadUnliftIO m) => Network.Connection -> MVar ByteString -> m a
+connectionParseGivenMethodOrViolation conn leftoversVar = do
+  errOrMethod <- connectionParse conn leftoversVar parseGivenMethodFrame
+  case errOrMethod of
+    Left err -> throwIO $ ProtocolViolation err
+    Right r -> pure r
+
 -- TODO keep track of the last bit of bytestring that we already got.
 connectionParse :: MonadUnliftIO m => Network.Connection -> MVar ByteString -> Attoparsec.Parser a -> m (Either String a)
 connectionParse conn leftoversVar parser = modifyMVar leftoversVar $ \leftovers -> do
@@ -156,12 +207,14 @@ ourLocale = "en_US"
 data ClientException
   = -- | The protocol negotiation was rejected because the server sent back a protocol header instead of a Connection.start method frame.
     ProtocolNegotiationRejected ProtocolHeader
-  | -- | The protocol negotion failed because the server just did not follow the protocol and sent over something other than a protocol header during negotiation
+  | -- | The protocol negotion failed because the server just did not follow the protocol and sent over something other than a protocol header during negotiation.
     ProtocolNegotiationFailed String
-  | -- | The server does not support our locale
+  | -- | The server does not support our locale.
     LocaleNotSupported
-  | -- | The server does not support our SASL mechanism
+  | -- | The server does not support our SASL mechanism.
     SASLMechanismNotSupported ByteString
+  | -- | The server comitted a protocol violation.
+    ProtocolViolation String
   deriving (Show, Eq, Generic)
 
 instance Exception ClientException

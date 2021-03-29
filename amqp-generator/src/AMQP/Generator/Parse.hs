@@ -160,7 +160,7 @@ instance FromElement Grammar where
     if t == Just ("grammar" :: Text) then Right () else Left "Not a grammar element"
     case elementNodes e of
       [n] -> case n of
-        NodeContent t -> pure $ Grammar {grammarText = stripDoc t}
+        NodeContent t -> pure $ Grammar {grammarText = t}
         _ -> Left $ unwords ["A non-Content node found under 'doc' element with type grammar:", show e]
       _ -> Left $ unwords ["No or more than one child found of 'doc' element with type grammar:", show e]
 
