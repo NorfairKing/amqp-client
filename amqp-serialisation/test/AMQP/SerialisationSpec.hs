@@ -56,6 +56,11 @@ spec = do
     it "can parse whatever 'buildRawFrame' builds'" $
       roundtrips buildRawFrame parseRawFrame
 
+  -- describe "parseMethodFrame" $
+  --   it "can parse whatever 'buildMethodFrame' builds'" $
+  --     forAllValid $ \cn ->
+  --       roundtrips (buildMethodFrame cn) parseMethodFrame
+
   describe "parseConnectionStartMethodFramePayload" $
     it "can parse the example that we got from the rabbitmq server" $ do
       payload <- SB.readFile "test_resources/connection-start.dat"

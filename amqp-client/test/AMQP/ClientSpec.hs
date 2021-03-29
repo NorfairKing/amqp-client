@@ -19,3 +19,13 @@ spec = rabbitMQSpec $ do
             }
     withConnection settings $ \_ -> do
       pure () :: IO ()
+  itWithOuter "can make a connection, open a channel and then do nothing" $ \RabbitMQHandle {..} -> do
+    let settings =
+          ConnectionSettings
+            { connectionSettingHostName = "127.0.0.1",
+              connectionSettingPort = rabbitMQHandlePort,
+              connectionSettingSASLMechanism = PLAINMechanism "guest" "guest"
+            }
+    withConnection settings $ \conn -> do
+      withChannel conn $ \_ -> do
+        pure () :: IO ()

@@ -17,6 +17,7 @@ library:
     - connection
     - containers
     - network
+    - stm
     - text
     - unliftio
 

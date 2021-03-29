@@ -156,8 +156,8 @@ newtype Grammar = Grammar {grammarText :: Text}
 
 instance FromElement Grammar where
   fromElement = elementWithName "doc" $ \e -> do
-    t <- e .:? "type"
-    if t == Just ("grammar" :: Text) then Right () else Left "Not a grammar element"
+    typ <- e .:? "type"
+    if typ == Just ("grammar" :: Text) then Right () else Left "Not a grammar element"
     case elementNodes e of
       [n] -> case n of
         NodeContent t -> pure $ Grammar {grammarText = t}
@@ -233,6 +233,7 @@ firstParsingElementBelow :: FromElement child => Element -> Name -> Either Strin
 firstParsingElementBelow e n = case filter ((n ==) . elementName) (elementChildrenOf e) of
   [] -> pure Nothing
   cs -> case partitionEithers $ map fromElement cs of
+    ([], []) -> pure Nothing
     (err : _, []) -> Left err
     (_, res : _) -> pure $ Just res
 

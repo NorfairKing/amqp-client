@@ -17,6 +17,8 @@ import qualified Data.ByteString as SB
 import Data.ByteString.Builder as ByteString (Builder)
 import qualified Data.ByteString.Builder as SBB
 import qualified Data.ByteString.Lazy as LB
+import Data.IntMap (IntMap)
+import qualified Data.IntMap as IM
 import Data.List
 import qualified Data.Map as M
 import Data.Text (Text)
@@ -50,9 +52,43 @@ data Connection = Connection
     connectionLeftoversVar :: !(MVar ByteString),
     connectionMaximumNumberOfChannels :: !ShortUInt,
     connectionMaximumFrameSize :: !LongUInt,
-    connectionHeartbeatInterval :: !ShortUInt
+    connectionHeartbeatInterval :: !ShortUInt,
+    connectionMessageQueue :: !(TQueue ConnectionMessage),
+    connectionChannels :: !(TVar (IntMap Channel))
   }
   deriving (Generic)
+
+data ConnectionMessage
+  = ConnectionMethod Method
+  deriving (Show, Eq, Generic)
+
+data ChannelMessage
+  = ChannelMethod Method
+  deriving (Show, Eq, Generic)
+
+data Channel = Channel
+  { channelNumber :: ChannelNumber,
+    channelMessageQueue :: TQueue ChannelMessage -- TODO we want to be able to consume other things than just methods
+  }
+  deriving (Generic)
+
+data HandleResult = NotHandled | HandledButNotDone | HandledAndDone
+  deriving (Generic)
+
+withChannel :: MonadUnliftIO m => Connection -> (Channel -> m a) -> m a
+withChannel conn func = do
+  let channelOpen = ChannelOpen {channelOpenReserved1 = ""}
+  let number = 1 --
+  connectionPutGivenMethod (connectionNetworkConnection conn) number channelOpen
+  messageQueue <- newTQueueIO
+  let chan = Channel {channelNumber = number, channelMessageQueue = messageQueue}
+  func chan
+
+chanHasMessage :: MonadIO m => Channel -> m Bool
+chanHasMessage Channel {..} = atomically $ not <$> isEmptyTQueue channelMessageQueue
+
+-- waitForMessageOnChan :: Connection -> ChannelNumber -> m a
+-- waitForMessageOnChan conn channelNumber = do
 
 -- | Set up (and clean up) a connection to the AMQP server.
 --
@@ -131,13 +167,17 @@ withConnection ConnectionSettings {..} callback = do
       -- errOrRes <- connectionParseMethod networkConnection leftoversVar
       -- liftIO $ print (errOrRes :: Either String Method)
 
+      messageQueue <- newTQueueIO
+      channelVar <- newTVarIO IM.empty
       let amqpConnection =
             Connection
               { connectionNetworkConnection = networkConnection,
                 connectionLeftoversVar = leftoversVar,
                 connectionMaximumNumberOfChannels = maxChannels,
                 connectionMaximumFrameSize = maxFrameSize,
-                connectionHeartbeatInterval = heartbeatInterval
+                connectionHeartbeatInterval = heartbeatInterval,
+                connectionMessageQueue = messageQueue,
+                connectionChannels = channelVar
               }
       callback amqpConnection
 
@@ -170,6 +210,9 @@ plainSASLResponse username password =
             SBB.word8 0,
             SBB.byteString $ TE.encodeUtf8 password
           ]
+
+connectionPutGivenMethod :: (IsMethod a, MonadIO m) => Network.Connection -> ChannelNumber -> a -> m ()
+connectionPutGivenMethod conn chan m = connectionPutBuilder conn (buildGivenMethodFrame chan m)
 
 connectionPutBuilder :: MonadIO m => Network.Connection -> ByteString.Builder -> m ()
 connectionPutBuilder conn b = liftIO $ mapM_ (Network.connectionPut conn) (LB.toChunks (SBB.toLazyByteString b))

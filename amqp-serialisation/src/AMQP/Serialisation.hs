@@ -91,3 +91,8 @@ buildMethodFrame chan m =
         rawFrameChannel = chan,
         rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildMethodFramePayload m
       }
+
+data FramePayload
+  = MethodPayload Method
+  | HeartbeatPayload
+  deriving (Show, Eq, Generic)
