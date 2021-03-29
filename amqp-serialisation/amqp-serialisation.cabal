@@ -20,6 +20,7 @@ source-repository head
 library
   exposed-modules:
       AMQP.Serialisation
+      AMQP.Serialisation.Argument
       AMQP.Serialisation.Base
       AMQP.Serialisation.Generated
   other-modules:

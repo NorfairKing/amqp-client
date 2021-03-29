@@ -7,6 +7,7 @@
 
 module AMQP.Serialisation where
 
+import AMQP.Serialisation.Argument
 import AMQP.Serialisation.Base
 import AMQP.Serialisation.Generated
 import Control.Monad
@@ -182,45 +183,3 @@ buildMethodFramePayload a =
     buildShortUInt (methodClassId (Proxy :: Proxy a)) :
     buildShortUInt (methodMethodId (Proxy :: Proxy a)) :
     map buildArgument (buildMethodArguments a)
-
-class Method a where
-  methodClassId :: Proxy a -> ClassId
-  methodMethodId :: Proxy a -> MethodId
-  buildMethodArguments :: a -> [Argument]
-  parseMethodArguments :: Parser a
-
-class IsArgument a where
-  toArgument :: a -> Argument
-  parseArgument :: Parser a
-
-instance IsArgument Bit where
-  toArgument = ArgumentBit
-  parseArgument = parseBit
-
-instance IsArgument Octet where
-  toArgument = ArgumentOctet
-  parseArgument = parseOctet
-
-instance IsArgument LongUInt where
-  toArgument = ArgumentLongUInt
-  parseArgument = parseLongUInt
-
-instance IsArgument LongLongUInt where
-  toArgument = ArgumentLongLongUInt
-  parseArgument = parseLongLongUInt
-
-instance IsArgument ShortString where
-  toArgument = ArgumentShortString
-  parseArgument = parseShortString
-
-instance IsArgument LongString where
-  toArgument = ArgumentLongString
-  parseArgument = parseLongString
-
-instance IsArgument Timestamp where
-  toArgument = ArgumentTimestamp
-  parseArgument = parseTimestamp
-
-instance IsArgument FieldTable where
-  toArgument = ArgumentFieldTable
-  parseArgument = parseFieldTable
