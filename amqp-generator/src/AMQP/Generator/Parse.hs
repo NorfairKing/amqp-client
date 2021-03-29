@@ -4,6 +4,7 @@
 
 module AMQP.Generator.Parse where
 
+import Data.Either
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Text (Text)
@@ -86,6 +87,7 @@ data Class = Class
     classIndex :: !Word,
     classlabel :: !Text,
     classDoc :: !(Maybe Doc),
+    classGrammar :: !(Maybe Grammar),
     classFields :: ![Field],
     classMethods :: ![Method]
   }
@@ -99,6 +101,7 @@ instance FromElement Class where
       <*> e .: "index"
       <*> e .: "label"
       <*> firstElementBelow e "doc"
+      <*> firstParsingElementBelow e "doc"
       <*> elementsBelow e "field"
       <*> elementsBelow e "method"
 
@@ -147,6 +150,19 @@ instance FromElement Field where
       <*> e .:? "type"
       <*> e .:? "label"
       <*> firstElementBelow e "doc"
+
+newtype Grammar = Grammar {grammarText :: Text}
+  deriving (Show, Eq, Generic)
+
+instance FromElement Grammar where
+  fromElement = elementWithName "doc" $ \e -> do
+    t <- e .:? "type"
+    if t == Just ("grammar" :: Text) then Right () else Left "Not a grammar element"
+    case elementNodes e of
+      [n] -> case n of
+        NodeContent t -> pure $ Grammar {grammarText = stripDoc t}
+        _ -> Left $ unwords ["A non-Content node found under 'doc' element with type grammar:", show e]
+      _ -> Left $ unwords ["No or more than one child found of 'doc' element with type grammar:", show e]
 
 newtype Doc = Doc {docText :: Text}
   deriving (Show, Eq, Generic)
@@ -212,6 +228,13 @@ firstElementBelow :: FromElement child => Element -> Name -> Either String (Mayb
 firstElementBelow e n = case filter ((n ==) . elementName) (elementChildrenOf e) of
   [] -> pure Nothing
   (c : _) -> Just <$> fromElement c
+
+firstParsingElementBelow :: FromElement child => Element -> Name -> Either String (Maybe child)
+firstParsingElementBelow e n = case filter ((n ==) . elementName) (elementChildrenOf e) of
+  [] -> pure Nothing
+  cs -> case partitionEithers $ map fromElement cs of
+    (err : _, []) -> Left err
+    (_, res : _) -> pure $ Just res
 
 -- | Parse an attribute with a given name
 (.:) :: FromAttribute a => Element -> Name -> Either String a

@@ -164,11 +164,20 @@ genHaddocks intro mDoc =
 genDocComment :: AMQP.Doc -> Doc
 genDocComment = comment . AMQP.docText
 
+genGrammarComment :: Grammar -> Doc
+genGrammarComment Grammar {..} = vcat [comment "Grammar:", comment "", blockComment grammarText]
+
+sectionIntro :: Text -> Doc
+sectionIntro t = text "-- *" <+> text (T.unpack t)
+
 haddockIntro :: Text -> Doc
 haddockIntro t = text "-- |" <+> text (T.unpack t)
 
 comment :: Text -> Doc
 comment = vcat . map ((text "--" <+>) . text) . lines . T.unpack
+
+blockComment :: Text -> Doc
+blockComment = vcat . map ((text "-- >" <+>) . text) . lines . T.unpack
 
 mkHaskellVarName :: Text -> Name
 mkHaskellVarName = mkName . remapReserved . toCamel . fromKebab . T.unpack
@@ -182,7 +191,18 @@ genClassesTypesDoc :: [Class] -> Doc
 genClassesTypesDoc = vcat . intersperse (text "\n") . map genClassTypesDoc
 
 genClassTypesDoc :: Class -> Doc
-genClassTypesDoc AMQP.Class {..} = vcat $ intersperse (text "") $ map (genClassMethodTypeDoc className classIndex) classMethods
+genClassTypesDoc AMQP.Class {..} =
+  vcat
+    [ sectionIntro $ T.unwords ["The", T.concat ["@", className, "@"], "class"],
+      comment "",
+      maybe empty genDocComment classDoc,
+      comment "\n",
+      maybe empty genGrammarComment classGrammar,
+      text "",
+      vcat $
+        intersperse (text "") $
+          map (genClassMethodTypeDoc className classIndex) classMethods
+    ]
 
 genClassMethodTypeDoc :: Text -> Word -> Method -> Doc
 genClassMethodTypeDoc className classIndex m@AMQP.Method {..} =

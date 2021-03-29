@@ -13,6 +13,23 @@ import Data.Proxy
 import Data.Validity
 import GHC.Generics (Generic)
 
+-- * The @connection@ class
+
+-- The connection class provides methods for a client to establish a network connection to
+-- a server, and for both peers to operate the connection thereafter.
+--
+-- Grammar:
+-- > connection          = open-connection *use-connection close-connection
+-- > open-connection     = C:protocol-header
+-- > S:START C:START-OK
+-- > *challenge
+-- > S:TUNE C:TUNE-OK
+-- > C:OPEN S:OPEN-OK
+-- > challenge           = S:SECURE C:SECURE-OK
+-- > use-connection      = *channel
+-- > close-connection    = C:CLOSE S:CLOSE-OK
+-- > / S:CLOSE C:CLOSE-OK
+
 -- | The @start@ method: start connection negotiation
 --
 -- This method starts the connection negotiation process by telling the client the
@@ -176,6 +193,20 @@ instance IsMethod ConnectionCloseOk where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 51
 
+-- * The @channel@ class
+
+-- The channel class provides methods for a client to establish a channel to a
+-- server and for both peers to operate the channel thereafter.
+--
+-- Grammar:
+-- > channel             = open-channel *use-channel close-channel
+-- > open-channel        = C:OPEN S:OPEN-OK
+-- > use-channel         = C:FLOW S:FLOW-OK
+-- > / S:FLOW C:FLOW-OK
+-- > / functional-class
+-- > close-channel       = C:CLOSE S:CLOSE-OK
+-- > / S:CLOSE C:CLOSE-OK
+
 -- | The @open@ method: open a channel for use
 --
 -- This method opens a channel to the server.
@@ -260,6 +291,15 @@ instance IsMethod ChannelCloseOk where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 41
 
+-- * The @exchange@ class
+
+-- Exchanges match and distribute messages across queues. Exchanges can be configured in
+-- the server or declared at runtime.
+--
+-- Grammar:
+-- > exchange            = C:DECLARE  S:DECLARE-OK
+-- > / C:DELETE   S:DELETE-OK
+
 -- | The @declare@ method: verify exchange exists, create if needed
 --
 -- This method creates an exchange if it does not already exist, and if the exchange
@@ -327,6 +367,19 @@ instance Validity ExchangeDeleteOk
 instance IsMethod ExchangeDeleteOk where
   methodClassId (Proxy) = 40
   methodMethodId (Proxy) = 21
+
+-- * The @queue@ class
+
+-- Queues store and forward messages. Queues can be configured in the server or created at
+-- runtime. Queues must be attached to at least one exchange in order to receive messages
+-- from publishers.
+--
+-- Grammar:
+-- > queue               = C:DECLARE  S:DECLARE-OK
+-- > / C:BIND     S:BIND-OK
+-- > / C:UNBIND   S:UNBIND-OK
+-- > / C:PURGE    S:PURGE-OK
+-- > / C:DELETE   S:DELETE-OK
 
 -- | The @declare@ method: declare queue, create if needed
 --
@@ -490,6 +543,23 @@ instance Validity QueueDeleteOk
 instance IsMethod QueueDeleteOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 41
+
+-- * The @basic@ class
+
+-- The Basic class provides methods that support an industry-standard messaging model.
+--
+-- Grammar:
+-- > basic               = C:QOS S:QOS-OK
+-- > / C:CONSUME S:CONSUME-OK
+-- > / C:CANCEL S:CANCEL-OK
+-- > / C:PUBLISH content
+-- > / S:RETURN content
+-- > / S:DELIVER content
+-- > / C:GET ( S:GET-OK content / S:GET-EMPTY )
+-- > / C:ACK
+-- > / C:REJECT
+-- > / C:RECOVER-ASYNC
+-- > / C:RECOVER S:RECOVER-OK
 
 -- | The @qos@ method: specify quality of service
 --
@@ -774,6 +844,23 @@ instance Validity BasicRecoverOk
 instance IsMethod BasicRecoverOk where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 111
+
+-- * The @tx@ class
+
+-- The Tx class allows publish and ack operations to be batched into atomic
+-- units of work.  The intention is that all publish and ack requests issued
+-- within a transaction will complete successfully or none of them will.
+-- Servers SHOULD implement atomic transactions at least where all publish
+-- or ack requests affect a single queue.  Transactions that cover multiple
+-- queues may be non-atomic, given that queues can be created and destroyed
+-- asynchronously, and such events do not form part of any transaction.
+-- Further, the behaviour of transactions with respect to the immediate and
+-- mandatory flags on Basic.Publish methods is not defined.
+--
+-- Grammar:
+-- > tx                  = C:SELECT S:SELECT-OK
+-- > / C:COMMIT S:COMMIT-OK
+-- > / C:ROLLBACK S:ROLLBACK-OK
 
 -- | The @select@ method: select standard transaction mode
 --
