@@ -144,15 +144,11 @@ parseProtocolNegotiationResponse =
 
 data MethodFrame = MethodFrame
   { methodFrameChannel :: !ChannelNumber,
-    methodFramePayload :: !MethodFramePayload
+    methodFramePayload :: !Method
   }
   deriving (Show, Eq, Generic)
 
-data MethodFramePayload
-  = ConnectionStartFrame !ConnectionStart
-  deriving (Show, Eq, Generic)
-
-parseMethodFrame :: Method a => Parser a
+parseMethodFrame :: IsMethod a => Parser a
 parseMethodFrame = label "Method Frame" $ do
   RawFrame {..} <- parseRawFrame
   case rawFrameType of
@@ -161,13 +157,13 @@ parseMethodFrame = label "Method Frame" $ do
       Right r -> pure r
     ft -> fail $ unwords ["Got a frame of type", show ft, "instead of a method frame."]
 
-parseMethodFramePayload :: forall a. Method a => Parser a
+parseMethodFramePayload :: forall a. IsMethod a => Parser a
 parseMethodFramePayload = label "Method Payload" $ do
   label "class" $ void $ Parse.word16be $ methodClassId (Proxy :: Proxy a)
   label "method" $ void $ Parse.word16be $ methodMethodId (Proxy :: Proxy a)
   label "arguments" parseMethodArguments
 
-buildMethodFrame :: forall a. Method a => ChannelNumber -> a -> ByteString.Builder
+buildMethodFrame :: forall a. IsMethod a => ChannelNumber -> a -> ByteString.Builder
 buildMethodFrame chan a =
   buildRawFrame $
     RawFrame
@@ -176,7 +172,7 @@ buildMethodFrame chan a =
         rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildMethodFramePayload a
       }
 
-buildMethodFramePayload :: forall a. Method a => a -> ByteString.Builder
+buildMethodFramePayload :: forall a. IsMethod a => a -> ByteString.Builder
 buildMethodFramePayload a =
   mconcat $
     buildShortUInt (methodClassId (Proxy :: Proxy a)) :

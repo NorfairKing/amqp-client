@@ -270,7 +270,7 @@ data ConnectionStart = ConnectionStart
 
 instance Validity ConnectionStart
 
-instance Method ConnectionStart where
+instance IsMethod ConnectionStart where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 10
 
@@ -287,7 +287,7 @@ data ConnectionStartOk = ConnectionStartOk
 
 instance Validity ConnectionStartOk
 
-instance Method ConnectionStartOk where
+instance IsMethod ConnectionStartOk where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 11
 
@@ -301,7 +301,7 @@ data ConnectionSecure = ConnectionSecure {connectionSecureChallenge :: !LongStri
 
 instance Validity ConnectionSecure
 
-instance Method ConnectionSecure where
+instance IsMethod ConnectionSecure where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 20
 
@@ -314,7 +314,7 @@ data ConnectionSecureOk = ConnectionSecureOk {connectionSecureOkResponse :: !Lon
 
 instance Validity ConnectionSecureOk
 
-instance Method ConnectionSecureOk where
+instance IsMethod ConnectionSecureOk where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 21
 
@@ -331,7 +331,7 @@ data ConnectionTune = ConnectionTune
 
 instance Validity ConnectionTune
 
-instance Method ConnectionTune where
+instance IsMethod ConnectionTune where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 30
 
@@ -348,7 +348,7 @@ data ConnectionTuneOk = ConnectionTuneOk
 
 instance Validity ConnectionTuneOk
 
-instance Method ConnectionTuneOk where
+instance IsMethod ConnectionTuneOk where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 31
 
@@ -367,7 +367,7 @@ data ConnectionOpen = ConnectionOpen
 
 instance Validity ConnectionOpen
 
-instance Method ConnectionOpen where
+instance IsMethod ConnectionOpen where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 40
 
@@ -379,7 +379,7 @@ data ConnectionOpenOk = ConnectionOpenOk {connectionOpenOkReserved1 :: !ShortStr
 
 instance Validity ConnectionOpenOk
 
-instance Method ConnectionOpenOk where
+instance IsMethod ConnectionOpenOk where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 41
 
@@ -399,7 +399,7 @@ data ConnectionClose = ConnectionClose
 
 instance Validity ConnectionClose
 
-instance Method ConnectionClose where
+instance IsMethod ConnectionClose where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 50
 
@@ -413,7 +413,7 @@ data ConnectionCloseOk
 
 instance Validity ConnectionCloseOk
 
-instance Method ConnectionCloseOk where
+instance IsMethod ConnectionCloseOk where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 51
 
@@ -425,7 +425,7 @@ data ChannelOpen = ChannelOpen {channelOpenReserved1 :: !ShortString}
 
 instance Validity ChannelOpen
 
-instance Method ChannelOpen where
+instance IsMethod ChannelOpen where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 10
 
@@ -437,7 +437,7 @@ data ChannelOpenOk = ChannelOpenOk {channelOpenOkReserved1 :: !LongString}
 
 instance Validity ChannelOpenOk
 
-instance Method ChannelOpenOk where
+instance IsMethod ChannelOpenOk where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 11
 
@@ -453,7 +453,7 @@ data ChannelFlow = ChannelFlow {channelFlowActive :: !Bit}
 
 instance Validity ChannelFlow
 
-instance Method ChannelFlow where
+instance IsMethod ChannelFlow where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 20
 
@@ -465,7 +465,7 @@ data ChannelFlowOk = ChannelFlowOk {channelFlowOkActive :: !Bit}
 
 instance Validity ChannelFlowOk
 
-instance Method ChannelFlowOk where
+instance IsMethod ChannelFlowOk where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 21
 
@@ -485,7 +485,7 @@ data ChannelClose = ChannelClose
 
 instance Validity ChannelClose
 
-instance Method ChannelClose where
+instance IsMethod ChannelClose where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 40
 
@@ -497,7 +497,7 @@ data ChannelCloseOk = ChannelCloseOk deriving (Show, Eq, Generic)
 
 instance Validity ChannelCloseOk
 
-instance Method ChannelCloseOk where
+instance IsMethod ChannelCloseOk where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 41
 
@@ -520,7 +520,7 @@ data ExchangeDeclare = ExchangeDeclare
 
 instance Validity ExchangeDeclare
 
-instance Method ExchangeDeclare where
+instance IsMethod ExchangeDeclare where
   methodClassId (Proxy) = 40
   methodMethodId (Proxy) = 10
 
@@ -534,7 +534,7 @@ data ExchangeDeclareOk
 
 instance Validity ExchangeDeclareOk
 
-instance Method ExchangeDeclareOk where
+instance IsMethod ExchangeDeclareOk where
   methodClassId (Proxy) = 40
   methodMethodId (Proxy) = 11
 
@@ -552,7 +552,7 @@ data ExchangeDelete = ExchangeDelete
 
 instance Validity ExchangeDelete
 
-instance Method ExchangeDelete where
+instance IsMethod ExchangeDelete where
   methodClassId (Proxy) = 40
   methodMethodId (Proxy) = 20
 
@@ -565,7 +565,7 @@ data ExchangeDeleteOk
 
 instance Validity ExchangeDeleteOk
 
-instance Method ExchangeDeleteOk where
+instance IsMethod ExchangeDeleteOk where
   methodClassId (Proxy) = 40
   methodMethodId (Proxy) = 21
 
@@ -588,7 +588,7 @@ data QueueDeclare = QueueDeclare
 
 instance Validity QueueDeclare
 
-instance Method QueueDeclare where
+instance IsMethod QueueDeclare where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 10
 
@@ -605,7 +605,7 @@ data QueueDeclareOk = QueueDeclareOk
 
 instance Validity QueueDeclareOk
 
-instance Method QueueDeclareOk where
+instance IsMethod QueueDeclareOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 11
 
@@ -627,7 +627,7 @@ data QueueBind = QueueBind
 
 instance Validity QueueBind
 
-instance Method QueueBind where
+instance IsMethod QueueBind where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 20
 
@@ -638,7 +638,7 @@ data QueueBindOk = QueueBindOk deriving (Show, Eq, Generic)
 
 instance Validity QueueBindOk
 
-instance Method QueueBindOk where
+instance IsMethod QueueBindOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 21
 
@@ -656,7 +656,7 @@ data QueueUnbind = QueueUnbind
 
 instance Validity QueueUnbind
 
-instance Method QueueUnbind where
+instance IsMethod QueueUnbind where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 50
 
@@ -667,7 +667,7 @@ data QueueUnbindOk = QueueUnbindOk deriving (Show, Eq, Generic)
 
 instance Validity QueueUnbindOk
 
-instance Method QueueUnbindOk where
+instance IsMethod QueueUnbindOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 51
 
@@ -684,7 +684,7 @@ data QueuePurge = QueuePurge
 
 instance Validity QueuePurge
 
-instance Method QueuePurge where
+instance IsMethod QueuePurge where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 30
 
@@ -696,7 +696,7 @@ data QueuePurgeOk = QueuePurgeOk {queuePurgeOkMessageCount :: !MessageCount}
 
 instance Validity QueuePurgeOk
 
-instance Method QueuePurgeOk where
+instance IsMethod QueuePurgeOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 31
 
@@ -716,7 +716,7 @@ data QueueDelete = QueueDelete
 
 instance Validity QueueDelete
 
-instance Method QueueDelete where
+instance IsMethod QueueDelete where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 40
 
@@ -728,7 +728,7 @@ data QueueDeleteOk = QueueDeleteOk {queueDeleteOkMessageCount :: !MessageCount}
 
 instance Validity QueueDeleteOk
 
-instance Method QueueDeleteOk where
+instance IsMethod QueueDeleteOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 41
 
@@ -748,7 +748,7 @@ data BasicQos = BasicQos
 
 instance Validity BasicQos
 
-instance Method BasicQos where
+instance IsMethod BasicQos where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 10
 
@@ -761,7 +761,7 @@ data BasicQosOk = BasicQosOk deriving (Show, Eq, Generic)
 
 instance Validity BasicQosOk
 
-instance Method BasicQosOk where
+instance IsMethod BasicQosOk where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 11
 
@@ -784,7 +784,7 @@ data BasicConsume = BasicConsume
 
 instance Validity BasicConsume
 
-instance Method BasicConsume where
+instance IsMethod BasicConsume where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 20
 
@@ -797,7 +797,7 @@ data BasicConsumeOk = BasicConsumeOk {basicConsumeOkConsumerTag :: !ConsumerTag}
 
 instance Validity BasicConsumeOk
 
-instance Method BasicConsumeOk where
+instance IsMethod BasicConsumeOk where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 21
 
@@ -815,7 +815,7 @@ data BasicCancel = BasicCancel
 
 instance Validity BasicCancel
 
-instance Method BasicCancel where
+instance IsMethod BasicCancel where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 30
 
@@ -827,7 +827,7 @@ data BasicCancelOk = BasicCancelOk {basicCancelOkConsumerTag :: !ConsumerTag}
 
 instance Validity BasicCancelOk
 
-instance Method BasicCancelOk where
+instance IsMethod BasicCancelOk where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 31
 
@@ -847,7 +847,7 @@ data BasicPublish = BasicPublish
 
 instance Validity BasicPublish
 
-instance Method BasicPublish where
+instance IsMethod BasicPublish where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 40
 
@@ -867,7 +867,7 @@ data BasicReturn = BasicReturn
 
 instance Validity BasicReturn
 
-instance Method BasicReturn where
+instance IsMethod BasicReturn where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 50
 
@@ -888,7 +888,7 @@ data BasicDeliver = BasicDeliver
 
 instance Validity BasicDeliver
 
-instance Method BasicDeliver where
+instance IsMethod BasicDeliver where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 60
 
@@ -906,7 +906,7 @@ data BasicGet = BasicGet
 
 instance Validity BasicGet
 
-instance Method BasicGet where
+instance IsMethod BasicGet where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 70
 
@@ -926,7 +926,7 @@ data BasicGetOk = BasicGetOk
 
 instance Validity BasicGetOk
 
-instance Method BasicGetOk where
+instance IsMethod BasicGetOk where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 71
 
@@ -939,7 +939,7 @@ data BasicGetEmpty = BasicGetEmpty {basicGetEmptyReserved1 :: !ShortString}
 
 instance Validity BasicGetEmpty
 
-instance Method BasicGetEmpty where
+instance IsMethod BasicGetEmpty where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 72
 
@@ -956,7 +956,7 @@ data BasicAck = BasicAck
 
 instance Validity BasicAck
 
-instance Method BasicAck where
+instance IsMethod BasicAck where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 80
 
@@ -973,7 +973,7 @@ data BasicReject = BasicReject
 
 instance Validity BasicReject
 
-instance Method BasicReject where
+instance IsMethod BasicReject where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 90
 
@@ -987,7 +987,7 @@ data BasicRecoverAsync = BasicRecoverAsync {basicRecoverAsyncRequeue :: !Bit}
 
 instance Validity BasicRecoverAsync
 
-instance Method BasicRecoverAsync where
+instance IsMethod BasicRecoverAsync where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 100
 
@@ -1001,7 +1001,7 @@ data BasicRecover = BasicRecover {basicRecoverRequeue :: !Bit}
 
 instance Validity BasicRecover
 
-instance Method BasicRecover where
+instance IsMethod BasicRecover where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 110
 
@@ -1012,7 +1012,7 @@ data BasicRecoverOk = BasicRecoverOk deriving (Show, Eq, Generic)
 
 instance Validity BasicRecoverOk
 
-instance Method BasicRecoverOk where
+instance IsMethod BasicRecoverOk where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 111
 
@@ -1024,7 +1024,7 @@ data TxSelect = TxSelect deriving (Show, Eq, Generic)
 
 instance Validity TxSelect
 
-instance Method TxSelect where
+instance IsMethod TxSelect where
   methodClassId (Proxy) = 90
   methodMethodId (Proxy) = 10
 
@@ -1036,7 +1036,7 @@ data TxSelectOk = TxSelectOk deriving (Show, Eq, Generic)
 
 instance Validity TxSelectOk
 
-instance Method TxSelectOk where
+instance IsMethod TxSelectOk where
   methodClassId (Proxy) = 90
   methodMethodId (Proxy) = 11
 
@@ -1048,7 +1048,7 @@ data TxCommit = TxCommit deriving (Show, Eq, Generic)
 
 instance Validity TxCommit
 
-instance Method TxCommit where
+instance IsMethod TxCommit where
   methodClassId (Proxy) = 90
   methodMethodId (Proxy) = 20
 
@@ -1060,7 +1060,7 @@ data TxCommitOk = TxCommitOk deriving (Show, Eq, Generic)
 
 instance Validity TxCommitOk
 
-instance Method TxCommitOk where
+instance IsMethod TxCommitOk where
   methodClassId (Proxy) = 90
   methodMethodId (Proxy) = 21
 
@@ -1074,7 +1074,7 @@ data TxRollback = TxRollback deriving (Show, Eq, Generic)
 
 instance Validity TxRollback
 
-instance Method TxRollback where
+instance IsMethod TxRollback where
   methodClassId (Proxy) = 90
   methodMethodId (Proxy) = 30
 
@@ -1086,6 +1086,65 @@ data TxRollbackOk = TxRollbackOk deriving (Show, Eq, Generic)
 
 instance Validity TxRollbackOk
 
-instance Method TxRollbackOk where
+instance IsMethod TxRollbackOk where
   methodClassId (Proxy) = 90
   methodMethodId (Proxy) = 31
+
+-- | A sum type of all the methods
+data Method
+  = MethodConnectionStart !ConnectionStart
+  | MethodConnectionStartOk !ConnectionStartOk
+  | MethodConnectionSecure !ConnectionSecure
+  | MethodConnectionSecureOk !ConnectionSecureOk
+  | MethodConnectionTune !ConnectionTune
+  | MethodConnectionTuneOk !ConnectionTuneOk
+  | MethodConnectionOpen !ConnectionOpen
+  | MethodConnectionOpenOk !ConnectionOpenOk
+  | MethodConnectionClose !ConnectionClose
+  | MethodConnectionCloseOk !ConnectionCloseOk
+  | MethodChannelOpen !ChannelOpen
+  | MethodChannelOpenOk !ChannelOpenOk
+  | MethodChannelFlow !ChannelFlow
+  | MethodChannelFlowOk !ChannelFlowOk
+  | MethodChannelClose !ChannelClose
+  | MethodChannelCloseOk !ChannelCloseOk
+  | MethodExchangeDeclare !ExchangeDeclare
+  | MethodExchangeDeclareOk !ExchangeDeclareOk
+  | MethodExchangeDelete !ExchangeDelete
+  | MethodExchangeDeleteOk !ExchangeDeleteOk
+  | MethodQueueDeclare !QueueDeclare
+  | MethodQueueDeclareOk !QueueDeclareOk
+  | MethodQueueBind !QueueBind
+  | MethodQueueBindOk !QueueBindOk
+  | MethodQueueUnbind !QueueUnbind
+  | MethodQueueUnbindOk !QueueUnbindOk
+  | MethodQueuePurge !QueuePurge
+  | MethodQueuePurgeOk !QueuePurgeOk
+  | MethodQueueDelete !QueueDelete
+  | MethodQueueDeleteOk !QueueDeleteOk
+  | MethodBasicQos !BasicQos
+  | MethodBasicQosOk !BasicQosOk
+  | MethodBasicConsume !BasicConsume
+  | MethodBasicConsumeOk !BasicConsumeOk
+  | MethodBasicCancel !BasicCancel
+  | MethodBasicCancelOk !BasicCancelOk
+  | MethodBasicPublish !BasicPublish
+  | MethodBasicReturn !BasicReturn
+  | MethodBasicDeliver !BasicDeliver
+  | MethodBasicGet !BasicGet
+  | MethodBasicGetOk !BasicGetOk
+  | MethodBasicGetEmpty !BasicGetEmpty
+  | MethodBasicAck !BasicAck
+  | MethodBasicReject !BasicReject
+  | MethodBasicRecoverAsync !BasicRecoverAsync
+  | MethodBasicRecover !BasicRecover
+  | MethodBasicRecoverOk !BasicRecoverOk
+  | MethodTxSelect !TxSelect
+  | MethodTxSelectOk !TxSelectOk
+  | MethodTxCommit !TxCommit
+  | MethodTxCommitOk !TxCommitOk
+  | MethodTxRollback !TxRollback
+  | MethodTxRollbackOk !TxRollbackOk
+  deriving (Show, Eq, Generic)
+
+instance Validity Method

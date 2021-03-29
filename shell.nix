@@ -10,7 +10,7 @@ pkgs.haskell.lib.buildStackProject {
     zlib
     (import sources.niv { }).niv
     rabbitmq-server
-  ];
+  ] ++ pre-commit.tools;
   shellHook = ''
     ${pre-commit.check.shellHook}
   '';

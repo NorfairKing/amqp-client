@@ -33,6 +33,7 @@ library
     , pretty-show
     , template-haskell
     , text
+    , typed-process
     , xml-conduit
   default-language: Haskell2010
 

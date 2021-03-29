@@ -12,7 +12,7 @@ import Data.Validity.ByteString ()
 import Data.Validity.Containers ()
 import GHC.Generics
 
-class Method a where
+class IsMethod a where
   -- TODO replace by ClassId
   -- This will require some refactoring of the generator so that we don't get compile loops
   methodClassId :: Proxy a -> ShortUInt
@@ -21,10 +21,10 @@ class Method a where
   -- This will require some refactoring of the generator so that we don't get compile loops
   methodMethodId :: Proxy a -> ShortUInt
   buildMethodArguments :: a -> [Argument]
-  default buildMethodArguments :: (Generic a, GMethod (Rep a)) => a -> [Argument]
+  default buildMethodArguments :: (Generic a, GIsMethod (Rep a)) => a -> [Argument]
   buildMethodArguments = gBuildArguments . from
   parseMethodArguments :: Parser a
-  default parseMethodArguments :: (Generic a, GMethod (Rep a)) => Parser a
+  default parseMethodArguments :: (Generic a, GIsMethod (Rep a)) => Parser a
   parseMethodArguments = to <$> gParseArguments
 
 class IsArgument a where
@@ -91,30 +91,30 @@ instance IsArgument FieldTable where
 -- So we try to derive them using Generics instead of generating all that.
 --
 -- Note that this _does_ mean that the fields need to be in the right order.
-class GMethod f where
+class GIsMethod f where
   gBuildArguments :: f a -> [Argument]
   gParseArguments :: Parser (f a)
 
 -- No instance for the Void constructor.
 
 -- | Constructor without arguments
-instance GMethod U1 where
+instance GIsMethod U1 where
   gBuildArguments _ = [] -- No arguments
   gParseArguments = pure U1
 
 -- | Constructor for product types
-instance (GMethod a, GMethod b) => GMethod (a :*: b) where
+instance (GIsMethod a, GIsMethod b) => GIsMethod (a :*: b) where
   -- These are small lists anyway.
   gBuildArguments (a :*: b) = gBuildArguments a ++ gBuildArguments b
   gParseArguments = (:*:) <$> gParseArguments <*> gParseArguments
 
 -- | Constructor for Meta-info that we don't need: constructor names, etc
-instance GMethod a => GMethod (M1 i c a) where
+instance GIsMethod a => GIsMethod (M1 i c a) where
   gBuildArguments = gBuildArguments . unM1
   gParseArguments = M1 <$> gParseArguments
 
 -- | Constructor for the leaves: Where we get the arguments
-instance IsArgument a => GMethod (K1 R a) where
+instance IsArgument a => GIsMethod (K1 R a) where
   gBuildArguments (K1 a) = [toArgument a]
   gParseArguments = K1 <$> parseArgument
 

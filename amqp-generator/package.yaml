@@ -17,6 +17,7 @@ library:
     - pretty-show
     - template-haskell
     - text
+    - typed-process
     - xml-conduit
 
 executables:

@@ -20,6 +20,7 @@ import Language.Haskell.TH.PprLib
 import Language.Haskell.TH.Syntax
 import System.Environment
 import System.Exit
+import System.Process.Typed
 import Text.Casing
 import Text.PrettyPrint (render)
 
@@ -31,11 +32,14 @@ main = do
     _ -> die "Supply the spec XML file as a command-line argument"
 
 generateFrom :: FilePath -> IO ()
-generateFrom fp = do
-  spec <- AMQP.parseSpecFromFile fp
+generateFrom inPath = do
+  spec <- AMQP.parseSpecFromFile inPath
   let moduleString = render $ to_HPJ_Doc $ genGeneratedModule spec
-  putStrLn moduleString
-  writeFile "amqp-serialisation/src/AMQP/Serialisation/Generated.hs" moduleString
+  let outPath = "amqp-serialisation/src/AMQP/Serialisation/Generated.hs"
+  writeFile outPath moduleString
+  runProcess_ $ proc "ormolu" ["--mode", "inplace", outPath]
+  result <- readFile outPath
+  putStrLn result
 
 genGeneratedModule :: AMQP.AMQPSpec -> Doc
 genGeneratedModule AMQP.AMQPSpec {..} =
@@ -52,7 +56,8 @@ genGeneratedModule AMQP.AMQPSpec {..} =
       text "",
       genConstantsDoc amqpSpecConstants,
       genDomainTypesDoc amqpSpecDomainTypes,
-      genClassesTypesDoc amqpSpecClasses
+      genClassesTypesDoc amqpSpecClasses,
+      genMethodSumType amqpSpecClasses
     ]
 
 genConstantsDoc :: [Constant] -> Doc
@@ -174,7 +179,7 @@ classMethodTypeDecs className classIndex AMQP.Method {..} =
         InstanceD
           Nothing
           []
-          (AppT (ConT (mkName "Method")) (VarT n))
+          (AppT (ConT (mkName "IsMethod")) (VarT n))
           [ FunD (mkName "methodClassId") [Clause [ConP (mkName "Proxy") []] (NormalB (LitE (IntegerL (toInteger classIndex)))) []],
             FunD (mkName "methodMethodId") [Clause [ConP (mkName "Proxy") []] (NormalB (LitE (IntegerL (toInteger methodIndex)))) []]
           ]
@@ -195,3 +200,46 @@ classMethodFieldVarBangType className methodName AMQP.Field {..} =
 
 mkMethodFieldTypeName :: Text -> Text -> Text -> Name
 mkMethodFieldTypeName className methodName fieldName = mkHaskellVarName (T.intercalate "-" [className, methodName, fieldName])
+
+genMethodSumType :: [AMQP.Class] -> Doc
+genMethodSumType cs =
+  vcat
+    [ haddockIntro "A sum type of all the methods",
+      ppr_list $ methodsSumTypeDecs cs
+    ]
+
+methodsSumTypeDecs :: [AMQP.Class] -> [Dec]
+methodsSumTypeDecs cs =
+  let n = mkName "Method"
+   in [ DataD
+          []
+          n
+          []
+          Nothing
+          (concatMap classSumTypeConstructors cs)
+          [ DerivClause
+              Nothing
+              [ ConT (mkName "Show"),
+                ConT (mkName "Eq"),
+                ConT (mkName "Generic")
+              ]
+          ],
+        InstanceD
+          Nothing
+          []
+          (AppT (ConT (mkName "Validity")) (VarT n))
+          []
+      ]
+
+classSumTypeConstructors :: AMQP.Class -> [Con]
+classSumTypeConstructors AMQP.Class {..} = map (methodSumTypeConstructor className) classMethods
+
+methodSumTypeConstructor :: Text -> AMQP.Method -> Con
+methodSumTypeConstructor className AMQP.Method {..} =
+  NormalC
+    (mkMethodSumTypeConstructorName className methodName)
+    [ (Bang NoSourceUnpackedness SourceStrict, ConT (mkMethodTypeName className methodName))
+    ]
+
+mkMethodSumTypeConstructorName :: Text -> Text -> Name
+mkMethodSumTypeConstructorName className methodName = mkHaskellTypeName $ T.intercalate "-" ["method", className, methodName]
