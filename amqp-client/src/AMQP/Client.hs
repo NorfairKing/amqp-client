@@ -68,11 +68,15 @@ withConnection ConnectionSettings {..} callback = do
       let locales = SB.split 0x20 (longStringBytes (connectionStartLocales f))
           ourLocaleSupported = ourLocale `elem` locales
       when (not ourLocaleSupported) $ throwIO LocaleNotSupported
+      let mechanisms = SB.split 0x20 (longStringBytes (connectionStartMechanisms f))
+          ourMechanism = "PLAIN"
+          ourMechanismSupported = ourMechanism `elem` mechanisms
+      when (not ourMechanismSupported) $ throwIO $ SASLMechanismNotSupported ourMechanism
       let connectionOk =
             ConnectionStartOk
               { connectionStartOkClientProperties = FieldTable M.empty,
-                connectionStartOkMechanism = ShortString SB.empty,
-                connectionStartOkResponse = LongString SB.empty,
+                connectionStartOkMechanism = ShortString ourMechanism,
+                connectionStartOkResponse = plainSASLResponse "guest" "guest",
                 connectionStartOkLocale = ShortString ourLocale
               }
       liftIO $ putStrLn "Answering: "
@@ -87,6 +91,19 @@ withConnection ConnectionSettings {..} callback = do
                 connectionLeftoversVar = leftoversVar
               }
       callback amqpConnection
+
+-- | The @PLAIN@ SASL mechanism. See <http://tools.ietf.org/html/rfc4616 RFC4616>
+plainSASLResponse :: ByteString -> ByteString -> LongString
+plainSASLResponse username password =
+  LongString $
+    LB.toStrict $
+      SBB.toLazyByteString $
+        mconcat
+          [ SBB.word8 0,
+            SBB.byteString username,
+            SBB.word8 0,
+            SBB.byteString password
+          ]
 
 connectionPutBuilder :: MonadIO m => Network.Connection -> ByteString.Builder -> m ()
 connectionPutBuilder conn b = liftIO $ mapM_ (Network.connectionPut conn) (LB.toChunks (SBB.toLazyByteString b))
@@ -115,6 +132,8 @@ data ClientException
     ProtocolNegotiationFailed String
   | -- | The server does not support our locale
     LocaleNotSupported
+  | -- | The server does not support our SASL mechanism
+    SASLMechanismNotSupported ByteString
   deriving (Show, Eq, Generic)
 
 instance Exception ClientException
