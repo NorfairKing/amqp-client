@@ -113,6 +113,3 @@ instance GIsMethod a => GIsMethod (M1 i c a) where
 instance IsArgument a => GIsMethod (K1 R a) where
   gBuildArguments (K1 a) = [toArgument a]
   gParseArguments = K1 <$> parseArgument
-
--- gBuildArguments = gBuildArguments . unK1
--- gParseArguments = K1 <$> gParseArguments
