@@ -165,7 +165,7 @@ genDocComment :: AMQP.Doc -> Doc
 genDocComment = comment . AMQP.docText
 
 genGrammarComment :: Grammar -> Doc
-genGrammarComment Grammar {..} = vcat [comment "Grammar:", comment "", blockComment grammarText]
+genGrammarComment Grammar {..} = vcat [comment "Grammar:", comment "\n", blockComment grammarText]
 
 sectionIntro :: Text -> Doc
 sectionIntro t = text "-- *" <+> text (T.unpack t)

@@ -19,6 +19,7 @@ import GHC.Generics (Generic)
 -- a server, and for both peers to operate the connection thereafter.
 --
 -- Grammar:
+--
 -- >
 -- >       connection          = open-connection *use-connection close-connection
 -- >       open-connection     = C:protocol-header
@@ -201,6 +202,7 @@ instance IsMethod ConnectionCloseOk where
 -- server and for both peers to operate the channel thereafter.
 --
 -- Grammar:
+--
 -- >
 -- >       channel             = open-channel *use-channel close-channel
 -- >       open-channel        = C:OPEN S:OPEN-OK
@@ -301,6 +303,7 @@ instance IsMethod ChannelCloseOk where
 -- the server or declared at runtime.
 --
 -- Grammar:
+--
 -- >
 -- >       exchange            = C:DECLARE  S:DECLARE-OK
 -- >                           / C:DELETE   S:DELETE-OK
@@ -381,6 +384,7 @@ instance IsMethod ExchangeDeleteOk where
 -- from publishers.
 --
 -- Grammar:
+--
 -- >
 -- >       queue               = C:DECLARE  S:DECLARE-OK
 -- >                           / C:BIND     S:BIND-OK
@@ -557,6 +561,7 @@ instance IsMethod QueueDeleteOk where
 -- The Basic class provides methods that support an industry-standard messaging model.
 --
 -- Grammar:
+--
 -- >
 -- >       basic               = C:QOS S:QOS-OK
 -- >                           / C:CONSUME S:CONSUME-OK
@@ -868,6 +873,7 @@ instance IsMethod BasicRecoverOk where
 -- mandatory flags on Basic.Publish methods is not defined.
 --
 -- Grammar:
+--
 -- >
 -- >       tx                  = C:SELECT S:SELECT-OK
 -- >                           / C:COMMIT S:COMMIT-OK
