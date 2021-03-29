@@ -1,7 +1,10 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module AMQP.Serialisation.Generated where
 
 import AMQP.Serialisation.Base
 import Data.Word
+import GHC.Generics (Generic)
 
 -- | frame-method
 frameMethod :: Word8
@@ -247,3 +250,521 @@ type ReplyCode = ShortUInt
 -- The localised reply text. This text can be logged as an aid to resolving
 -- issues.
 type ReplyText = ShortString
+
+-- | 'start': start connection negotiation
+--
+-- This method starts the connection negotiation process by telling the client the
+-- protocol version that the server proposes, along with a list of security mechanisms
+-- which the client can use for authentication.
+data ConnectionStart = ConnectionStart
+  { connectionStartVersionMajor :: {-# UNPACK #-} !Octet,
+    connectionStartVersionMinor :: {-# UNPACK #-} !Octet,
+    connectionStartServerProperties :: {-# UNPACK #-} !PeerProperties,
+    connectionStartMechanisms :: {-# UNPACK #-} !LongString,
+    connectionStartLocales :: {-# UNPACK #-} !LongString
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'start-ok': select security mechanism and locale
+--
+-- This method selects a SASL security mechanism.
+data ConnectionStartOk = ConnectionStartOk
+  { connectionStartOkClientProperties :: {-# UNPACK #-} !PeerProperties,
+    connectionStartOkMechanism :: {-# UNPACK #-} !ShortString,
+    connectionStartOkResponse :: {-# UNPACK #-} !LongString,
+    connectionStartOkLocale :: {-# UNPACK #-} !ShortString
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'secure': security mechanism challenge
+--
+-- The SASL protocol works by exchanging challenges and responses until both peers have
+-- received sufficient information to authenticate each other. This method challenges
+-- the client to provide more information.
+data ConnectionSecure = ConnectionSecure {connectionSecureChallenge :: {-# UNPACK #-} !LongString}
+  deriving (Show, Eq, Generic)
+
+-- | 'secure-ok': security mechanism response
+--
+-- This method attempts to authenticate, passing a block of SASL data for the security
+-- mechanism at the server side.
+data ConnectionSecureOk = ConnectionSecureOk {connectionSecureOkResponse :: {-# UNPACK #-} !LongString}
+  deriving (Show, Eq, Generic)
+
+-- | 'tune': propose connection tuning parameters
+--
+-- This method proposes a set of connection configuration values to the client. The
+-- client can accept and/or adjust these.
+data ConnectionTune = ConnectionTune
+  { connectionTuneChannelMax :: {-# UNPACK #-} !ShortUInt,
+    connectionTuneFrameMax :: {-# UNPACK #-} !LongUInt,
+    connectionTuneHeartbeat :: {-# UNPACK #-} !ShortUInt
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'tune-ok': negotiate connection tuning parameters
+--
+-- This method sends the client's connection tuning parameters to the server.
+-- Certain fields are negotiated, others provide capability information.
+data ConnectionTuneOk = ConnectionTuneOk
+  { connectionTuneOkChannelMax :: {-# UNPACK #-} !ShortUInt,
+    connectionTuneOkFrameMax :: {-# UNPACK #-} !LongUInt,
+    connectionTuneOkHeartbeat :: {-# UNPACK #-} !ShortUInt
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'open': open connection to virtual host
+--
+-- This method opens a connection to a virtual host, which is a collection of
+-- resources, and acts to separate multiple application domains within a server.
+-- The server may apply arbitrary limits per virtual host, such as the number
+-- of each type of entity that may be used, per connection and/or in total.
+data ConnectionOpen = ConnectionOpen
+  { connectionOpenVirtualHost :: {-# UNPACK #-} !Path,
+    connectionOpenReserved1 :: {-# UNPACK #-} !ShortString,
+    connectionOpenReserved2 :: {-# UNPACK #-} !Bit
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'open-ok': signal that connection is ready
+--
+-- This method signals to the client that the connection is ready for use.
+data ConnectionOpenOk = ConnectionOpenOk {connectionOpenOkReserved1 :: {-# UNPACK #-} !ShortString}
+  deriving (Show, Eq, Generic)
+
+-- | 'close': request a connection close
+--
+-- This method indicates that the sender wants to close the connection. This may be
+-- due to internal conditions (e.g. a forced shut-down) or due to an error handling
+-- a specific method, i.e. an exception. When a close is due to an exception, the
+-- sender provides the class and method id of the method which caused the exception.
+data ConnectionClose = ConnectionClose
+  { connectionCloseReplyCode :: {-# UNPACK #-} !ReplyCode,
+    connectionCloseReplyText :: {-# UNPACK #-} !ReplyText,
+    connectionCloseClassId :: {-# UNPACK #-} !ClassId,
+    connectionCloseMethodId :: {-# UNPACK #-} !MethodId
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'close-ok': confirm a connection close
+--
+-- This method confirms a Connection.Close method and tells the recipient that it is
+-- safe to release resources for the connection and close the socket.
+data ConnectionCloseOk
+  = ConnectionCloseOk
+  deriving (Show, Eq, Generic)
+
+-- | 'open': open a channel for use
+--
+-- This method opens a channel to the server.
+data ChannelOpen = ChannelOpen {channelOpenReserved1 :: {-# UNPACK #-} !ShortString}
+  deriving (Show, Eq, Generic)
+
+-- | 'open-ok': signal that the channel is ready
+--
+-- This method signals to the client that the channel is ready for use.
+data ChannelOpenOk = ChannelOpenOk {channelOpenOkReserved1 :: {-# UNPACK #-} !LongString}
+  deriving (Show, Eq, Generic)
+
+-- | 'flow': enable/disable flow from peer
+--
+-- This method asks the peer to pause or restart the flow of content data sent by
+-- a consumer. This is a simple flow-control mechanism that a peer can use to avoid
+-- overflowing its queues or otherwise finding itself receiving more messages than
+-- it can process. Note that this method is not intended for window control. It does
+-- not affect contents returned by Basic.Get-Ok methods.
+data ChannelFlow = ChannelFlow {channelFlowActive :: {-# UNPACK #-} !Bit}
+  deriving (Show, Eq, Generic)
+
+-- | 'flow-ok': confirm a flow method
+--
+-- Confirms to the peer that a flow command was received and processed.
+data ChannelFlowOk = ChannelFlowOk {channelFlowOkActive :: {-# UNPACK #-} !Bit}
+  deriving (Show, Eq, Generic)
+
+-- | 'close': request a channel close
+--
+-- This method indicates that the sender wants to close the channel. This may be due to
+-- internal conditions (e.g. a forced shut-down) or due to an error handling a specific
+-- method, i.e. an exception. When a close is due to an exception, the sender provides
+-- the class and method id of the method which caused the exception.
+data ChannelClose = ChannelClose
+  { channelCloseReplyCode :: {-# UNPACK #-} !ReplyCode,
+    channelCloseReplyText :: {-# UNPACK #-} !ReplyText,
+    channelCloseClassId :: {-# UNPACK #-} !ClassId,
+    channelCloseMethodId :: {-# UNPACK #-} !MethodId
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'close-ok': confirm a channel close
+--
+-- This method confirms a Channel.Close method and tells the recipient that it is safe
+-- to release resources for the channel.
+data ChannelCloseOk = ChannelCloseOk deriving (Show, Eq, Generic)
+
+-- | 'declare': verify exchange exists, create if needed
+--
+-- This method creates an exchange if it does not already exist, and if the exchange
+-- exists, verifies that it is of the correct and expected class.
+data ExchangeDeclare = ExchangeDeclare
+  { exchangeDeclareReserved1 :: {-# UNPACK #-} !ShortUInt,
+    exchangeDeclareExchange :: {-# UNPACK #-} !ExchangeName,
+    exchangeDeclareType :: {-# UNPACK #-} !ShortString,
+    exchangeDeclarePassive :: {-# UNPACK #-} !Bit,
+    exchangeDeclareDurable :: {-# UNPACK #-} !Bit,
+    exchangeDeclareReserved2 :: {-# UNPACK #-} !Bit,
+    exchangeDeclareReserved3 :: {-# UNPACK #-} !Bit,
+    exchangeDeclareNoWait :: {-# UNPACK #-} !NoWait,
+    exchangeDeclareArguments :: {-# UNPACK #-} !FieldTable
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'declare-ok': confirm exchange declaration
+--
+-- This method confirms a Declare method and confirms the name of the exchange,
+-- essential for automatically-named exchanges.
+data ExchangeDeclareOk
+  = ExchangeDeclareOk
+  deriving (Show, Eq, Generic)
+
+-- | 'delete': delete an exchange
+--
+-- This method deletes an exchange. When an exchange is deleted all queue bindings on
+-- the exchange are cancelled.
+data ExchangeDelete = ExchangeDelete
+  { exchangeDeleteReserved1 :: {-# UNPACK #-} !ShortUInt,
+    exchangeDeleteExchange :: {-# UNPACK #-} !ExchangeName,
+    exchangeDeleteIfUnused :: {-# UNPACK #-} !Bit,
+    exchangeDeleteNoWait :: {-# UNPACK #-} !NoWait
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'delete-ok': confirm deletion of an exchange
+--
+-- This method confirms the deletion of an exchange.
+data ExchangeDeleteOk
+  = ExchangeDeleteOk
+  deriving (Show, Eq, Generic)
+
+-- | 'declare': declare queue, create if needed
+--
+-- This method creates or checks a queue. When creating a new queue the client can
+-- specify various properties that control the durability of the queue and its
+-- contents, and the level of sharing for the queue.
+data QueueDeclare = QueueDeclare
+  { queueDeclareReserved1 :: {-# UNPACK #-} !ShortUInt,
+    queueDeclareQueue :: {-# UNPACK #-} !QueueName,
+    queueDeclarePassive :: {-# UNPACK #-} !Bit,
+    queueDeclareDurable :: {-# UNPACK #-} !Bit,
+    queueDeclareExclusive :: {-# UNPACK #-} !Bit,
+    queueDeclareAutoDelete :: {-# UNPACK #-} !Bit,
+    queueDeclareNoWait :: {-# UNPACK #-} !NoWait,
+    queueDeclareArguments :: {-# UNPACK #-} !FieldTable
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'declare-ok': confirms a queue definition
+--
+-- This method confirms a Declare method and confirms the name of the queue, essential
+-- for automatically-named queues.
+data QueueDeclareOk = QueueDeclareOk
+  { queueDeclareOkQueue :: {-# UNPACK #-} !QueueName,
+    queueDeclareOkMessageCount :: {-# UNPACK #-} !MessageCount,
+    queueDeclareOkConsumerCount :: {-# UNPACK #-} !LongUInt
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'bind': bind queue to an exchange
+--
+-- This method binds a queue to an exchange. Until a queue is bound it will not
+-- receive any messages. In a classic messaging model, store-and-forward queues
+-- are bound to a direct exchange and subscription queues are bound to a topic
+-- exchange.
+data QueueBind = QueueBind
+  { queueBindReserved1 :: {-# UNPACK #-} !ShortUInt,
+    queueBindQueue :: {-# UNPACK #-} !QueueName,
+    queueBindExchange :: {-# UNPACK #-} !ExchangeName,
+    queueBindRoutingKey :: {-# UNPACK #-} !ShortString,
+    queueBindNoWait :: {-# UNPACK #-} !NoWait,
+    queueBindArguments :: {-# UNPACK #-} !FieldTable
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'bind-ok': confirm bind successful
+--
+-- This method confirms that the bind was successful.
+data QueueBindOk = QueueBindOk deriving (Show, Eq, Generic)
+
+-- | 'unbind': unbind a queue from an exchange
+--
+-- This method unbinds a queue from an exchange.
+data QueueUnbind = QueueUnbind
+  { queueUnbindReserved1 :: {-# UNPACK #-} !ShortUInt,
+    queueUnbindQueue :: {-# UNPACK #-} !QueueName,
+    queueUnbindExchange :: {-# UNPACK #-} !ExchangeName,
+    queueUnbindRoutingKey :: {-# UNPACK #-} !ShortString,
+    queueUnbindArguments :: {-# UNPACK #-} !FieldTable
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'unbind-ok': confirm unbind successful
+--
+-- This method confirms that the unbind was successful.
+data QueueUnbindOk = QueueUnbindOk deriving (Show, Eq, Generic)
+
+-- | 'purge': purge a queue
+--
+-- This method removes all messages from a queue which are not awaiting
+-- acknowledgment.
+data QueuePurge = QueuePurge
+  { queuePurgeReserved1 :: {-# UNPACK #-} !ShortUInt,
+    queuePurgeQueue :: {-# UNPACK #-} !QueueName,
+    queuePurgeNoWait :: {-# UNPACK #-} !NoWait
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'purge-ok': confirms a queue purge
+--
+-- This method confirms the purge of a queue.
+data QueuePurgeOk = QueuePurgeOk {queuePurgeOkMessageCount :: {-# UNPACK #-} !MessageCount}
+  deriving (Show, Eq, Generic)
+
+-- | 'delete': delete a queue
+--
+-- This method deletes a queue. When a queue is deleted any pending messages are sent
+-- to a dead-letter queue if this is defined in the server configuration, and all
+-- consumers on the queue are cancelled.
+data QueueDelete = QueueDelete
+  { queueDeleteReserved1 :: {-# UNPACK #-} !ShortUInt,
+    queueDeleteQueue :: {-# UNPACK #-} !QueueName,
+    queueDeleteIfUnused :: {-# UNPACK #-} !Bit,
+    queueDeleteIfEmpty :: {-# UNPACK #-} !Bit,
+    queueDeleteNoWait :: {-# UNPACK #-} !NoWait
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'delete-ok': confirm deletion of a queue
+--
+-- This method confirms the deletion of a queue.
+data QueueDeleteOk = QueueDeleteOk {queueDeleteOkMessageCount :: {-# UNPACK #-} !MessageCount}
+  deriving (Show, Eq, Generic)
+
+-- | 'qos': specify quality of service
+--
+-- This method requests a specific quality of service. The QoS can be specified for the
+-- current channel or for all channels on the connection. The particular properties and
+-- semantics of a qos method always depend on the content class semantics. Though the
+-- qos method could in principle apply to both peers, it is currently meaningful only
+-- for the server.
+data BasicQos = BasicQos
+  { basicQosPrefetchSize :: {-# UNPACK #-} !LongUInt,
+    basicQosPrefetchCount :: {-# UNPACK #-} !ShortUInt,
+    basicQosGlobal :: {-# UNPACK #-} !Bit
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'qos-ok': confirm the requested qos
+--
+-- This method tells the client that the requested QoS levels could be handled by the
+-- server. The requested QoS applies to all active consumers until a new QoS is
+-- defined.
+data BasicQosOk = BasicQosOk deriving (Show, Eq, Generic)
+
+-- | 'consume': start a queue consumer
+--
+-- This method asks the server to start a "consumer", which is a transient request for
+-- messages from a specific queue. Consumers last as long as the channel they were
+-- declared on, or until the client cancels them.
+data BasicConsume = BasicConsume
+  { basicConsumeReserved1 :: {-# UNPACK #-} !ShortUInt,
+    basicConsumeQueue :: {-# UNPACK #-} !QueueName,
+    basicConsumeConsumerTag :: {-# UNPACK #-} !ConsumerTag,
+    basicConsumeNoLocal :: {-# UNPACK #-} !NoLocal,
+    basicConsumeNoAck :: {-# UNPACK #-} !NoAck,
+    basicConsumeExclusive :: {-# UNPACK #-} !Bit,
+    basicConsumeNoWait :: {-# UNPACK #-} !NoWait,
+    basicConsumeArguments :: {-# UNPACK #-} !FieldTable
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'consume-ok': confirm a new consumer
+--
+-- The server provides the client with a consumer tag, which is used by the client
+-- for methods called on the consumer at a later stage.
+data BasicConsumeOk = BasicConsumeOk {basicConsumeOkConsumerTag :: {-# UNPACK #-} !ConsumerTag}
+  deriving (Show, Eq, Generic)
+
+-- | 'cancel': end a queue consumer
+--
+-- This method cancels a consumer. This does not affect already delivered
+-- messages, but it does mean the server will not send any more messages for
+-- that consumer. The client may receive an arbitrary number of messages in
+-- between sending the cancel method and receiving the cancel-ok reply.
+data BasicCancel = BasicCancel
+  { basicCancelConsumerTag :: {-# UNPACK #-} !ConsumerTag,
+    basicCancelNoWait :: {-# UNPACK #-} !NoWait
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'cancel-ok': confirm a cancelled consumer
+--
+-- This method confirms that the cancellation was completed.
+data BasicCancelOk = BasicCancelOk {basicCancelOkConsumerTag :: {-# UNPACK #-} !ConsumerTag}
+  deriving (Show, Eq, Generic)
+
+-- | 'publish': publish a message
+--
+-- This method publishes a message to a specific exchange. The message will be routed
+-- to queues as defined by the exchange configuration and distributed to any active
+-- consumers when the transaction, if any, is committed.
+data BasicPublish = BasicPublish
+  { basicPublishReserved1 :: {-# UNPACK #-} !ShortUInt,
+    basicPublishExchange :: {-# UNPACK #-} !ExchangeName,
+    basicPublishRoutingKey :: {-# UNPACK #-} !ShortString,
+    basicPublishMandatory :: {-# UNPACK #-} !Bit,
+    basicPublishImmediate :: {-# UNPACK #-} !Bit
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'return': return a failed message
+--
+-- This method returns an undeliverable message that was published with the "immediate"
+-- flag set, or an unroutable message published with the "mandatory" flag set. The
+-- reply code and text provide information about the reason that the message was
+-- undeliverable.
+data BasicReturn = BasicReturn
+  { basicReturnReplyCode :: {-# UNPACK #-} !ReplyCode,
+    basicReturnReplyText :: {-# UNPACK #-} !ReplyText,
+    basicReturnExchange :: {-# UNPACK #-} !ExchangeName,
+    basicReturnRoutingKey :: {-# UNPACK #-} !ShortString
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'deliver': notify the client of a consumer message
+--
+-- This method delivers a message to the client, via a consumer. In the asynchronous
+-- message delivery model, the client starts a consumer using the Consume method, then
+-- the server responds with Deliver methods as and when messages arrive for that
+-- consumer.
+data BasicDeliver = BasicDeliver
+  { basicDeliverConsumerTag :: {-# UNPACK #-} !ConsumerTag,
+    basicDeliverDeliveryTag :: {-# UNPACK #-} !DeliveryTag,
+    basicDeliverRedelivered :: {-# UNPACK #-} !Redelivered,
+    basicDeliverExchange :: {-# UNPACK #-} !ExchangeName,
+    basicDeliverRoutingKey :: {-# UNPACK #-} !ShortString
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'get': direct access to a queue
+--
+-- This method provides a direct access to the messages in a queue using a synchronous
+-- dialogue that is designed for specific types of application where synchronous
+-- functionality is more important than performance.
+data BasicGet = BasicGet
+  { basicGetReserved1 :: {-# UNPACK #-} !ShortUInt,
+    basicGetQueue :: {-# UNPACK #-} !QueueName,
+    basicGetNoAck :: {-# UNPACK #-} !NoAck
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'get-ok': provide client with a message
+--
+-- This method delivers a message to the client following a get method. A message
+-- delivered by 'get-ok' must be acknowledged unless the no-ack option was set in the
+-- get method.
+data BasicGetOk = BasicGetOk
+  { basicGetOkDeliveryTag :: {-# UNPACK #-} !DeliveryTag,
+    basicGetOkRedelivered :: {-# UNPACK #-} !Redelivered,
+    basicGetOkExchange :: {-# UNPACK #-} !ExchangeName,
+    basicGetOkRoutingKey :: {-# UNPACK #-} !ShortString,
+    basicGetOkMessageCount :: {-# UNPACK #-} !MessageCount
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'get-empty': indicate no messages available
+--
+-- This method tells the client that the queue has no messages available for the
+-- client.
+data BasicGetEmpty = BasicGetEmpty {basicGetEmptyReserved1 :: {-# UNPACK #-} !ShortString}
+  deriving (Show, Eq, Generic)
+
+-- | 'ack': acknowledge one or more messages
+--
+-- This method acknowledges one or more messages delivered via the Deliver or Get-Ok
+-- methods. The client can ask to confirm a single message or a set of messages up to
+-- and including a specific message.
+data BasicAck = BasicAck
+  { basicAckDeliveryTag :: {-# UNPACK #-} !DeliveryTag,
+    basicAckMultiple :: {-# UNPACK #-} !Bit
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'reject': reject an incoming message
+--
+-- This method allows a client to reject a message. It can be used to interrupt and
+-- cancel large incoming messages, or return untreatable messages to their original
+-- queue.
+data BasicReject = BasicReject
+  { basicRejectDeliveryTag :: {-# UNPACK #-} !DeliveryTag,
+    basicRejectRequeue :: {-# UNPACK #-} !Bit
+  }
+  deriving (Show, Eq, Generic)
+
+-- | 'recover-async': redeliver unacknowledged messages
+--
+-- This method asks the server to redeliver all unacknowledged messages on a
+-- specified channel. Zero or more messages may be redelivered.  This method
+-- is deprecated in favour of the synchronous Recover/Recover-Ok.
+data BasicRecoverAsync = BasicRecoverAsync {basicRecoverAsyncRequeue :: {-# UNPACK #-} !Bit}
+  deriving (Show, Eq, Generic)
+
+-- | 'recover': redeliver unacknowledged messages
+--
+-- This method asks the server to redeliver all unacknowledged messages on a
+-- specified channel. Zero or more messages may be redelivered.  This method
+-- replaces the asynchronous Recover.
+data BasicRecover = BasicRecover {basicRecoverRequeue :: {-# UNPACK #-} !Bit}
+  deriving (Show, Eq, Generic)
+
+-- | 'recover-ok': confirm recovery
+--
+-- This method acknowledges a Basic.Recover method.
+data BasicRecoverOk = BasicRecoverOk deriving (Show, Eq, Generic)
+
+-- | 'select': select standard transaction mode
+--
+-- This method sets the channel to use standard transactions. The client must use this
+-- method at least once on a channel before using the Commit or Rollback methods.
+data TxSelect = TxSelect deriving (Show, Eq, Generic)
+
+-- | 'select-ok': confirm transaction mode
+--
+-- This method confirms to the client that the channel was successfully set to use
+-- standard transactions.
+data TxSelectOk = TxSelectOk deriving (Show, Eq, Generic)
+
+-- | 'commit': commit the current transaction
+--
+-- This method commits all message publications and acknowledgments performed in
+-- the current transaction.  A new transaction starts immediately after a commit.
+data TxCommit = TxCommit deriving (Show, Eq, Generic)
+
+-- | 'commit-ok': confirm a successful commit
+--
+-- This method confirms to the client that the commit succeeded. Note that if a commit
+-- fails, the server raises a channel exception.
+data TxCommitOk = TxCommitOk deriving (Show, Eq, Generic)
+
+-- | 'rollback': abandon the current transaction
+--
+-- This method abandons all message publications and acknowledgments performed in
+-- the current transaction. A new transaction starts immediately after a rollback.
+-- Note that unacked messages will not be automatically redelivered by rollback;
+-- if that is required an explicit recover call should be issued.
+data TxRollback = TxRollback deriving (Show, Eq, Generic)
+
+-- | 'rollback-ok': confirm successful rollback
+--
+-- This method confirms to the client that the rollback succeeded. Note that if an
+-- rollback fails, the server raises a channel exception.
+data TxRollbackOk = TxRollbackOk deriving (Show, Eq, Generic)
