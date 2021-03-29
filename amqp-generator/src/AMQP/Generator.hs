@@ -184,11 +184,11 @@ mkMethodTypeName :: Text -> Text -> Name
 mkMethodTypeName className methodName = mkHaskellTypeName $ T.intercalate "-" [className, methodName]
 
 -- QUESTION: Should we unpack method fields?
--- ANSWER: Let's try and see what happens.
+-- ANSWER: Maybe, but it doesn't work on every field so let's revisit this later.
 classMethodFieldVarBangType :: Text -> Text -> Field -> VarBangType
 classMethodFieldVarBangType className methodName AMQP.Field {..} =
   ( mkMethodFieldTypeName className methodName fieldName,
-    Bang SourceUnpack SourceStrict,
+    Bang NoSourceUnpackedness SourceStrict,
     -- This 'fromMaybe' should not be necessary, refactor it away?
     ConT (typeTranslator (fromMaybe (error "A field must have either a type or a domain type") $ fieldType <|> fieldDomain))
   )

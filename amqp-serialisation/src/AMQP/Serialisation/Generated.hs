@@ -260,11 +260,11 @@ type ReplyText = ShortString
 -- protocol version that the server proposes, along with a list of security mechanisms
 -- which the client can use for authentication.
 data ConnectionStart = ConnectionStart
-  { connectionStartVersionMajor :: {-# UNPACK #-} !Octet,
-    connectionStartVersionMinor :: {-# UNPACK #-} !Octet,
-    connectionStartServerProperties :: {-# UNPACK #-} !PeerProperties,
-    connectionStartMechanisms :: {-# UNPACK #-} !LongString,
-    connectionStartLocales :: {-# UNPACK #-} !LongString
+  { connectionStartVersionMajor :: !Octet,
+    connectionStartVersionMinor :: !Octet,
+    connectionStartServerProperties :: !PeerProperties,
+    connectionStartMechanisms :: !LongString,
+    connectionStartLocales :: !LongString
   }
   deriving (Show, Eq, Generic)
 
@@ -278,10 +278,10 @@ instance Method ConnectionStart where
 --
 -- This method selects a SASL security mechanism.
 data ConnectionStartOk = ConnectionStartOk
-  { connectionStartOkClientProperties :: {-# UNPACK #-} !PeerProperties,
-    connectionStartOkMechanism :: {-# UNPACK #-} !ShortString,
-    connectionStartOkResponse :: {-# UNPACK #-} !LongString,
-    connectionStartOkLocale :: {-# UNPACK #-} !ShortString
+  { connectionStartOkClientProperties :: !PeerProperties,
+    connectionStartOkMechanism :: !ShortString,
+    connectionStartOkResponse :: !LongString,
+    connectionStartOkLocale :: !ShortString
   }
   deriving (Show, Eq, Generic)
 
@@ -296,7 +296,7 @@ instance Method ConnectionStartOk where
 -- The SASL protocol works by exchanging challenges and responses until both peers have
 -- received sufficient information to authenticate each other. This method challenges
 -- the client to provide more information.
-data ConnectionSecure = ConnectionSecure {connectionSecureChallenge :: {-# UNPACK #-} !LongString}
+data ConnectionSecure = ConnectionSecure {connectionSecureChallenge :: !LongString}
   deriving (Show, Eq, Generic)
 
 instance Validity ConnectionSecure
@@ -309,7 +309,7 @@ instance Method ConnectionSecure where
 --
 -- This method attempts to authenticate, passing a block of SASL data for the security
 -- mechanism at the server side.
-data ConnectionSecureOk = ConnectionSecureOk {connectionSecureOkResponse :: {-# UNPACK #-} !LongString}
+data ConnectionSecureOk = ConnectionSecureOk {connectionSecureOkResponse :: !LongString}
   deriving (Show, Eq, Generic)
 
 instance Validity ConnectionSecureOk
@@ -323,9 +323,9 @@ instance Method ConnectionSecureOk where
 -- This method proposes a set of connection configuration values to the client. The
 -- client can accept and/or adjust these.
 data ConnectionTune = ConnectionTune
-  { connectionTuneChannelMax :: {-# UNPACK #-} !ShortUInt,
-    connectionTuneFrameMax :: {-# UNPACK #-} !LongUInt,
-    connectionTuneHeartbeat :: {-# UNPACK #-} !ShortUInt
+  { connectionTuneChannelMax :: !ShortUInt,
+    connectionTuneFrameMax :: !LongUInt,
+    connectionTuneHeartbeat :: !ShortUInt
   }
   deriving (Show, Eq, Generic)
 
@@ -340,9 +340,9 @@ instance Method ConnectionTune where
 -- This method sends the client's connection tuning parameters to the server.
 -- Certain fields are negotiated, others provide capability information.
 data ConnectionTuneOk = ConnectionTuneOk
-  { connectionTuneOkChannelMax :: {-# UNPACK #-} !ShortUInt,
-    connectionTuneOkFrameMax :: {-# UNPACK #-} !LongUInt,
-    connectionTuneOkHeartbeat :: {-# UNPACK #-} !ShortUInt
+  { connectionTuneOkChannelMax :: !ShortUInt,
+    connectionTuneOkFrameMax :: !LongUInt,
+    connectionTuneOkHeartbeat :: !ShortUInt
   }
   deriving (Show, Eq, Generic)
 
@@ -359,9 +359,9 @@ instance Method ConnectionTuneOk where
 -- The server may apply arbitrary limits per virtual host, such as the number
 -- of each type of entity that may be used, per connection and/or in total.
 data ConnectionOpen = ConnectionOpen
-  { connectionOpenVirtualHost :: {-# UNPACK #-} !Path,
-    connectionOpenReserved1 :: {-# UNPACK #-} !ShortString,
-    connectionOpenReserved2 :: {-# UNPACK #-} !Bit
+  { connectionOpenVirtualHost :: !Path,
+    connectionOpenReserved1 :: !ShortString,
+    connectionOpenReserved2 :: !Bit
   }
   deriving (Show, Eq, Generic)
 
@@ -374,7 +374,7 @@ instance Method ConnectionOpen where
 -- | The @open-ok@ method: signal that connection is ready
 --
 -- This method signals to the client that the connection is ready for use.
-data ConnectionOpenOk = ConnectionOpenOk {connectionOpenOkReserved1 :: {-# UNPACK #-} !ShortString}
+data ConnectionOpenOk = ConnectionOpenOk {connectionOpenOkReserved1 :: !ShortString}
   deriving (Show, Eq, Generic)
 
 instance Validity ConnectionOpenOk
@@ -390,10 +390,10 @@ instance Method ConnectionOpenOk where
 -- a specific method, i.e. an exception. When a close is due to an exception, the
 -- sender provides the class and method id of the method which caused the exception.
 data ConnectionClose = ConnectionClose
-  { connectionCloseReplyCode :: {-# UNPACK #-} !ReplyCode,
-    connectionCloseReplyText :: {-# UNPACK #-} !ReplyText,
-    connectionCloseClassId :: {-# UNPACK #-} !ClassId,
-    connectionCloseMethodId :: {-# UNPACK #-} !MethodId
+  { connectionCloseReplyCode :: !ReplyCode,
+    connectionCloseReplyText :: !ReplyText,
+    connectionCloseClassId :: !ClassId,
+    connectionCloseMethodId :: !MethodId
   }
   deriving (Show, Eq, Generic)
 
@@ -420,7 +420,7 @@ instance Method ConnectionCloseOk where
 -- | The @open@ method: open a channel for use
 --
 -- This method opens a channel to the server.
-data ChannelOpen = ChannelOpen {channelOpenReserved1 :: {-# UNPACK #-} !ShortString}
+data ChannelOpen = ChannelOpen {channelOpenReserved1 :: !ShortString}
   deriving (Show, Eq, Generic)
 
 instance Validity ChannelOpen
@@ -432,7 +432,7 @@ instance Method ChannelOpen where
 -- | The @open-ok@ method: signal that the channel is ready
 --
 -- This method signals to the client that the channel is ready for use.
-data ChannelOpenOk = ChannelOpenOk {channelOpenOkReserved1 :: {-# UNPACK #-} !LongString}
+data ChannelOpenOk = ChannelOpenOk {channelOpenOkReserved1 :: !LongString}
   deriving (Show, Eq, Generic)
 
 instance Validity ChannelOpenOk
@@ -448,7 +448,7 @@ instance Method ChannelOpenOk where
 -- overflowing its queues or otherwise finding itself receiving more messages than
 -- it can process. Note that this method is not intended for window control. It does
 -- not affect contents returned by Basic.Get-Ok methods.
-data ChannelFlow = ChannelFlow {channelFlowActive :: {-# UNPACK #-} !Bit}
+data ChannelFlow = ChannelFlow {channelFlowActive :: !Bit}
   deriving (Show, Eq, Generic)
 
 instance Validity ChannelFlow
@@ -460,7 +460,7 @@ instance Method ChannelFlow where
 -- | The @flow-ok@ method: confirm a flow method
 --
 -- Confirms to the peer that a flow command was received and processed.
-data ChannelFlowOk = ChannelFlowOk {channelFlowOkActive :: {-# UNPACK #-} !Bit}
+data ChannelFlowOk = ChannelFlowOk {channelFlowOkActive :: !Bit}
   deriving (Show, Eq, Generic)
 
 instance Validity ChannelFlowOk
@@ -476,10 +476,10 @@ instance Method ChannelFlowOk where
 -- method, i.e. an exception. When a close is due to an exception, the sender provides
 -- the class and method id of the method which caused the exception.
 data ChannelClose = ChannelClose
-  { channelCloseReplyCode :: {-# UNPACK #-} !ReplyCode,
-    channelCloseReplyText :: {-# UNPACK #-} !ReplyText,
-    channelCloseClassId :: {-# UNPACK #-} !ClassId,
-    channelCloseMethodId :: {-# UNPACK #-} !MethodId
+  { channelCloseReplyCode :: !ReplyCode,
+    channelCloseReplyText :: !ReplyText,
+    channelCloseClassId :: !ClassId,
+    channelCloseMethodId :: !MethodId
   }
   deriving (Show, Eq, Generic)
 
@@ -506,15 +506,15 @@ instance Method ChannelCloseOk where
 -- This method creates an exchange if it does not already exist, and if the exchange
 -- exists, verifies that it is of the correct and expected class.
 data ExchangeDeclare = ExchangeDeclare
-  { exchangeDeclareReserved1 :: {-# UNPACK #-} !ShortUInt,
-    exchangeDeclareExchange :: {-# UNPACK #-} !ExchangeName,
-    exchangeDeclareType :: {-# UNPACK #-} !ShortString,
-    exchangeDeclarePassive :: {-# UNPACK #-} !Bit,
-    exchangeDeclareDurable :: {-# UNPACK #-} !Bit,
-    exchangeDeclareReserved2 :: {-# UNPACK #-} !Bit,
-    exchangeDeclareReserved3 :: {-# UNPACK #-} !Bit,
-    exchangeDeclareNoWait :: {-# UNPACK #-} !NoWait,
-    exchangeDeclareArguments :: {-# UNPACK #-} !FieldTable
+  { exchangeDeclareReserved1 :: !ShortUInt,
+    exchangeDeclareExchange :: !ExchangeName,
+    exchangeDeclareType :: !ShortString,
+    exchangeDeclarePassive :: !Bit,
+    exchangeDeclareDurable :: !Bit,
+    exchangeDeclareReserved2 :: !Bit,
+    exchangeDeclareReserved3 :: !Bit,
+    exchangeDeclareNoWait :: !NoWait,
+    exchangeDeclareArguments :: !FieldTable
   }
   deriving (Show, Eq, Generic)
 
@@ -543,10 +543,10 @@ instance Method ExchangeDeclareOk where
 -- This method deletes an exchange. When an exchange is deleted all queue bindings on
 -- the exchange are cancelled.
 data ExchangeDelete = ExchangeDelete
-  { exchangeDeleteReserved1 :: {-# UNPACK #-} !ShortUInt,
-    exchangeDeleteExchange :: {-# UNPACK #-} !ExchangeName,
-    exchangeDeleteIfUnused :: {-# UNPACK #-} !Bit,
-    exchangeDeleteNoWait :: {-# UNPACK #-} !NoWait
+  { exchangeDeleteReserved1 :: !ShortUInt,
+    exchangeDeleteExchange :: !ExchangeName,
+    exchangeDeleteIfUnused :: !Bit,
+    exchangeDeleteNoWait :: !NoWait
   }
   deriving (Show, Eq, Generic)
 
@@ -575,14 +575,14 @@ instance Method ExchangeDeleteOk where
 -- specify various properties that control the durability of the queue and its
 -- contents, and the level of sharing for the queue.
 data QueueDeclare = QueueDeclare
-  { queueDeclareReserved1 :: {-# UNPACK #-} !ShortUInt,
-    queueDeclareQueue :: {-# UNPACK #-} !QueueName,
-    queueDeclarePassive :: {-# UNPACK #-} !Bit,
-    queueDeclareDurable :: {-# UNPACK #-} !Bit,
-    queueDeclareExclusive :: {-# UNPACK #-} !Bit,
-    queueDeclareAutoDelete :: {-# UNPACK #-} !Bit,
-    queueDeclareNoWait :: {-# UNPACK #-} !NoWait,
-    queueDeclareArguments :: {-# UNPACK #-} !FieldTable
+  { queueDeclareReserved1 :: !ShortUInt,
+    queueDeclareQueue :: !QueueName,
+    queueDeclarePassive :: !Bit,
+    queueDeclareDurable :: !Bit,
+    queueDeclareExclusive :: !Bit,
+    queueDeclareAutoDelete :: !Bit,
+    queueDeclareNoWait :: !NoWait,
+    queueDeclareArguments :: !FieldTable
   }
   deriving (Show, Eq, Generic)
 
@@ -597,9 +597,9 @@ instance Method QueueDeclare where
 -- This method confirms a Declare method and confirms the name of the queue, essential
 -- for automatically-named queues.
 data QueueDeclareOk = QueueDeclareOk
-  { queueDeclareOkQueue :: {-# UNPACK #-} !QueueName,
-    queueDeclareOkMessageCount :: {-# UNPACK #-} !MessageCount,
-    queueDeclareOkConsumerCount :: {-# UNPACK #-} !LongUInt
+  { queueDeclareOkQueue :: !QueueName,
+    queueDeclareOkMessageCount :: !MessageCount,
+    queueDeclareOkConsumerCount :: !LongUInt
   }
   deriving (Show, Eq, Generic)
 
@@ -616,12 +616,12 @@ instance Method QueueDeclareOk where
 -- are bound to a direct exchange and subscription queues are bound to a topic
 -- exchange.
 data QueueBind = QueueBind
-  { queueBindReserved1 :: {-# UNPACK #-} !ShortUInt,
-    queueBindQueue :: {-# UNPACK #-} !QueueName,
-    queueBindExchange :: {-# UNPACK #-} !ExchangeName,
-    queueBindRoutingKey :: {-# UNPACK #-} !ShortString,
-    queueBindNoWait :: {-# UNPACK #-} !NoWait,
-    queueBindArguments :: {-# UNPACK #-} !FieldTable
+  { queueBindReserved1 :: !ShortUInt,
+    queueBindQueue :: !QueueName,
+    queueBindExchange :: !ExchangeName,
+    queueBindRoutingKey :: !ShortString,
+    queueBindNoWait :: !NoWait,
+    queueBindArguments :: !FieldTable
   }
   deriving (Show, Eq, Generic)
 
@@ -646,11 +646,11 @@ instance Method QueueBindOk where
 --
 -- This method unbinds a queue from an exchange.
 data QueueUnbind = QueueUnbind
-  { queueUnbindReserved1 :: {-# UNPACK #-} !ShortUInt,
-    queueUnbindQueue :: {-# UNPACK #-} !QueueName,
-    queueUnbindExchange :: {-# UNPACK #-} !ExchangeName,
-    queueUnbindRoutingKey :: {-# UNPACK #-} !ShortString,
-    queueUnbindArguments :: {-# UNPACK #-} !FieldTable
+  { queueUnbindReserved1 :: !ShortUInt,
+    queueUnbindQueue :: !QueueName,
+    queueUnbindExchange :: !ExchangeName,
+    queueUnbindRoutingKey :: !ShortString,
+    queueUnbindArguments :: !FieldTable
   }
   deriving (Show, Eq, Generic)
 
@@ -676,9 +676,9 @@ instance Method QueueUnbindOk where
 -- This method removes all messages from a queue which are not awaiting
 -- acknowledgment.
 data QueuePurge = QueuePurge
-  { queuePurgeReserved1 :: {-# UNPACK #-} !ShortUInt,
-    queuePurgeQueue :: {-# UNPACK #-} !QueueName,
-    queuePurgeNoWait :: {-# UNPACK #-} !NoWait
+  { queuePurgeReserved1 :: !ShortUInt,
+    queuePurgeQueue :: !QueueName,
+    queuePurgeNoWait :: !NoWait
   }
   deriving (Show, Eq, Generic)
 
@@ -691,7 +691,7 @@ instance Method QueuePurge where
 -- | The @purge-ok@ method: confirms a queue purge
 --
 -- This method confirms the purge of a queue.
-data QueuePurgeOk = QueuePurgeOk {queuePurgeOkMessageCount :: {-# UNPACK #-} !MessageCount}
+data QueuePurgeOk = QueuePurgeOk {queuePurgeOkMessageCount :: !MessageCount}
   deriving (Show, Eq, Generic)
 
 instance Validity QueuePurgeOk
@@ -706,11 +706,11 @@ instance Method QueuePurgeOk where
 -- to a dead-letter queue if this is defined in the server configuration, and all
 -- consumers on the queue are cancelled.
 data QueueDelete = QueueDelete
-  { queueDeleteReserved1 :: {-# UNPACK #-} !ShortUInt,
-    queueDeleteQueue :: {-# UNPACK #-} !QueueName,
-    queueDeleteIfUnused :: {-# UNPACK #-} !Bit,
-    queueDeleteIfEmpty :: {-# UNPACK #-} !Bit,
-    queueDeleteNoWait :: {-# UNPACK #-} !NoWait
+  { queueDeleteReserved1 :: !ShortUInt,
+    queueDeleteQueue :: !QueueName,
+    queueDeleteIfUnused :: !Bit,
+    queueDeleteIfEmpty :: !Bit,
+    queueDeleteNoWait :: !NoWait
   }
   deriving (Show, Eq, Generic)
 
@@ -723,7 +723,7 @@ instance Method QueueDelete where
 -- | The @delete-ok@ method: confirm deletion of a queue
 --
 -- This method confirms the deletion of a queue.
-data QueueDeleteOk = QueueDeleteOk {queueDeleteOkMessageCount :: {-# UNPACK #-} !MessageCount}
+data QueueDeleteOk = QueueDeleteOk {queueDeleteOkMessageCount :: !MessageCount}
   deriving (Show, Eq, Generic)
 
 instance Validity QueueDeleteOk
@@ -740,9 +740,9 @@ instance Method QueueDeleteOk where
 -- qos method could in principle apply to both peers, it is currently meaningful only
 -- for the server.
 data BasicQos = BasicQos
-  { basicQosPrefetchSize :: {-# UNPACK #-} !LongUInt,
-    basicQosPrefetchCount :: {-# UNPACK #-} !ShortUInt,
-    basicQosGlobal :: {-# UNPACK #-} !Bit
+  { basicQosPrefetchSize :: !LongUInt,
+    basicQosPrefetchCount :: !ShortUInt,
+    basicQosGlobal :: !Bit
   }
   deriving (Show, Eq, Generic)
 
@@ -771,14 +771,14 @@ instance Method BasicQosOk where
 -- messages from a specific queue. Consumers last as long as the channel they were
 -- declared on, or until the client cancels them.
 data BasicConsume = BasicConsume
-  { basicConsumeReserved1 :: {-# UNPACK #-} !ShortUInt,
-    basicConsumeQueue :: {-# UNPACK #-} !QueueName,
-    basicConsumeConsumerTag :: {-# UNPACK #-} !ConsumerTag,
-    basicConsumeNoLocal :: {-# UNPACK #-} !NoLocal,
-    basicConsumeNoAck :: {-# UNPACK #-} !NoAck,
-    basicConsumeExclusive :: {-# UNPACK #-} !Bit,
-    basicConsumeNoWait :: {-# UNPACK #-} !NoWait,
-    basicConsumeArguments :: {-# UNPACK #-} !FieldTable
+  { basicConsumeReserved1 :: !ShortUInt,
+    basicConsumeQueue :: !QueueName,
+    basicConsumeConsumerTag :: !ConsumerTag,
+    basicConsumeNoLocal :: !NoLocal,
+    basicConsumeNoAck :: !NoAck,
+    basicConsumeExclusive :: !Bit,
+    basicConsumeNoWait :: !NoWait,
+    basicConsumeArguments :: !FieldTable
   }
   deriving (Show, Eq, Generic)
 
@@ -792,7 +792,7 @@ instance Method BasicConsume where
 --
 -- The server provides the client with a consumer tag, which is used by the client
 -- for methods called on the consumer at a later stage.
-data BasicConsumeOk = BasicConsumeOk {basicConsumeOkConsumerTag :: {-# UNPACK #-} !ConsumerTag}
+data BasicConsumeOk = BasicConsumeOk {basicConsumeOkConsumerTag :: !ConsumerTag}
   deriving (Show, Eq, Generic)
 
 instance Validity BasicConsumeOk
@@ -808,8 +808,8 @@ instance Method BasicConsumeOk where
 -- that consumer. The client may receive an arbitrary number of messages in
 -- between sending the cancel method and receiving the cancel-ok reply.
 data BasicCancel = BasicCancel
-  { basicCancelConsumerTag :: {-# UNPACK #-} !ConsumerTag,
-    basicCancelNoWait :: {-# UNPACK #-} !NoWait
+  { basicCancelConsumerTag :: !ConsumerTag,
+    basicCancelNoWait :: !NoWait
   }
   deriving (Show, Eq, Generic)
 
@@ -822,7 +822,7 @@ instance Method BasicCancel where
 -- | The @cancel-ok@ method: confirm a cancelled consumer
 --
 -- This method confirms that the cancellation was completed.
-data BasicCancelOk = BasicCancelOk {basicCancelOkConsumerTag :: {-# UNPACK #-} !ConsumerTag}
+data BasicCancelOk = BasicCancelOk {basicCancelOkConsumerTag :: !ConsumerTag}
   deriving (Show, Eq, Generic)
 
 instance Validity BasicCancelOk
@@ -837,11 +837,11 @@ instance Method BasicCancelOk where
 -- to queues as defined by the exchange configuration and distributed to any active
 -- consumers when the transaction, if any, is committed.
 data BasicPublish = BasicPublish
-  { basicPublishReserved1 :: {-# UNPACK #-} !ShortUInt,
-    basicPublishExchange :: {-# UNPACK #-} !ExchangeName,
-    basicPublishRoutingKey :: {-# UNPACK #-} !ShortString,
-    basicPublishMandatory :: {-# UNPACK #-} !Bit,
-    basicPublishImmediate :: {-# UNPACK #-} !Bit
+  { basicPublishReserved1 :: !ShortUInt,
+    basicPublishExchange :: !ExchangeName,
+    basicPublishRoutingKey :: !ShortString,
+    basicPublishMandatory :: !Bit,
+    basicPublishImmediate :: !Bit
   }
   deriving (Show, Eq, Generic)
 
@@ -858,10 +858,10 @@ instance Method BasicPublish where
 -- reply code and text provide information about the reason that the message was
 -- undeliverable.
 data BasicReturn = BasicReturn
-  { basicReturnReplyCode :: {-# UNPACK #-} !ReplyCode,
-    basicReturnReplyText :: {-# UNPACK #-} !ReplyText,
-    basicReturnExchange :: {-# UNPACK #-} !ExchangeName,
-    basicReturnRoutingKey :: {-# UNPACK #-} !ShortString
+  { basicReturnReplyCode :: !ReplyCode,
+    basicReturnReplyText :: !ReplyText,
+    basicReturnExchange :: !ExchangeName,
+    basicReturnRoutingKey :: !ShortString
   }
   deriving (Show, Eq, Generic)
 
@@ -878,11 +878,11 @@ instance Method BasicReturn where
 -- the server responds with Deliver methods as and when messages arrive for that
 -- consumer.
 data BasicDeliver = BasicDeliver
-  { basicDeliverConsumerTag :: {-# UNPACK #-} !ConsumerTag,
-    basicDeliverDeliveryTag :: {-# UNPACK #-} !DeliveryTag,
-    basicDeliverRedelivered :: {-# UNPACK #-} !Redelivered,
-    basicDeliverExchange :: {-# UNPACK #-} !ExchangeName,
-    basicDeliverRoutingKey :: {-# UNPACK #-} !ShortString
+  { basicDeliverConsumerTag :: !ConsumerTag,
+    basicDeliverDeliveryTag :: !DeliveryTag,
+    basicDeliverRedelivered :: !Redelivered,
+    basicDeliverExchange :: !ExchangeName,
+    basicDeliverRoutingKey :: !ShortString
   }
   deriving (Show, Eq, Generic)
 
@@ -898,9 +898,9 @@ instance Method BasicDeliver where
 -- dialogue that is designed for specific types of application where synchronous
 -- functionality is more important than performance.
 data BasicGet = BasicGet
-  { basicGetReserved1 :: {-# UNPACK #-} !ShortUInt,
-    basicGetQueue :: {-# UNPACK #-} !QueueName,
-    basicGetNoAck :: {-# UNPACK #-} !NoAck
+  { basicGetReserved1 :: !ShortUInt,
+    basicGetQueue :: !QueueName,
+    basicGetNoAck :: !NoAck
   }
   deriving (Show, Eq, Generic)
 
@@ -916,11 +916,11 @@ instance Method BasicGet where
 -- delivered by 'get-ok' must be acknowledged unless the no-ack option was set in the
 -- get method.
 data BasicGetOk = BasicGetOk
-  { basicGetOkDeliveryTag :: {-# UNPACK #-} !DeliveryTag,
-    basicGetOkRedelivered :: {-# UNPACK #-} !Redelivered,
-    basicGetOkExchange :: {-# UNPACK #-} !ExchangeName,
-    basicGetOkRoutingKey :: {-# UNPACK #-} !ShortString,
-    basicGetOkMessageCount :: {-# UNPACK #-} !MessageCount
+  { basicGetOkDeliveryTag :: !DeliveryTag,
+    basicGetOkRedelivered :: !Redelivered,
+    basicGetOkExchange :: !ExchangeName,
+    basicGetOkRoutingKey :: !ShortString,
+    basicGetOkMessageCount :: !MessageCount
   }
   deriving (Show, Eq, Generic)
 
@@ -934,7 +934,7 @@ instance Method BasicGetOk where
 --
 -- This method tells the client that the queue has no messages available for the
 -- client.
-data BasicGetEmpty = BasicGetEmpty {basicGetEmptyReserved1 :: {-# UNPACK #-} !ShortString}
+data BasicGetEmpty = BasicGetEmpty {basicGetEmptyReserved1 :: !ShortString}
   deriving (Show, Eq, Generic)
 
 instance Validity BasicGetEmpty
@@ -949,8 +949,8 @@ instance Method BasicGetEmpty where
 -- methods. The client can ask to confirm a single message or a set of messages up to
 -- and including a specific message.
 data BasicAck = BasicAck
-  { basicAckDeliveryTag :: {-# UNPACK #-} !DeliveryTag,
-    basicAckMultiple :: {-# UNPACK #-} !Bit
+  { basicAckDeliveryTag :: !DeliveryTag,
+    basicAckMultiple :: !Bit
   }
   deriving (Show, Eq, Generic)
 
@@ -966,8 +966,8 @@ instance Method BasicAck where
 -- cancel large incoming messages, or return untreatable messages to their original
 -- queue.
 data BasicReject = BasicReject
-  { basicRejectDeliveryTag :: {-# UNPACK #-} !DeliveryTag,
-    basicRejectRequeue :: {-# UNPACK #-} !Bit
+  { basicRejectDeliveryTag :: !DeliveryTag,
+    basicRejectRequeue :: !Bit
   }
   deriving (Show, Eq, Generic)
 
@@ -982,7 +982,7 @@ instance Method BasicReject where
 -- This method asks the server to redeliver all unacknowledged messages on a
 -- specified channel. Zero or more messages may be redelivered.  This method
 -- is deprecated in favour of the synchronous Recover/Recover-Ok.
-data BasicRecoverAsync = BasicRecoverAsync {basicRecoverAsyncRequeue :: {-# UNPACK #-} !Bit}
+data BasicRecoverAsync = BasicRecoverAsync {basicRecoverAsyncRequeue :: !Bit}
   deriving (Show, Eq, Generic)
 
 instance Validity BasicRecoverAsync
@@ -996,7 +996,7 @@ instance Method BasicRecoverAsync where
 -- This method asks the server to redeliver all unacknowledged messages on a
 -- specified channel. Zero or more messages may be redelivered.  This method
 -- replaces the asynchronous Recover.
-data BasicRecover = BasicRecover {basicRecoverRequeue :: {-# UNPACK #-} !Bit}
+data BasicRecover = BasicRecover {basicRecoverRequeue :: !Bit}
   deriving (Show, Eq, Generic)
 
 instance Validity BasicRecover

@@ -4,20 +4,14 @@
 
 module AMQP.Generator.Parse where
 
-import Control.Monad
-import Data.Either (partitionEithers)
-import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
-import System.Environment
 import System.Exit
 import Text.Read (readMaybe)
-import Text.Show.Pretty (pPrint, ppShow)
 import Text.XML as XML
-import Text.XML.Cursor as Cursor
 
 parseSpecFromFile :: FilePath -> IO AMQPSpec
 parseSpecFromFile fp = do
@@ -84,6 +78,7 @@ instance FromElement Assertion where
       "length" -> AssertLength <$> e .: "value"
       "regexp" -> AssertRegex <$> e .: "value"
       "notnull" -> pure AssertNotNull
+      _ -> Left $ "Unknown assertion check: " <> show check
 
 data Class = Class
   { className :: !Text,

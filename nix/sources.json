@@ -1,4 +1,16 @@
 {
+    "gitignore": {
+        "branch": "master",
+        "description": "Nix function for filtering local git sources",
+        "homepage": "",
+        "owner": "hercules-ci",
+        "repo": "gitignore.nix",
+        "rev": "211907489e9f198594c0eb0ca9256a1949c9d412",
+        "sha256": "06j7wpvj54khw0z10fjyi31kpafkr6hi1k0di13k1xp8kywvfyx8",
+        "type": "tarball",
+        "url": "https://github.com/hercules-ci/gitignore.nix/archive/211907489e9f198594c0eb0ca9256a1949c9d412.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "niv": {
         "branch": "master",
         "description": "Easy dependency management for Nix projects",
@@ -12,15 +24,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
-        "branch": "release-20.03",
+        "branch": "nixpkgs-unstable",
         "description": "Nix Packages collection",
         "homepage": "",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "462c6fe4b115804ea4d5bee7103c0f46ff9f9cfb",
-        "sha256": "0a4bdaxjrds6kyw9s3r2vbc96f7glgy5n03jk4zr5z8h3j4v2s81",
+        "rev": "4e0d3868c679da20108db402785f924daa1a7fb5",
+        "sha256": "17ypsp6fmyywck1ad6fn77msg2xjlkgwv9ipzb4nw9hpca40hlss",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/462c6fe4b115804ea4d5bee7103c0f46ff9f9cfb.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/4e0d3868c679da20108db402785f924daa1a7fb5.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "pre-commit-hooks": {
@@ -33,6 +45,54 @@
         "sha256": "0xl9f6ydgk8gnn22f392p3zna0cishwj8id1vpy0p0s06wsbhfs5",
         "type": "tarball",
         "url": "https://github.com/cachix/pre-commit-hooks.nix/archive/c7e3896e35ceea480a7484ec1709be7bdda8849d.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "safe-coloured-text": {
+        "branch": "master",
+        "description": null,
+        "homepage": null,
+        "owner": "NorfairKing",
+        "repo": "safe-coloured-text",
+        "rev": "3fe46e3102a02987ebb8ee389c15a9c57df21ccc",
+        "sha256": "0s7s7bv31rkkli26922abqcgm7sx944c0a6kj818ycqs6s3j1nql",
+        "type": "tarball",
+        "url": "https://github.com/NorfairKing/safe-coloured-text/archive/3fe46e3102a02987ebb8ee389c15a9c57df21ccc.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "sydtest": {
+        "branch": "master",
+        "description": "A modern testing framework for Haskell with good defaults and advanced testing features.",
+        "homepage": "",
+        "owner": "NorfairKing",
+        "repo": "sydtest",
+        "rev": "0fad471cee677a4018acbe1983385dfc9a1b49d2",
+        "sha256": "1wv82y02acggkc9i0lnm17nj7cs8lwi3043v470z3hsfc754rz9b",
+        "type": "tarball",
+        "url": "https://github.com/NorfairKing/sydtest/archive/0fad471cee677a4018acbe1983385dfc9a1b49d2.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "validity": {
+        "branch": "master",
+        "description": "Validity and validity-based testing",
+        "homepage": "https://www.youtube.com/watch?v=eIs9qNh17SM",
+        "owner": "NorfairKing",
+        "repo": "validity",
+        "rev": "86a824729519c154c23f0757f2ce4b9ab93b675a",
+        "sha256": "153028qywr85lrhf0yrjf9v7wf9bnbsn6w7lv3skppqi1k4igpvl",
+        "type": "tarball",
+        "url": "https://github.com/NorfairKing/validity/archive/86a824729519c154c23f0757f2ce4b9ab93b675a.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "yamlparse-applicative": {
+        "branch": "master",
+        "description": "An optparse-applicative -style explainable yaml parser",
+        "homepage": "https://cs-syd.eu/posts/2020-06-28-yamlparse-applicative",
+        "owner": "NorfairKing",
+        "repo": "yamlparse-applicative",
+        "rev": "7a329d06ffa45595963cf98f34910887115eb471",
+        "sha256": "0mffjivg17qbyap6a4g33m9dpkf1v10l5wczwar0b21d642bz6w4",
+        "type": "tarball",
+        "url": "https://github.com/NorfairKing/yamlparse-applicative/archive/7a329d06ffa45595963cf98f34910887115eb471.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }

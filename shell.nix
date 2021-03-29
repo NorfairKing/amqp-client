@@ -1,12 +1,15 @@
 let
   sources = import ./nix/sources.nix;
-  pkgs = import sources.nixpkgs { };
+  pkgs = import ./nix/pkgs.nix { };
   pre-commit = import ./nix/pre-commit.nix;
 in
-pkgs.mkShell {
+pkgs.haskell.lib.buildStackProject {
   name = "amqp-shell";
   buildInputs = with pkgs; [
-    (import sources.niv { inherit pkgs; }).niv
+    coreutils
+    zlib
+    (import sources.niv { }).niv
+    rabbitmq-server
   ];
   shellHook = ''
     ${pre-commit.check.shellHook}

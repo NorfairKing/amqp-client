@@ -68,6 +68,4 @@ extra-deps:
     - validity-vector
 
 nix:
-  packages:
-    - zlib
-    - rabbitmq-server
+  shell-file: shell.nix
