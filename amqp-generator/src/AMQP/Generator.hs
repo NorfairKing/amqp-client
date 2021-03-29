@@ -135,11 +135,14 @@ genGeneratedMethodsModule :: AMQP.AMQPSpec -> Doc
 genGeneratedMethodsModule AMQP.AMQPSpec {..} =
   vcat
     [ text "{-# LANGUAGE DeriveGeneric #-}",
+      text "{-# LANGUAGE LambdaCase #-}",
       text "module AMQP.Serialisation.Generated.Methods where",
       text "",
       text "import AMQP.Serialisation.Argument",
       text "import AMQP.Serialisation.Base",
+      text "import AMQP.Serialisation.Frame",
       text "import AMQP.Serialisation.Generated.DomainTypes",
+      text "import Data.ByteString.Builder as ByteString (Builder)",
       text "import GHC.Generics (Generic)",
       text "import Data.Proxy",
       text "import Data.Validity",
@@ -234,7 +237,9 @@ genMethodSumType :: [AMQP.Class] -> Doc
 genMethodSumType cs =
   vcat
     [ haddockIntro "A sum type of all the methods",
-      ppr_list $ methodsSumTypeDecs cs
+      ppr_list $ methodsSumTypeDecs cs,
+      haddockIntro "Turn a 'Method' into a 'ByteString.Builder'.",
+      ppr_list $ genBuildSumTypeFunction cs
     ]
 
 methodsSumTypeDecs :: [AMQP.Class] -> [Dec]
@@ -272,3 +277,34 @@ methodSumTypeConstructor className AMQP.Method {..} =
 
 mkMethodSumTypeConstructorName :: Text -> Text -> Name
 mkMethodSumTypeConstructorName className methodName = mkHaskellTypeName $ T.intercalate "-" ["method", className, methodName]
+
+genBuildSumTypeFunction :: [AMQP.Class] -> [Dec]
+genBuildSumTypeFunction cs =
+  let n = mkName "buildMethod"
+   in [ SigD n (AppT (AppT ArrowT (ConT (mkName "Method"))) (ConT (mkName "ByteString.Builder"))),
+        FunD
+          n
+          [ Clause
+              []
+              ( NormalB
+                  ( LamCaseE
+                      ( flip concatMap cs $ \Class {..} -> flip map classMethods $ \Method {..} ->
+                          let varName = mkName "m"
+                           in Match
+                                ( ConP
+                                    (mkMethodSumTypeConstructorName className methodName)
+                                    [VarP varName]
+                                )
+                                ( NormalB
+                                    ( AppE
+                                        (VarE (mkName "buildMethodFramePayload"))
+                                        (VarE varName)
+                                    )
+                                )
+                                []
+                      )
+                  )
+              )
+              []
+          ]
+      ]

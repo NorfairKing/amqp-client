@@ -22,6 +22,7 @@ library
       AMQP.Serialisation
       AMQP.Serialisation.Argument
       AMQP.Serialisation.Base
+      AMQP.Serialisation.Frame
       AMQP.Serialisation.Generated.Constants
       AMQP.Serialisation.Generated.DomainTypes
       AMQP.Serialisation.Generated.Methods

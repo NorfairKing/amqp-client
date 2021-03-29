@@ -1,10 +1,13 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE LambdaCase #-}
 
 module AMQP.Serialisation.Generated.Methods where
 
 import AMQP.Serialisation.Argument
 import AMQP.Serialisation.Base
+import AMQP.Serialisation.Frame
 import AMQP.Serialisation.Generated.DomainTypes
+import Data.ByteString.Builder as ByteString (Builder)
 import Data.Proxy
 import Data.Validity
 import GHC.Generics (Generic)
@@ -903,3 +906,60 @@ data Method
   deriving (Show, Eq, Generic)
 
 instance Validity Method
+
+-- | Turn a 'Method' into a 'ByteString.Builder'.
+buildMethod :: Method -> ByteString.Builder
+buildMethod = \case
+  MethodConnectionStart m -> buildMethodFramePayload m
+  MethodConnectionStartOk m -> buildMethodFramePayload m
+  MethodConnectionSecure m -> buildMethodFramePayload m
+  MethodConnectionSecureOk m -> buildMethodFramePayload m
+  MethodConnectionTune m -> buildMethodFramePayload m
+  MethodConnectionTuneOk m -> buildMethodFramePayload m
+  MethodConnectionOpen m -> buildMethodFramePayload m
+  MethodConnectionOpenOk m -> buildMethodFramePayload m
+  MethodConnectionClose m -> buildMethodFramePayload m
+  MethodConnectionCloseOk m -> buildMethodFramePayload m
+  MethodChannelOpen m -> buildMethodFramePayload m
+  MethodChannelOpenOk m -> buildMethodFramePayload m
+  MethodChannelFlow m -> buildMethodFramePayload m
+  MethodChannelFlowOk m -> buildMethodFramePayload m
+  MethodChannelClose m -> buildMethodFramePayload m
+  MethodChannelCloseOk m -> buildMethodFramePayload m
+  MethodExchangeDeclare m -> buildMethodFramePayload m
+  MethodExchangeDeclareOk m -> buildMethodFramePayload m
+  MethodExchangeDelete m -> buildMethodFramePayload m
+  MethodExchangeDeleteOk m -> buildMethodFramePayload m
+  MethodQueueDeclare m -> buildMethodFramePayload m
+  MethodQueueDeclareOk m -> buildMethodFramePayload m
+  MethodQueueBind m -> buildMethodFramePayload m
+  MethodQueueBindOk m -> buildMethodFramePayload m
+  MethodQueueUnbind m -> buildMethodFramePayload m
+  MethodQueueUnbindOk m -> buildMethodFramePayload m
+  MethodQueuePurge m -> buildMethodFramePayload m
+  MethodQueuePurgeOk m -> buildMethodFramePayload m
+  MethodQueueDelete m -> buildMethodFramePayload m
+  MethodQueueDeleteOk m -> buildMethodFramePayload m
+  MethodBasicQos m -> buildMethodFramePayload m
+  MethodBasicQosOk m -> buildMethodFramePayload m
+  MethodBasicConsume m -> buildMethodFramePayload m
+  MethodBasicConsumeOk m -> buildMethodFramePayload m
+  MethodBasicCancel m -> buildMethodFramePayload m
+  MethodBasicCancelOk m -> buildMethodFramePayload m
+  MethodBasicPublish m -> buildMethodFramePayload m
+  MethodBasicReturn m -> buildMethodFramePayload m
+  MethodBasicDeliver m -> buildMethodFramePayload m
+  MethodBasicGet m -> buildMethodFramePayload m
+  MethodBasicGetOk m -> buildMethodFramePayload m
+  MethodBasicGetEmpty m -> buildMethodFramePayload m
+  MethodBasicAck m -> buildMethodFramePayload m
+  MethodBasicReject m -> buildMethodFramePayload m
+  MethodBasicRecoverAsync m -> buildMethodFramePayload m
+  MethodBasicRecover m -> buildMethodFramePayload m
+  MethodBasicRecoverOk m -> buildMethodFramePayload m
+  MethodTxSelect m -> buildMethodFramePayload m
+  MethodTxSelectOk m -> buildMethodFramePayload m
+  MethodTxCommit m -> buildMethodFramePayload m
+  MethodTxCommitOk m -> buildMethodFramePayload m
+  MethodTxRollback m -> buildMethodFramePayload m
+  MethodTxRollbackOk m -> buildMethodFramePayload m

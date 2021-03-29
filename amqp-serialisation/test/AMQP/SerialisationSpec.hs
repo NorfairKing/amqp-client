@@ -5,7 +5,8 @@ module AMQP.SerialisationSpec (spec) where
 
 import AMQP.Serialisation
 import AMQP.Serialisation.Base
-import AMQP.Serialisation.Generated
+import AMQP.Serialisation.Frame
+import AMQP.Serialisation.Generated.Methods
 import AMQP.Serialisation.TestUtils
 import Control.Monad
 import Data.Attoparsec.ByteString
