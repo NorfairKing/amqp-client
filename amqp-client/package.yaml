@@ -17,6 +17,7 @@ library:
     - connection
     - containers
     - network
+    - text
     - unliftio
 
 tests:

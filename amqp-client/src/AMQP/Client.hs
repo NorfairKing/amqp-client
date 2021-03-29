@@ -1,10 +1,12 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module AMQP.Client where
 
 import AMQP.Serialisation
+import AMQP.Serialisation.Argument
 import AMQP.Serialisation.Base
 import AMQP.Serialisation.Generated
 import Control.Monad
@@ -16,15 +18,26 @@ import qualified Data.ByteString.Builder as SBB
 import qualified Data.ByteString.Lazy as LB
 import Data.List
 import qualified Data.Map as M
+import Data.Text (Text)
+import qualified Data.Text.Encoding as TE
 import GHC.Generics (Generic)
 import qualified Network.Connection as Network
 import qualified Network.Socket as Socket
 import UnliftIO
 
 data ConnectionSettings = ConnectionSettings
-  { connectionSettingHostName :: Socket.HostName,
-    connectionSettingPort :: Socket.PortNumber
+  { connectionSettingHostName :: !Socket.HostName,
+    connectionSettingPort :: !Socket.PortNumber,
+    connectionSettingSASLMechanism :: !SASLMechanism
   }
+  deriving (Show, Eq, Generic)
+
+data SASLMechanism
+  = PLAINMechanism
+      !Text
+      -- ^ Username
+      !Text
+      -- ^ Password
   deriving (Show, Eq, Generic)
 
 data Connection = Connection
@@ -69,21 +82,22 @@ withConnection ConnectionSettings {..} callback = do
           ourLocaleSupported = ourLocale `elem` locales
       when (not ourLocaleSupported) $ throwIO LocaleNotSupported
       let mechanisms = SB.split 0x20 (longStringBytes (connectionStartMechanisms f))
-          ourMechanism = "PLAIN"
-          ourMechanismSupported = ourMechanism `elem` mechanisms
-      when (not ourMechanismSupported) $ throwIO $ SASLMechanismNotSupported ourMechanism
+
+          ourMechanismName = saslMechanismName connectionSettingSASLMechanism
+          ourMechanismSupported = ourMechanismName `elem` mechanisms
+      when (not ourMechanismSupported) $ throwIO $ SASLMechanismNotSupported ourMechanismName
       let connectionOk =
             ConnectionStartOk
               { connectionStartOkClientProperties = FieldTable M.empty,
-                connectionStartOkMechanism = ShortString ourMechanism,
-                connectionStartOkResponse = plainSASLResponse "guest" "guest",
+                connectionStartOkMechanism = ShortString ourMechanismName,
+                connectionStartOkResponse = saslMechanismResponse connectionSettingSASLMechanism,
                 connectionStartOkLocale = ShortString ourLocale
               }
       liftIO $ putStrLn "Answering: "
       liftIO $ print connectionOk
       connectionPutBuilder networkConnection (buildMethodFrame 0 connectionOk)
-      frame' <- connectionParse networkConnection leftoversVar parseRawFrame
-      liftIO $ print frame'
+      errOrRes <- connectionParseMethod networkConnection leftoversVar
+      liftIO $ print (errOrRes :: Either String ConnectionSecure)
 
       let amqpConnection =
             Connection
@@ -92,21 +106,35 @@ withConnection ConnectionSettings {..} callback = do
               }
       callback amqpConnection
 
+saslMechanismName :: SASLMechanism -> ByteString
+saslMechanismName = \case
+  PLAINMechanism {} -> plainSASLName
+
+saslMechanismResponse :: SASLMechanism -> LongString
+saslMechanismResponse = \case
+  PLAINMechanism username password -> plainSASLResponse username password
+
+plainSASLName :: ByteString
+plainSASLName = "PLAIN"
+
 -- | The @PLAIN@ SASL mechanism. See <http://tools.ietf.org/html/rfc4616 RFC4616>
-plainSASLResponse :: ByteString -> ByteString -> LongString
+plainSASLResponse :: Text -> Text -> LongString
 plainSASLResponse username password =
   LongString $
     LB.toStrict $
       SBB.toLazyByteString $
         mconcat
           [ SBB.word8 0,
-            SBB.byteString username,
+            SBB.byteString $ TE.encodeUtf8 username,
             SBB.word8 0,
-            SBB.byteString password
+            SBB.byteString $ TE.encodeUtf8 password
           ]
 
 connectionPutBuilder :: MonadIO m => Network.Connection -> ByteString.Builder -> m ()
 connectionPutBuilder conn b = liftIO $ mapM_ (Network.connectionPut conn) (LB.toChunks (SBB.toLazyByteString b))
+
+connectionParseMethod :: (Method a, MonadUnliftIO m) => Network.Connection -> MVar ByteString -> m (Either String a)
+connectionParseMethod conn leftoversVar = connectionParse conn leftoversVar parseMethodFrame
 
 -- TODO keep track of the last bit of bytestring that we already got.
 connectionParse :: MonadUnliftIO m => Network.Connection -> MVar ByteString -> Attoparsec.Parser a -> m (Either String a)

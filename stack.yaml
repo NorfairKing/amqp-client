@@ -3,17 +3,14 @@ packages:
 - amqp-generator
 - amqp-serialisation
 - amqp-client
-- /home/syd/src/sydtest/sydtest
-- /home/syd/src/sydtest/sydtest-discover
-- /home/syd/src/sydtest/sydtest-rabbitmq
-- /home/syd/src/sydtest/sydtest-typed-process
 extra-deps:
-    # - github: NorfairKing/sydtest
-    #   commit: 71f4421ca6d17300fcbceb1d6407eabd7e6086e3
-    #   subdirs:
-    #   - sydtest
-    #   - sydtest-discover
-    #   - sydtest-typed-process
+- github: NorfairKing/sydtest
+  commit: 0fad471cee677a4018acbe1983385dfc9a1b49d2
+  subdirs:
+  - sydtest
+  - sydtest-discover
+  - sydtest-rabbitmq
+  - sydtest-typed-process
 - github: NorfairKing/yamlparse-applicative
   commit: 7a329d06ffa45595963cf98f34910887115eb471
   subdirs:
