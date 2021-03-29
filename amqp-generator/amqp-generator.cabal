@@ -29,6 +29,7 @@ library
       base >=4.7 && <5
     , casing
     , containers
+    , directory
     , pretty
     , pretty-show
     , template-haskell

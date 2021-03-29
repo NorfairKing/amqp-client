@@ -4,4 +4,4 @@
 - ignore:
     name: "Redundant bracket"
     within: 
-      - AMQP.Serialisation.Generated
+      - AMQP.Serialisation.Generated.Methods

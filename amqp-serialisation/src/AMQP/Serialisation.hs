@@ -9,7 +9,8 @@ module AMQP.Serialisation where
 
 import AMQP.Serialisation.Argument
 import AMQP.Serialisation.Base
-import AMQP.Serialisation.Generated
+import AMQP.Serialisation.Generated.Constants
+import AMQP.Serialisation.Generated.Methods
 import Control.Monad
 import Data.Attoparsec.Binary as Parse
 import Data.Attoparsec.ByteString as Parse

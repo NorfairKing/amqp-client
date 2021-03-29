@@ -10,6 +10,7 @@ where
 import AMQP.Generator.Parse as AMQP hiding (Doc (..))
 import qualified AMQP.Generator.Parse as AMQP
 import Control.Applicative ((<|>))
+import Control.Monad
 import Data.List
 import Data.Maybe
 import Data.Text (Text)
@@ -18,6 +19,7 @@ import Language.Haskell.TH.Lib
 import Language.Haskell.TH.Ppr
 import Language.Haskell.TH.PprLib
 import Language.Haskell.TH.Syntax
+import System.Directory
 import System.Environment
 import System.Exit
 import System.Process.Typed
@@ -34,30 +36,30 @@ main = do
 generateFrom :: FilePath -> IO ()
 generateFrom inPath = do
   spec <- AMQP.parseSpecFromFile inPath
-  let moduleString = render $ to_HPJ_Doc $ genGeneratedModule spec
-  let outPath = "amqp-serialisation/src/AMQP/Serialisation/Generated.hs"
-  writeFile outPath moduleString
-  runProcess_ $ proc "ormolu" ["--mode", "inplace", outPath]
-  result <- readFile outPath
-  putStrLn result
+  let generatedDir = "amqp-serialisation/src/AMQP/Serialisation/Generated/"
+  let modules :: [(FilePath, Doc)]
+      modules =
+        [ ("Constants.hs", genGeneratedConstantsModule spec),
+          ("DomainTypes.hs", genGeneratedTypesModule spec),
+          ("Methods.hs", genGeneratedMethodsModule spec)
+        ]
+  createDirectoryIfMissing True generatedDir
+  forM_ modules $ \(name, m) -> do
+    let moduleString = render $ to_HPJ_Doc m
+    let outPath = generatedDir ++ name
+    writeFile outPath moduleString
+    runProcess_ $ proc "ormolu" ["--mode", "inplace", outPath]
+    result <- readFile outPath
+    putStrLn result
 
-genGeneratedModule :: AMQP.AMQPSpec -> Doc
-genGeneratedModule AMQP.AMQPSpec {..} =
+genGeneratedConstantsModule :: AMQP.AMQPSpec -> Doc
+genGeneratedConstantsModule AMQP.AMQPSpec {..} =
   vcat
-    [ text "{-# LANGUAGE DeriveGeneric #-}",
-      text "module AMQP.Serialisation.Generated where",
+    [ text "module AMQP.Serialisation.Generated.Constants where",
       text "",
-      text "import AMQP.Serialisation.Base",
-      text "import AMQP.Serialisation.Argument",
-      text "import GHC.Generics (Generic)",
       text "import Data.Word",
-      text "import Data.Proxy",
-      text "import Data.Validity",
       text "",
-      genConstantsDoc amqpSpecConstants,
-      genDomainTypesDoc amqpSpecDomainTypes,
-      genClassesTypesDoc amqpSpecClasses,
-      genMethodSumType amqpSpecClasses
+      genConstantsDoc amqpSpecConstants
     ]
 
 genConstantsDoc :: [Constant] -> Doc
@@ -85,31 +87,15 @@ makeConstantType w
   | w < 256 = mkName "Word8"
   | otherwise = mkName "Word"
 
-genHaddocks :: Text -> Maybe AMQP.Doc -> Doc
-genHaddocks intro mDoc =
+genGeneratedTypesModule :: AMQP.AMQPSpec -> Doc
+genGeneratedTypesModule AMQP.AMQPSpec {..} =
   vcat
-    [ haddockIntro intro,
-      case mDoc of
-        Nothing -> empty
-        Just d -> comment " " $$ genDocComment d
+    [ text "module AMQP.Serialisation.Generated.DomainTypes where",
+      text "",
+      text "import AMQP.Serialisation.Base",
+      text "",
+      genDomainTypesDoc amqpSpecDomainTypes
     ]
-
-genDocComment :: AMQP.Doc -> Doc
-genDocComment = comment . AMQP.docText
-
-haddockIntro :: Text -> Doc
-haddockIntro t = text "-- |" <+> text (T.unpack t)
-
-comment :: Text -> Doc
-comment = vcat . map ((text "--" <+>) . text) . lines . T.unpack
-
-mkHaskellVarName :: Text -> Name
-mkHaskellVarName = mkName . remapReserved . toCamel . fromKebab . T.unpack
-  where
-    remapReserved = \case
-      "type" -> "typ"
-      "class" -> "clazz"
-      s -> s
 
 genDomainTypesDoc :: [DomainType] -> Doc
 genDomainTypesDoc = vcat . intersperse (text "") . mapMaybe genDomainTypeDoc
@@ -144,6 +130,49 @@ typeTranslator = \case
 
 mkHaskellTypeName :: Text -> Name
 mkHaskellTypeName = mkName . toPascal . fromKebab . T.unpack
+
+genGeneratedMethodsModule :: AMQP.AMQPSpec -> Doc
+genGeneratedMethodsModule AMQP.AMQPSpec {..} =
+  vcat
+    [ text "{-# LANGUAGE DeriveGeneric #-}",
+      text "module AMQP.Serialisation.Generated.Methods where",
+      text "",
+      text "import AMQP.Serialisation.Argument",
+      text "import AMQP.Serialisation.Base",
+      text "import AMQP.Serialisation.Generated.DomainTypes",
+      text "import GHC.Generics (Generic)",
+      text "import Data.Proxy",
+      text "import Data.Validity",
+      text "",
+      genClassesTypesDoc amqpSpecClasses,
+      genMethodSumType amqpSpecClasses
+    ]
+
+genHaddocks :: Text -> Maybe AMQP.Doc -> Doc
+genHaddocks intro mDoc =
+  vcat
+    [ haddockIntro intro,
+      case mDoc of
+        Nothing -> empty
+        Just d -> comment " " $$ genDocComment d
+    ]
+
+genDocComment :: AMQP.Doc -> Doc
+genDocComment = comment . AMQP.docText
+
+haddockIntro :: Text -> Doc
+haddockIntro t = text "-- |" <+> text (T.unpack t)
+
+comment :: Text -> Doc
+comment = vcat . map ((text "--" <+>) . text) . lines . T.unpack
+
+mkHaskellVarName :: Text -> Name
+mkHaskellVarName = mkName . remapReserved . toCamel . fromKebab . T.unpack
+  where
+    remapReserved = \case
+      "type" -> "typ"
+      "class" -> "clazz"
+      s -> s
 
 genClassesTypesDoc :: [Class] -> Doc
 genClassesTypesDoc = vcat . intersperse (text "\n") . map genClassTypesDoc

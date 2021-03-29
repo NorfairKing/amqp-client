@@ -22,7 +22,9 @@ library
       AMQP.Serialisation
       AMQP.Serialisation.Argument
       AMQP.Serialisation.Base
-      AMQP.Serialisation.Generated
+      AMQP.Serialisation.Generated.Constants
+      AMQP.Serialisation.Generated.DomainTypes
+      AMQP.Serialisation.Generated.Methods
   other-modules:
       Paths_amqp_serialisation
   hs-source-dirs:
