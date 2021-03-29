@@ -13,6 +13,7 @@ import Control.Monad
 import Data.Attoparsec.ByteString as Parse
 import Data.ByteString.Builder as ByteString (Builder)
 import qualified Data.ByteString.Builder as SBB
+import qualified Data.ByteString.Lazy as LB
 import Data.Validity
 import Data.Validity.ByteString ()
 import Data.Validity.Containers ()
@@ -65,5 +66,23 @@ parseProtocolNegotiationResponse =
   label "ProtocolNegotiationResponse" $
     choice
       [ ProtocolRejected <$> parseProtocolHeader,
-        ProtocolProposed <$> parseMethodFrame
+        ProtocolProposed <$> parseGivenMethodFrame
       ]
+
+parseMethodFrame :: Parser Method
+parseMethodFrame = label "Method Frame" $ do
+  rf@RawFrame {..} <- parseRawFrame
+  case rawFrameType of
+    MethodFrameType -> case parseOnly parseMethodFramePayload rawFramePayload of
+      Left err -> fail err
+      Right r -> pure r
+    ft -> fail $ unwords ["Unable to parse method frame", show rf]
+
+buildMethodFrame :: ChannelNumber -> Method -> ByteString.Builder
+buildMethodFrame chan m =
+  buildRawFrame $
+    RawFrame
+      { rawFrameType = MethodFrameType,
+        rawFrameChannel = chan,
+        rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildMethodFramePayload m
+      }

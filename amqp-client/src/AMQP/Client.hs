@@ -96,9 +96,9 @@ withConnection ConnectionSettings {..} callback = do
               }
       liftIO $ putStrLn "Answering: "
       liftIO $ print connectionOk
-      connectionPutBuilder networkConnection (buildMethodFrame 0 connectionOk)
+      connectionPutBuilder networkConnection (buildGivenMethodFrame 0 connectionOk)
       errOrRes <- connectionParseMethod networkConnection leftoversVar
-      liftIO $ print (errOrRes :: Either String ConnectionSecure)
+      liftIO $ print (errOrRes :: Either String Method)
 
       let amqpConnection =
             Connection
@@ -134,7 +134,7 @@ plainSASLResponse username password =
 connectionPutBuilder :: MonadIO m => Network.Connection -> ByteString.Builder -> m ()
 connectionPutBuilder conn b = liftIO $ mapM_ (Network.connectionPut conn) (LB.toChunks (SBB.toLazyByteString b))
 
-connectionParseMethod :: (IsMethod a, MonadUnliftIO m) => Network.Connection -> MVar ByteString -> m (Either String a)
+connectionParseMethod :: (MonadUnliftIO m) => Network.Connection -> MVar ByteString -> m (Either String Method)
 connectionParseMethod conn leftoversVar = connectionParse conn leftoversVar parseMethodFrame
 
 -- TODO keep track of the last bit of bytestring that we already got.

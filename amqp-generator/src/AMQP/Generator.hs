@@ -142,6 +142,7 @@ genGeneratedMethodsModule AMQP.AMQPSpec {..} =
       text "import AMQP.Serialisation.Base",
       text "import AMQP.Serialisation.Frame",
       text "import AMQP.Serialisation.Generated.DomainTypes",
+      text "import Data.Attoparsec.ByteString as Parse",
       text "import Data.ByteString.Builder as ByteString (Builder)",
       text "import GHC.Generics (Generic)",
       text "import Data.Proxy",
@@ -239,7 +240,9 @@ genMethodSumType cs =
     [ haddockIntro "A sum type of all the methods",
       ppr_list $ methodsSumTypeDecs cs,
       haddockIntro "Turn a 'Method' into a 'ByteString.Builder'.",
-      ppr_list $ genBuildSumTypeFunction cs
+      ppr_list $ genBuildSumTypeFunction cs,
+      haddockIntro "Parse a 'Method' frame payload.",
+      ppr_list $ genParseSumTypeFunction cs
     ]
 
 methodsSumTypeDecs :: [AMQP.Class] -> [Dec]
@@ -280,7 +283,7 @@ mkMethodSumTypeConstructorName className methodName = mkHaskellTypeName $ T.inte
 
 genBuildSumTypeFunction :: [AMQP.Class] -> [Dec]
 genBuildSumTypeFunction cs =
-  let n = mkName "buildMethod"
+  let n = mkName "buildMethodFramePayload"
    in [ SigD n (AppT (AppT ArrowT (ConT (mkName "Method"))) (ConT (mkName "ByteString.Builder"))),
         FunD
           n
@@ -297,7 +300,7 @@ genBuildSumTypeFunction cs =
                                 )
                                 ( NormalB
                                     ( AppE
-                                        (VarE (mkName "buildMethodFramePayload"))
+                                        (VarE (mkName "buildGivenMethodFramePayload"))
                                         (VarE varName)
                                     )
                                 )
@@ -308,3 +311,52 @@ genBuildSumTypeFunction cs =
               []
           ]
       ]
+
+genParseSumTypeFunction :: [AMQP.Class] -> [Dec]
+genParseSumTypeFunction cs =
+  let n = mkName "parseMethodFramePayload"
+   in [ SigD n (AppT (ConT (mkName "Parser")) (ConT (mkName "Method"))),
+        FunD
+          n
+          [ Clause
+              []
+              ( NormalB
+                  ( AppE
+                      ( VarE
+                          ( mkName "parseMethodFramePayloadHelper"
+                          )
+                      )
+                      ( let classIdVar = mkName "cid"
+                            methodIdVar = mkName "mid"
+                         in LamE
+                              [VarP classIdVar, VarP methodIdVar]
+                              (CaseE (VarE classIdVar) (map parseSumFunctionMatchForClass cs))
+                      )
+                  )
+              )
+              []
+          ]
+      ]
+
+-- TODO make exhaustive matches
+parseSumFunctionMatchForClass :: AMQP.Class -> Match
+parseSumFunctionMatchForClass AMQP.Class {..} =
+  Match
+    (LitP (IntegerL (toInteger classIndex)))
+    ( NormalB (CaseE (VarE (mkName "mid")) (map (parseSumFunctionMatchForMethod className) classMethods))
+    )
+    []
+
+-- TODO make exhaustive matches
+parseSumFunctionMatchForMethod :: Text -> AMQP.Method -> Match
+parseSumFunctionMatchForMethod className AMQP.Method {..} =
+  Match
+    (LitP (IntegerL (toInteger methodIndex)))
+    ( NormalB
+        ( InfixE
+            (Just (VarE (mkMethodSumTypeConstructorName className methodName)))
+            (VarE (mkName "<$>"))
+            (Just (VarE (mkName "parseMethodArguments")))
+        )
+    )
+    []

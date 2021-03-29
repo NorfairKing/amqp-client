@@ -59,7 +59,7 @@ spec = do
   describe "parseConnectionStartMethodFramePayload" $
     it "can parse the example that we got from the rabbitmq server" $ do
       payload <- SB.readFile "test_resources/connection-start.dat"
-      case parseOnly parseMethodFramePayload payload of
+      case parseOnly parseGivenMethodFramePayload payload of
         Left err ->
           expectationFailure $
             unlines

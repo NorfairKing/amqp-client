@@ -7,6 +7,7 @@ import AMQP.Serialisation.Argument
 import AMQP.Serialisation.Base
 import AMQP.Serialisation.Frame
 import AMQP.Serialisation.Generated.DomainTypes
+import Data.Attoparsec.ByteString as Parse
 import Data.ByteString.Builder as ByteString (Builder)
 import Data.Proxy
 import Data.Validity
@@ -908,58 +909,124 @@ data Method
 instance Validity Method
 
 -- | Turn a 'Method' into a 'ByteString.Builder'.
-buildMethod :: Method -> ByteString.Builder
-buildMethod = \case
-  MethodConnectionStart m -> buildMethodFramePayload m
-  MethodConnectionStartOk m -> buildMethodFramePayload m
-  MethodConnectionSecure m -> buildMethodFramePayload m
-  MethodConnectionSecureOk m -> buildMethodFramePayload m
-  MethodConnectionTune m -> buildMethodFramePayload m
-  MethodConnectionTuneOk m -> buildMethodFramePayload m
-  MethodConnectionOpen m -> buildMethodFramePayload m
-  MethodConnectionOpenOk m -> buildMethodFramePayload m
-  MethodConnectionClose m -> buildMethodFramePayload m
-  MethodConnectionCloseOk m -> buildMethodFramePayload m
-  MethodChannelOpen m -> buildMethodFramePayload m
-  MethodChannelOpenOk m -> buildMethodFramePayload m
-  MethodChannelFlow m -> buildMethodFramePayload m
-  MethodChannelFlowOk m -> buildMethodFramePayload m
-  MethodChannelClose m -> buildMethodFramePayload m
-  MethodChannelCloseOk m -> buildMethodFramePayload m
-  MethodExchangeDeclare m -> buildMethodFramePayload m
-  MethodExchangeDeclareOk m -> buildMethodFramePayload m
-  MethodExchangeDelete m -> buildMethodFramePayload m
-  MethodExchangeDeleteOk m -> buildMethodFramePayload m
-  MethodQueueDeclare m -> buildMethodFramePayload m
-  MethodQueueDeclareOk m -> buildMethodFramePayload m
-  MethodQueueBind m -> buildMethodFramePayload m
-  MethodQueueBindOk m -> buildMethodFramePayload m
-  MethodQueueUnbind m -> buildMethodFramePayload m
-  MethodQueueUnbindOk m -> buildMethodFramePayload m
-  MethodQueuePurge m -> buildMethodFramePayload m
-  MethodQueuePurgeOk m -> buildMethodFramePayload m
-  MethodQueueDelete m -> buildMethodFramePayload m
-  MethodQueueDeleteOk m -> buildMethodFramePayload m
-  MethodBasicQos m -> buildMethodFramePayload m
-  MethodBasicQosOk m -> buildMethodFramePayload m
-  MethodBasicConsume m -> buildMethodFramePayload m
-  MethodBasicConsumeOk m -> buildMethodFramePayload m
-  MethodBasicCancel m -> buildMethodFramePayload m
-  MethodBasicCancelOk m -> buildMethodFramePayload m
-  MethodBasicPublish m -> buildMethodFramePayload m
-  MethodBasicReturn m -> buildMethodFramePayload m
-  MethodBasicDeliver m -> buildMethodFramePayload m
-  MethodBasicGet m -> buildMethodFramePayload m
-  MethodBasicGetOk m -> buildMethodFramePayload m
-  MethodBasicGetEmpty m -> buildMethodFramePayload m
-  MethodBasicAck m -> buildMethodFramePayload m
-  MethodBasicReject m -> buildMethodFramePayload m
-  MethodBasicRecoverAsync m -> buildMethodFramePayload m
-  MethodBasicRecover m -> buildMethodFramePayload m
-  MethodBasicRecoverOk m -> buildMethodFramePayload m
-  MethodTxSelect m -> buildMethodFramePayload m
-  MethodTxSelectOk m -> buildMethodFramePayload m
-  MethodTxCommit m -> buildMethodFramePayload m
-  MethodTxCommitOk m -> buildMethodFramePayload m
-  MethodTxRollback m -> buildMethodFramePayload m
-  MethodTxRollbackOk m -> buildMethodFramePayload m
+buildMethodFramePayload :: Method -> ByteString.Builder
+buildMethodFramePayload = \case
+  MethodConnectionStart m -> buildGivenMethodFramePayload m
+  MethodConnectionStartOk m -> buildGivenMethodFramePayload m
+  MethodConnectionSecure m -> buildGivenMethodFramePayload m
+  MethodConnectionSecureOk m -> buildGivenMethodFramePayload m
+  MethodConnectionTune m -> buildGivenMethodFramePayload m
+  MethodConnectionTuneOk m -> buildGivenMethodFramePayload m
+  MethodConnectionOpen m -> buildGivenMethodFramePayload m
+  MethodConnectionOpenOk m -> buildGivenMethodFramePayload m
+  MethodConnectionClose m -> buildGivenMethodFramePayload m
+  MethodConnectionCloseOk m -> buildGivenMethodFramePayload m
+  MethodChannelOpen m -> buildGivenMethodFramePayload m
+  MethodChannelOpenOk m -> buildGivenMethodFramePayload m
+  MethodChannelFlow m -> buildGivenMethodFramePayload m
+  MethodChannelFlowOk m -> buildGivenMethodFramePayload m
+  MethodChannelClose m -> buildGivenMethodFramePayload m
+  MethodChannelCloseOk m -> buildGivenMethodFramePayload m
+  MethodExchangeDeclare m -> buildGivenMethodFramePayload m
+  MethodExchangeDeclareOk m -> buildGivenMethodFramePayload m
+  MethodExchangeDelete m -> buildGivenMethodFramePayload m
+  MethodExchangeDeleteOk m -> buildGivenMethodFramePayload m
+  MethodQueueDeclare m -> buildGivenMethodFramePayload m
+  MethodQueueDeclareOk m -> buildGivenMethodFramePayload m
+  MethodQueueBind m -> buildGivenMethodFramePayload m
+  MethodQueueBindOk m -> buildGivenMethodFramePayload m
+  MethodQueueUnbind m -> buildGivenMethodFramePayload m
+  MethodQueueUnbindOk m -> buildGivenMethodFramePayload m
+  MethodQueuePurge m -> buildGivenMethodFramePayload m
+  MethodQueuePurgeOk m -> buildGivenMethodFramePayload m
+  MethodQueueDelete m -> buildGivenMethodFramePayload m
+  MethodQueueDeleteOk m -> buildGivenMethodFramePayload m
+  MethodBasicQos m -> buildGivenMethodFramePayload m
+  MethodBasicQosOk m -> buildGivenMethodFramePayload m
+  MethodBasicConsume m -> buildGivenMethodFramePayload m
+  MethodBasicConsumeOk m -> buildGivenMethodFramePayload m
+  MethodBasicCancel m -> buildGivenMethodFramePayload m
+  MethodBasicCancelOk m -> buildGivenMethodFramePayload m
+  MethodBasicPublish m -> buildGivenMethodFramePayload m
+  MethodBasicReturn m -> buildGivenMethodFramePayload m
+  MethodBasicDeliver m -> buildGivenMethodFramePayload m
+  MethodBasicGet m -> buildGivenMethodFramePayload m
+  MethodBasicGetOk m -> buildGivenMethodFramePayload m
+  MethodBasicGetEmpty m -> buildGivenMethodFramePayload m
+  MethodBasicAck m -> buildGivenMethodFramePayload m
+  MethodBasicReject m -> buildGivenMethodFramePayload m
+  MethodBasicRecoverAsync m -> buildGivenMethodFramePayload m
+  MethodBasicRecover m -> buildGivenMethodFramePayload m
+  MethodBasicRecoverOk m -> buildGivenMethodFramePayload m
+  MethodTxSelect m -> buildGivenMethodFramePayload m
+  MethodTxSelectOk m -> buildGivenMethodFramePayload m
+  MethodTxCommit m -> buildGivenMethodFramePayload m
+  MethodTxCommitOk m -> buildGivenMethodFramePayload m
+  MethodTxRollback m -> buildGivenMethodFramePayload m
+  MethodTxRollbackOk m -> buildGivenMethodFramePayload m
+
+-- | Parse a 'Method' frame payload.
+parseMethodFramePayload :: Parser Method
+parseMethodFramePayload =
+  parseMethodFramePayloadHelper
+    ( \cid mid -> case cid of
+        10 -> case mid of
+          10 -> MethodConnectionStart <$> parseMethodArguments
+          11 -> MethodConnectionStartOk <$> parseMethodArguments
+          20 -> MethodConnectionSecure <$> parseMethodArguments
+          21 -> MethodConnectionSecureOk <$> parseMethodArguments
+          30 -> MethodConnectionTune <$> parseMethodArguments
+          31 -> MethodConnectionTuneOk <$> parseMethodArguments
+          40 -> MethodConnectionOpen <$> parseMethodArguments
+          41 -> MethodConnectionOpenOk <$> parseMethodArguments
+          50 -> MethodConnectionClose <$> parseMethodArguments
+          51 -> MethodConnectionCloseOk <$> parseMethodArguments
+        20 -> case mid of
+          10 -> MethodChannelOpen <$> parseMethodArguments
+          11 -> MethodChannelOpenOk <$> parseMethodArguments
+          20 -> MethodChannelFlow <$> parseMethodArguments
+          21 -> MethodChannelFlowOk <$> parseMethodArguments
+          40 -> MethodChannelClose <$> parseMethodArguments
+          41 -> MethodChannelCloseOk <$> parseMethodArguments
+        40 -> case mid of
+          10 -> MethodExchangeDeclare <$> parseMethodArguments
+          11 -> MethodExchangeDeclareOk <$> parseMethodArguments
+          20 -> MethodExchangeDelete <$> parseMethodArguments
+          21 -> MethodExchangeDeleteOk <$> parseMethodArguments
+        50 -> case mid of
+          10 -> MethodQueueDeclare <$> parseMethodArguments
+          11 -> MethodQueueDeclareOk <$> parseMethodArguments
+          20 -> MethodQueueBind <$> parseMethodArguments
+          21 -> MethodQueueBindOk <$> parseMethodArguments
+          50 -> MethodQueueUnbind <$> parseMethodArguments
+          51 -> MethodQueueUnbindOk <$> parseMethodArguments
+          30 -> MethodQueuePurge <$> parseMethodArguments
+          31 -> MethodQueuePurgeOk <$> parseMethodArguments
+          40 -> MethodQueueDelete <$> parseMethodArguments
+          41 -> MethodQueueDeleteOk <$> parseMethodArguments
+        60 -> case mid of
+          10 -> MethodBasicQos <$> parseMethodArguments
+          11 -> MethodBasicQosOk <$> parseMethodArguments
+          20 -> MethodBasicConsume <$> parseMethodArguments
+          21 -> MethodBasicConsumeOk <$> parseMethodArguments
+          30 -> MethodBasicCancel <$> parseMethodArguments
+          31 -> MethodBasicCancelOk <$> parseMethodArguments
+          40 -> MethodBasicPublish <$> parseMethodArguments
+          50 -> MethodBasicReturn <$> parseMethodArguments
+          60 -> MethodBasicDeliver <$> parseMethodArguments
+          70 -> MethodBasicGet <$> parseMethodArguments
+          71 -> MethodBasicGetOk <$> parseMethodArguments
+          72 -> MethodBasicGetEmpty <$> parseMethodArguments
+          80 -> MethodBasicAck <$> parseMethodArguments
+          90 -> MethodBasicReject <$> parseMethodArguments
+          100 -> MethodBasicRecoverAsync <$> parseMethodArguments
+          110 -> MethodBasicRecover <$> parseMethodArguments
+          111 -> MethodBasicRecoverOk <$> parseMethodArguments
+        90 -> case mid of
+          10 -> MethodTxSelect <$> parseMethodArguments
+          11 -> MethodTxSelectOk <$> parseMethodArguments
+          20 -> MethodTxCommit <$> parseMethodArguments
+          21 -> MethodTxCommitOk <$> parseMethodArguments
+          30 -> MethodTxRollback <$> parseMethodArguments
+          31 -> MethodTxRollbackOk <$> parseMethodArguments
+    )

@@ -6,6 +6,7 @@
 module AMQP.Serialisation.Argument where
 
 import AMQP.Serialisation.Base
+import AMQP.Serialisation.Generated.DomainTypes
 import Data.Attoparsec.ByteString as Parse
 import Data.Proxy
 import Data.Validity.ByteString ()
@@ -13,13 +14,8 @@ import Data.Validity.Containers ()
 import GHC.Generics
 
 class IsMethod a where
-  -- TODO replace by ClassId
-  -- This will require some refactoring of the generator so that we don't get compile loops
-  methodClassId :: Proxy a -> ShortUInt
-
-  -- TODO replace by MethodId
-  -- This will require some refactoring of the generator so that we don't get compile loops
-  methodMethodId :: Proxy a -> ShortUInt
+  methodClassId :: Proxy a -> ClassId
+  methodMethodId :: Proxy a -> MethodId
   buildMethodArguments :: a -> [Argument]
   default buildMethodArguments :: (Generic a, GIsMethod (Rep a)) => a -> [Argument]
   buildMethodArguments = gBuildArguments . from

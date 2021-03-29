@@ -10,6 +10,7 @@ module AMQP.Serialisation.Frame where
 import AMQP.Serialisation.Argument
 import AMQP.Serialisation.Base
 import AMQP.Serialisation.Generated.Constants
+import AMQP.Serialisation.Generated.DomainTypes
 import Control.Monad
 import Data.Attoparsec.Binary as Parse
 import Data.Attoparsec.ByteString as Parse
@@ -92,33 +93,39 @@ parseRawFrame = label "RawFrame" $ do
   void $ Parse.word8 frameEnd
   pure RawFrame {..}
 
-parseMethodFrame :: IsMethod a => Parser a
-parseMethodFrame = label "Method Frame" $ do
+parseGivenMethodFrame :: IsMethod a => Parser a
+parseGivenMethodFrame = label "Method Frame" $ do
   RawFrame {..} <- parseRawFrame
   case rawFrameType of
-    MethodFrameType -> case parseOnly parseMethodFramePayload rawFramePayload of
+    MethodFrameType -> case parseOnly parseGivenMethodFramePayload rawFramePayload of
       Left err -> fail err
       Right r -> pure r
     ft -> fail $ unwords ["Got a frame of type", show ft, "instead of a method frame."]
 
-parseMethodFramePayload :: forall a. IsMethod a => Parser a
-parseMethodFramePayload = label "Method Payload" $ do
+parseGivenMethodFramePayload :: forall a. IsMethod a => Parser a
+parseGivenMethodFramePayload = label "Method Payload" $ do
   label "class" $ void $ Parse.word16be $ methodClassId (Proxy :: Proxy a)
   label "method" $ void $ Parse.word16be $ methodMethodId (Proxy :: Proxy a)
   label "arguments" parseMethodArguments
 
-buildMethodFrame :: forall a. IsMethod a => ChannelNumber -> a -> ByteString.Builder
-buildMethodFrame chan a =
+buildGivenMethodFrame :: forall a. IsMethod a => ChannelNumber -> a -> ByteString.Builder
+buildGivenMethodFrame chan a =
   buildRawFrame $
     RawFrame
       { rawFrameType = MethodFrameType,
         rawFrameChannel = chan,
-        rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildMethodFramePayload a
+        rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildGivenMethodFramePayload a
       }
 
-buildMethodFramePayload :: forall a. IsMethod a => a -> ByteString.Builder
-buildMethodFramePayload a =
+buildGivenMethodFramePayload :: forall a. IsMethod a => a -> ByteString.Builder
+buildGivenMethodFramePayload a =
   mconcat $
     buildShortUInt (methodClassId (Proxy :: Proxy a)) :
     buildShortUInt (methodMethodId (Proxy :: Proxy a)) :
     map buildArgument (buildMethodArguments a)
+
+parseMethodFramePayloadHelper :: (ClassId -> MethodId -> Parser a) -> Parser a
+parseMethodFramePayloadHelper func = label "Method Payload" $ do
+  cid <- label "ClassId" Parse.anyWord16be
+  mid <- label "MethodId" Parse.anyWord16be
+  func cid mid
