@@ -23,7 +23,6 @@ import Data.Proxy
 import Data.Validity
 import Data.Validity.ByteString ()
 import Data.Validity.Containers ()
-import Data.Word
 import GHC.Generics (Generic)
 
 data ProtocolHeader = ProtocolHeader
@@ -90,7 +89,7 @@ parseFrameType = label "FrameType" $ do
     [ (frameMethod, pure MethodFrameType),
       (frameHeader, pure HeaderFrameType),
       (frameBody, pure BodyFrameType),
-      (frameHeader, pure HeartbeatFrameType)
+      (frameHeartbeat, pure HeartbeatFrameType)
     ]
 
 tableCaseMatch :: Eq a => a -> b -> [(a, b)] -> b

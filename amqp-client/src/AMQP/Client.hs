@@ -9,7 +9,6 @@ import AMQP.Serialisation.Base
 import AMQP.Serialisation.Generated
 import Control.Monad
 import qualified Data.Attoparsec.ByteString as Attoparsec
-import qualified Data.Attoparsec.ByteString.Char8 as Attoparsec
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as SB
 import Data.ByteString.Builder as ByteString (Builder)
@@ -76,9 +75,11 @@ withConnection ConnectionSettings {..} callback = do
                 connectionStartOkResponse = LongString SB.empty,
                 connectionStartOkLocale = ShortString ourLocale
               }
+      liftIO $ putStrLn "Answering: "
+      liftIO $ print connectionOk
       connectionPutBuilder networkConnection (buildMethodFrame 0 connectionOk)
-      frame <- connectionParse networkConnection leftoversVar parseRawFrame
-      liftIO $ print frame
+      frame' <- connectionParse networkConnection leftoversVar parseRawFrame
+      liftIO $ print frame'
 
       let amqpConnection =
             Connection

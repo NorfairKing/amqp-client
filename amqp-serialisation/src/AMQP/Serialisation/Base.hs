@@ -51,6 +51,7 @@ buildArgument :: Argument -> ByteString.Builder
 buildArgument = \case
   ArgumentBit b -> buildBit b
   ArgumentOctet o -> buildOctet o
+  ArgumentShortUInt su -> buildShortUInt su
   ArgumentLongUInt lu -> buildLongUInt lu
   ArgumentLongLongUInt llu -> buildLongLongUInt llu
   ArgumentShortString ss -> buildShortString ss

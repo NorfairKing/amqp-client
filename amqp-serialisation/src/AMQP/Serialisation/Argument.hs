@@ -69,8 +69,8 @@ instance IsArgument FieldTable where
 
 -- Here comes the Generic deriving of 'Method'
 --
--- It saves us from generating the
--- implementation of instances of 'Method' for all the generated types.
+-- It saves us from generating the implementation of instances of 'Method' for
+-- all the generated types.
 --
 -- All the instances would look like this:
 --
@@ -89,6 +89,8 @@ instance IsArgument FieldTable where
 -- >       <*> parseArgument
 --
 -- So we try to derive them using Generics instead of generating all that.
+--
+-- Note that this _does_ mean that the fields need to be in the right order.
 class GMethod f where
   gBuildArguments :: f a -> [Argument]
   gParseArguments :: Parser (f a)

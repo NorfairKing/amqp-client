@@ -10,15 +10,10 @@ where
 import AMQP.Generator.Parse as AMQP hiding (Doc (..))
 import qualified AMQP.Generator.Parse as AMQP
 import Control.Applicative ((<|>))
-import Control.Monad
-import Data.Either (partitionEithers)
 import Data.List
-import Data.Map (Map)
-import qualified Data.Map as M
 import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
-import GHC.Generics (Generic)
 import Language.Haskell.TH.Lib
 import Language.Haskell.TH.Ppr
 import Language.Haskell.TH.PprLib
@@ -27,8 +22,6 @@ import System.Environment
 import System.Exit
 import Text.Casing
 import Text.PrettyPrint (render)
-import Text.Read (readMaybe)
-import Text.Show.Pretty (pPrint, ppShow)
 
 main :: IO ()
 main = do
@@ -96,9 +89,6 @@ genHaddocks intro mDoc =
         Just d -> comment " " $$ genDocComment d
     ]
 
-genMDocComment :: Maybe AMQP.Doc -> Doc
-genMDocComment = maybe empty genDocComment
-
 genDocComment :: AMQP.Doc -> Doc
 genDocComment = comment . AMQP.docText
 
@@ -154,7 +144,7 @@ genClassesTypesDoc :: [Class] -> Doc
 genClassesTypesDoc = vcat . intersperse (text "\n") . map genClassTypesDoc
 
 genClassTypesDoc :: Class -> Doc
-genClassTypesDoc c@AMQP.Class {..} = vcat $ intersperse (text "") $ map (genClassMethodTypeDoc className classIndex) classMethods
+genClassTypesDoc AMQP.Class {..} = vcat $ intersperse (text "") $ map (genClassMethodTypeDoc className classIndex) classMethods
 
 genClassMethodTypeDoc :: Text -> Word -> Method -> Doc
 genClassMethodTypeDoc className classIndex m@AMQP.Method {..} =
@@ -164,7 +154,7 @@ genClassMethodTypeDoc className classIndex m@AMQP.Method {..} =
     ]
 
 classMethodTypeDecs :: Text -> Word -> Method -> [Dec]
-classMethodTypeDecs className classIndex m@AMQP.Method {..} =
+classMethodTypeDecs className classIndex AMQP.Method {..} =
   let n = mkMethodTypeName className methodName
    in [ DataD
           []

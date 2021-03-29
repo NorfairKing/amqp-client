@@ -5,6 +5,7 @@ module AMQP.SerialisationSpec (spec) where
 
 import AMQP.Serialisation
 import AMQP.Serialisation.Base
+import AMQP.Serialisation.Generated
 import AMQP.Serialisation.TestUtils
 import Control.Monad
 import Data.Attoparsec.ByteString
@@ -99,6 +100,6 @@ spec = do
                             ("version", "3.8.5")
                           ]
                     },
-                connectionStartMechanism = LongString {longStringBytes = "PLAIN AMQPLAIN"},
+                connectionStartMechanisms = LongString {longStringBytes = "PLAIN AMQPLAIN"},
                 connectionStartLocales = LongString {longStringBytes = "en_US"}
               }
