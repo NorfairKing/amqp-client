@@ -2,7 +2,10 @@
 
 module AMQP.Serialisation.Generated where
 
+import AMQP.Serialisation.Argument
 import AMQP.Serialisation.Base
+import Data.Proxy
+import Data.Validity
 import Data.Word
 import GHC.Generics (Generic)
 
@@ -251,7 +254,7 @@ type ReplyCode = ShortUInt
 -- issues.
 type ReplyText = ShortString
 
--- | 'start': start connection negotiation
+-- | The @start@ method: start connection negotiation
 --
 -- This method starts the connection negotiation process by telling the client the
 -- protocol version that the server proposes, along with a list of security mechanisms
@@ -265,7 +268,13 @@ data ConnectionStart = ConnectionStart
   }
   deriving (Show, Eq, Generic)
 
--- | 'start-ok': select security mechanism and locale
+instance Validity ConnectionStart
+
+instance Method ConnectionStart where
+  methodClassId (Proxy) = 10
+  methodMethodId (Proxy) = 10
+
+-- | The @start-ok@ method: select security mechanism and locale
 --
 -- This method selects a SASL security mechanism.
 data ConnectionStartOk = ConnectionStartOk
@@ -276,7 +285,13 @@ data ConnectionStartOk = ConnectionStartOk
   }
   deriving (Show, Eq, Generic)
 
--- | 'secure': security mechanism challenge
+instance Validity ConnectionStartOk
+
+instance Method ConnectionStartOk where
+  methodClassId (Proxy) = 10
+  methodMethodId (Proxy) = 11
+
+-- | The @secure@ method: security mechanism challenge
 --
 -- The SASL protocol works by exchanging challenges and responses until both peers have
 -- received sufficient information to authenticate each other. This method challenges
@@ -284,14 +299,26 @@ data ConnectionStartOk = ConnectionStartOk
 data ConnectionSecure = ConnectionSecure {connectionSecureChallenge :: {-# UNPACK #-} !LongString}
   deriving (Show, Eq, Generic)
 
--- | 'secure-ok': security mechanism response
+instance Validity ConnectionSecure
+
+instance Method ConnectionSecure where
+  methodClassId (Proxy) = 10
+  methodMethodId (Proxy) = 20
+
+-- | The @secure-ok@ method: security mechanism response
 --
 -- This method attempts to authenticate, passing a block of SASL data for the security
 -- mechanism at the server side.
 data ConnectionSecureOk = ConnectionSecureOk {connectionSecureOkResponse :: {-# UNPACK #-} !LongString}
   deriving (Show, Eq, Generic)
 
--- | 'tune': propose connection tuning parameters
+instance Validity ConnectionSecureOk
+
+instance Method ConnectionSecureOk where
+  methodClassId (Proxy) = 10
+  methodMethodId (Proxy) = 21
+
+-- | The @tune@ method: propose connection tuning parameters
 --
 -- This method proposes a set of connection configuration values to the client. The
 -- client can accept and/or adjust these.
@@ -302,7 +329,13 @@ data ConnectionTune = ConnectionTune
   }
   deriving (Show, Eq, Generic)
 
--- | 'tune-ok': negotiate connection tuning parameters
+instance Validity ConnectionTune
+
+instance Method ConnectionTune where
+  methodClassId (Proxy) = 10
+  methodMethodId (Proxy) = 30
+
+-- | The @tune-ok@ method: negotiate connection tuning parameters
 --
 -- This method sends the client's connection tuning parameters to the server.
 -- Certain fields are negotiated, others provide capability information.
@@ -313,7 +346,13 @@ data ConnectionTuneOk = ConnectionTuneOk
   }
   deriving (Show, Eq, Generic)
 
--- | 'open': open connection to virtual host
+instance Validity ConnectionTuneOk
+
+instance Method ConnectionTuneOk where
+  methodClassId (Proxy) = 10
+  methodMethodId (Proxy) = 31
+
+-- | The @open@ method: open connection to virtual host
 --
 -- This method opens a connection to a virtual host, which is a collection of
 -- resources, and acts to separate multiple application domains within a server.
@@ -326,13 +365,25 @@ data ConnectionOpen = ConnectionOpen
   }
   deriving (Show, Eq, Generic)
 
--- | 'open-ok': signal that connection is ready
+instance Validity ConnectionOpen
+
+instance Method ConnectionOpen where
+  methodClassId (Proxy) = 10
+  methodMethodId (Proxy) = 40
+
+-- | The @open-ok@ method: signal that connection is ready
 --
 -- This method signals to the client that the connection is ready for use.
 data ConnectionOpenOk = ConnectionOpenOk {connectionOpenOkReserved1 :: {-# UNPACK #-} !ShortString}
   deriving (Show, Eq, Generic)
 
--- | 'close': request a connection close
+instance Validity ConnectionOpenOk
+
+instance Method ConnectionOpenOk where
+  methodClassId (Proxy) = 10
+  methodMethodId (Proxy) = 41
+
+-- | The @close@ method: request a connection close
 --
 -- This method indicates that the sender wants to close the connection. This may be
 -- due to internal conditions (e.g. a forced shut-down) or due to an error handling
@@ -346,7 +397,13 @@ data ConnectionClose = ConnectionClose
   }
   deriving (Show, Eq, Generic)
 
--- | 'close-ok': confirm a connection close
+instance Validity ConnectionClose
+
+instance Method ConnectionClose where
+  methodClassId (Proxy) = 10
+  methodMethodId (Proxy) = 50
+
+-- | The @close-ok@ method: confirm a connection close
 --
 -- This method confirms a Connection.Close method and tells the recipient that it is
 -- safe to release resources for the connection and close the socket.
@@ -354,19 +411,37 @@ data ConnectionCloseOk
   = ConnectionCloseOk
   deriving (Show, Eq, Generic)
 
--- | 'open': open a channel for use
+instance Validity ConnectionCloseOk
+
+instance Method ConnectionCloseOk where
+  methodClassId (Proxy) = 10
+  methodMethodId (Proxy) = 51
+
+-- | The @open@ method: open a channel for use
 --
 -- This method opens a channel to the server.
 data ChannelOpen = ChannelOpen {channelOpenReserved1 :: {-# UNPACK #-} !ShortString}
   deriving (Show, Eq, Generic)
 
--- | 'open-ok': signal that the channel is ready
+instance Validity ChannelOpen
+
+instance Method ChannelOpen where
+  methodClassId (Proxy) = 20
+  methodMethodId (Proxy) = 10
+
+-- | The @open-ok@ method: signal that the channel is ready
 --
 -- This method signals to the client that the channel is ready for use.
 data ChannelOpenOk = ChannelOpenOk {channelOpenOkReserved1 :: {-# UNPACK #-} !LongString}
   deriving (Show, Eq, Generic)
 
--- | 'flow': enable/disable flow from peer
+instance Validity ChannelOpenOk
+
+instance Method ChannelOpenOk where
+  methodClassId (Proxy) = 20
+  methodMethodId (Proxy) = 11
+
+-- | The @flow@ method: enable/disable flow from peer
 --
 -- This method asks the peer to pause or restart the flow of content data sent by
 -- a consumer. This is a simple flow-control mechanism that a peer can use to avoid
@@ -376,13 +451,25 @@ data ChannelOpenOk = ChannelOpenOk {channelOpenOkReserved1 :: {-# UNPACK #-} !Lo
 data ChannelFlow = ChannelFlow {channelFlowActive :: {-# UNPACK #-} !Bit}
   deriving (Show, Eq, Generic)
 
--- | 'flow-ok': confirm a flow method
+instance Validity ChannelFlow
+
+instance Method ChannelFlow where
+  methodClassId (Proxy) = 20
+  methodMethodId (Proxy) = 20
+
+-- | The @flow-ok@ method: confirm a flow method
 --
 -- Confirms to the peer that a flow command was received and processed.
 data ChannelFlowOk = ChannelFlowOk {channelFlowOkActive :: {-# UNPACK #-} !Bit}
   deriving (Show, Eq, Generic)
 
--- | 'close': request a channel close
+instance Validity ChannelFlowOk
+
+instance Method ChannelFlowOk where
+  methodClassId (Proxy) = 20
+  methodMethodId (Proxy) = 21
+
+-- | The @close@ method: request a channel close
 --
 -- This method indicates that the sender wants to close the channel. This may be due to
 -- internal conditions (e.g. a forced shut-down) or due to an error handling a specific
@@ -396,13 +483,25 @@ data ChannelClose = ChannelClose
   }
   deriving (Show, Eq, Generic)
 
--- | 'close-ok': confirm a channel close
+instance Validity ChannelClose
+
+instance Method ChannelClose where
+  methodClassId (Proxy) = 20
+  methodMethodId (Proxy) = 40
+
+-- | The @close-ok@ method: confirm a channel close
 --
 -- This method confirms a Channel.Close method and tells the recipient that it is safe
 -- to release resources for the channel.
 data ChannelCloseOk = ChannelCloseOk deriving (Show, Eq, Generic)
 
--- | 'declare': verify exchange exists, create if needed
+instance Validity ChannelCloseOk
+
+instance Method ChannelCloseOk where
+  methodClassId (Proxy) = 20
+  methodMethodId (Proxy) = 41
+
+-- | The @declare@ method: verify exchange exists, create if needed
 --
 -- This method creates an exchange if it does not already exist, and if the exchange
 -- exists, verifies that it is of the correct and expected class.
@@ -419,7 +518,13 @@ data ExchangeDeclare = ExchangeDeclare
   }
   deriving (Show, Eq, Generic)
 
--- | 'declare-ok': confirm exchange declaration
+instance Validity ExchangeDeclare
+
+instance Method ExchangeDeclare where
+  methodClassId (Proxy) = 40
+  methodMethodId (Proxy) = 10
+
+-- | The @declare-ok@ method: confirm exchange declaration
 --
 -- This method confirms a Declare method and confirms the name of the exchange,
 -- essential for automatically-named exchanges.
@@ -427,7 +532,13 @@ data ExchangeDeclareOk
   = ExchangeDeclareOk
   deriving (Show, Eq, Generic)
 
--- | 'delete': delete an exchange
+instance Validity ExchangeDeclareOk
+
+instance Method ExchangeDeclareOk where
+  methodClassId (Proxy) = 40
+  methodMethodId (Proxy) = 11
+
+-- | The @delete@ method: delete an exchange
 --
 -- This method deletes an exchange. When an exchange is deleted all queue bindings on
 -- the exchange are cancelled.
@@ -439,14 +550,26 @@ data ExchangeDelete = ExchangeDelete
   }
   deriving (Show, Eq, Generic)
 
--- | 'delete-ok': confirm deletion of an exchange
+instance Validity ExchangeDelete
+
+instance Method ExchangeDelete where
+  methodClassId (Proxy) = 40
+  methodMethodId (Proxy) = 20
+
+-- | The @delete-ok@ method: confirm deletion of an exchange
 --
 -- This method confirms the deletion of an exchange.
 data ExchangeDeleteOk
   = ExchangeDeleteOk
   deriving (Show, Eq, Generic)
 
--- | 'declare': declare queue, create if needed
+instance Validity ExchangeDeleteOk
+
+instance Method ExchangeDeleteOk where
+  methodClassId (Proxy) = 40
+  methodMethodId (Proxy) = 21
+
+-- | The @declare@ method: declare queue, create if needed
 --
 -- This method creates or checks a queue. When creating a new queue the client can
 -- specify various properties that control the durability of the queue and its
@@ -463,7 +586,13 @@ data QueueDeclare = QueueDeclare
   }
   deriving (Show, Eq, Generic)
 
--- | 'declare-ok': confirms a queue definition
+instance Validity QueueDeclare
+
+instance Method QueueDeclare where
+  methodClassId (Proxy) = 50
+  methodMethodId (Proxy) = 10
+
+-- | The @declare-ok@ method: confirms a queue definition
 --
 -- This method confirms a Declare method and confirms the name of the queue, essential
 -- for automatically-named queues.
@@ -474,7 +603,13 @@ data QueueDeclareOk = QueueDeclareOk
   }
   deriving (Show, Eq, Generic)
 
--- | 'bind': bind queue to an exchange
+instance Validity QueueDeclareOk
+
+instance Method QueueDeclareOk where
+  methodClassId (Proxy) = 50
+  methodMethodId (Proxy) = 11
+
+-- | The @bind@ method: bind queue to an exchange
 --
 -- This method binds a queue to an exchange. Until a queue is bound it will not
 -- receive any messages. In a classic messaging model, store-and-forward queues
@@ -490,12 +625,24 @@ data QueueBind = QueueBind
   }
   deriving (Show, Eq, Generic)
 
--- | 'bind-ok': confirm bind successful
+instance Validity QueueBind
+
+instance Method QueueBind where
+  methodClassId (Proxy) = 50
+  methodMethodId (Proxy) = 20
+
+-- | The @bind-ok@ method: confirm bind successful
 --
 -- This method confirms that the bind was successful.
 data QueueBindOk = QueueBindOk deriving (Show, Eq, Generic)
 
--- | 'unbind': unbind a queue from an exchange
+instance Validity QueueBindOk
+
+instance Method QueueBindOk where
+  methodClassId (Proxy) = 50
+  methodMethodId (Proxy) = 21
+
+-- | The @unbind@ method: unbind a queue from an exchange
 --
 -- This method unbinds a queue from an exchange.
 data QueueUnbind = QueueUnbind
@@ -507,12 +654,24 @@ data QueueUnbind = QueueUnbind
   }
   deriving (Show, Eq, Generic)
 
--- | 'unbind-ok': confirm unbind successful
+instance Validity QueueUnbind
+
+instance Method QueueUnbind where
+  methodClassId (Proxy) = 50
+  methodMethodId (Proxy) = 50
+
+-- | The @unbind-ok@ method: confirm unbind successful
 --
 -- This method confirms that the unbind was successful.
 data QueueUnbindOk = QueueUnbindOk deriving (Show, Eq, Generic)
 
--- | 'purge': purge a queue
+instance Validity QueueUnbindOk
+
+instance Method QueueUnbindOk where
+  methodClassId (Proxy) = 50
+  methodMethodId (Proxy) = 51
+
+-- | The @purge@ method: purge a queue
 --
 -- This method removes all messages from a queue which are not awaiting
 -- acknowledgment.
@@ -523,13 +682,25 @@ data QueuePurge = QueuePurge
   }
   deriving (Show, Eq, Generic)
 
--- | 'purge-ok': confirms a queue purge
+instance Validity QueuePurge
+
+instance Method QueuePurge where
+  methodClassId (Proxy) = 50
+  methodMethodId (Proxy) = 30
+
+-- | The @purge-ok@ method: confirms a queue purge
 --
 -- This method confirms the purge of a queue.
 data QueuePurgeOk = QueuePurgeOk {queuePurgeOkMessageCount :: {-# UNPACK #-} !MessageCount}
   deriving (Show, Eq, Generic)
 
--- | 'delete': delete a queue
+instance Validity QueuePurgeOk
+
+instance Method QueuePurgeOk where
+  methodClassId (Proxy) = 50
+  methodMethodId (Proxy) = 31
+
+-- | The @delete@ method: delete a queue
 --
 -- This method deletes a queue. When a queue is deleted any pending messages are sent
 -- to a dead-letter queue if this is defined in the server configuration, and all
@@ -543,13 +714,25 @@ data QueueDelete = QueueDelete
   }
   deriving (Show, Eq, Generic)
 
--- | 'delete-ok': confirm deletion of a queue
+instance Validity QueueDelete
+
+instance Method QueueDelete where
+  methodClassId (Proxy) = 50
+  methodMethodId (Proxy) = 40
+
+-- | The @delete-ok@ method: confirm deletion of a queue
 --
 -- This method confirms the deletion of a queue.
 data QueueDeleteOk = QueueDeleteOk {queueDeleteOkMessageCount :: {-# UNPACK #-} !MessageCount}
   deriving (Show, Eq, Generic)
 
--- | 'qos': specify quality of service
+instance Validity QueueDeleteOk
+
+instance Method QueueDeleteOk where
+  methodClassId (Proxy) = 50
+  methodMethodId (Proxy) = 41
+
+-- | The @qos@ method: specify quality of service
 --
 -- This method requests a specific quality of service. The QoS can be specified for the
 -- current channel or for all channels on the connection. The particular properties and
@@ -563,14 +746,26 @@ data BasicQos = BasicQos
   }
   deriving (Show, Eq, Generic)
 
--- | 'qos-ok': confirm the requested qos
+instance Validity BasicQos
+
+instance Method BasicQos where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 10
+
+-- | The @qos-ok@ method: confirm the requested qos
 --
 -- This method tells the client that the requested QoS levels could be handled by the
 -- server. The requested QoS applies to all active consumers until a new QoS is
 -- defined.
 data BasicQosOk = BasicQosOk deriving (Show, Eq, Generic)
 
--- | 'consume': start a queue consumer
+instance Validity BasicQosOk
+
+instance Method BasicQosOk where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 11
+
+-- | The @consume@ method: start a queue consumer
 --
 -- This method asks the server to start a "consumer", which is a transient request for
 -- messages from a specific queue. Consumers last as long as the channel they were
@@ -587,14 +782,26 @@ data BasicConsume = BasicConsume
   }
   deriving (Show, Eq, Generic)
 
--- | 'consume-ok': confirm a new consumer
+instance Validity BasicConsume
+
+instance Method BasicConsume where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 20
+
+-- | The @consume-ok@ method: confirm a new consumer
 --
 -- The server provides the client with a consumer tag, which is used by the client
 -- for methods called on the consumer at a later stage.
 data BasicConsumeOk = BasicConsumeOk {basicConsumeOkConsumerTag :: {-# UNPACK #-} !ConsumerTag}
   deriving (Show, Eq, Generic)
 
--- | 'cancel': end a queue consumer
+instance Validity BasicConsumeOk
+
+instance Method BasicConsumeOk where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 21
+
+-- | The @cancel@ method: end a queue consumer
 --
 -- This method cancels a consumer. This does not affect already delivered
 -- messages, but it does mean the server will not send any more messages for
@@ -606,13 +813,25 @@ data BasicCancel = BasicCancel
   }
   deriving (Show, Eq, Generic)
 
--- | 'cancel-ok': confirm a cancelled consumer
+instance Validity BasicCancel
+
+instance Method BasicCancel where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 30
+
+-- | The @cancel-ok@ method: confirm a cancelled consumer
 --
 -- This method confirms that the cancellation was completed.
 data BasicCancelOk = BasicCancelOk {basicCancelOkConsumerTag :: {-# UNPACK #-} !ConsumerTag}
   deriving (Show, Eq, Generic)
 
--- | 'publish': publish a message
+instance Validity BasicCancelOk
+
+instance Method BasicCancelOk where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 31
+
+-- | The @publish@ method: publish a message
 --
 -- This method publishes a message to a specific exchange. The message will be routed
 -- to queues as defined by the exchange configuration and distributed to any active
@@ -626,7 +845,13 @@ data BasicPublish = BasicPublish
   }
   deriving (Show, Eq, Generic)
 
--- | 'return': return a failed message
+instance Validity BasicPublish
+
+instance Method BasicPublish where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 40
+
+-- | The @return@ method: return a failed message
 --
 -- This method returns an undeliverable message that was published with the "immediate"
 -- flag set, or an unroutable message published with the "mandatory" flag set. The
@@ -640,7 +865,13 @@ data BasicReturn = BasicReturn
   }
   deriving (Show, Eq, Generic)
 
--- | 'deliver': notify the client of a consumer message
+instance Validity BasicReturn
+
+instance Method BasicReturn where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 50
+
+-- | The @deliver@ method: notify the client of a consumer message
 --
 -- This method delivers a message to the client, via a consumer. In the asynchronous
 -- message delivery model, the client starts a consumer using the Consume method, then
@@ -655,7 +886,13 @@ data BasicDeliver = BasicDeliver
   }
   deriving (Show, Eq, Generic)
 
--- | 'get': direct access to a queue
+instance Validity BasicDeliver
+
+instance Method BasicDeliver where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 60
+
+-- | The @get@ method: direct access to a queue
 --
 -- This method provides a direct access to the messages in a queue using a synchronous
 -- dialogue that is designed for specific types of application where synchronous
@@ -667,7 +904,13 @@ data BasicGet = BasicGet
   }
   deriving (Show, Eq, Generic)
 
--- | 'get-ok': provide client with a message
+instance Validity BasicGet
+
+instance Method BasicGet where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 70
+
+-- | The @get-ok@ method: provide client with a message
 --
 -- This method delivers a message to the client following a get method. A message
 -- delivered by 'get-ok' must be acknowledged unless the no-ack option was set in the
@@ -681,14 +924,26 @@ data BasicGetOk = BasicGetOk
   }
   deriving (Show, Eq, Generic)
 
--- | 'get-empty': indicate no messages available
+instance Validity BasicGetOk
+
+instance Method BasicGetOk where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 71
+
+-- | The @get-empty@ method: indicate no messages available
 --
 -- This method tells the client that the queue has no messages available for the
 -- client.
 data BasicGetEmpty = BasicGetEmpty {basicGetEmptyReserved1 :: {-# UNPACK #-} !ShortString}
   deriving (Show, Eq, Generic)
 
--- | 'ack': acknowledge one or more messages
+instance Validity BasicGetEmpty
+
+instance Method BasicGetEmpty where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 72
+
+-- | The @ack@ method: acknowledge one or more messages
 --
 -- This method acknowledges one or more messages delivered via the Deliver or Get-Ok
 -- methods. The client can ask to confirm a single message or a set of messages up to
@@ -699,7 +954,13 @@ data BasicAck = BasicAck
   }
   deriving (Show, Eq, Generic)
 
--- | 'reject': reject an incoming message
+instance Validity BasicAck
+
+instance Method BasicAck where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 80
+
+-- | The @reject@ method: reject an incoming message
 --
 -- This method allows a client to reject a message. It can be used to interrupt and
 -- cancel large incoming messages, or return untreatable messages to their original
@@ -710,7 +971,13 @@ data BasicReject = BasicReject
   }
   deriving (Show, Eq, Generic)
 
--- | 'recover-async': redeliver unacknowledged messages
+instance Validity BasicReject
+
+instance Method BasicReject where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 90
+
+-- | The @recover-async@ method: redeliver unacknowledged messages
 --
 -- This method asks the server to redeliver all unacknowledged messages on a
 -- specified channel. Zero or more messages may be redelivered.  This method
@@ -718,7 +985,13 @@ data BasicReject = BasicReject
 data BasicRecoverAsync = BasicRecoverAsync {basicRecoverAsyncRequeue :: {-# UNPACK #-} !Bit}
   deriving (Show, Eq, Generic)
 
--- | 'recover': redeliver unacknowledged messages
+instance Validity BasicRecoverAsync
+
+instance Method BasicRecoverAsync where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 100
+
+-- | The @recover@ method: redeliver unacknowledged messages
 --
 -- This method asks the server to redeliver all unacknowledged messages on a
 -- specified channel. Zero or more messages may be redelivered.  This method
@@ -726,36 +999,72 @@ data BasicRecoverAsync = BasicRecoverAsync {basicRecoverAsyncRequeue :: {-# UNPA
 data BasicRecover = BasicRecover {basicRecoverRequeue :: {-# UNPACK #-} !Bit}
   deriving (Show, Eq, Generic)
 
--- | 'recover-ok': confirm recovery
+instance Validity BasicRecover
+
+instance Method BasicRecover where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 110
+
+-- | The @recover-ok@ method: confirm recovery
 --
 -- This method acknowledges a Basic.Recover method.
 data BasicRecoverOk = BasicRecoverOk deriving (Show, Eq, Generic)
 
--- | 'select': select standard transaction mode
+instance Validity BasicRecoverOk
+
+instance Method BasicRecoverOk where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 111
+
+-- | The @select@ method: select standard transaction mode
 --
 -- This method sets the channel to use standard transactions. The client must use this
 -- method at least once on a channel before using the Commit or Rollback methods.
 data TxSelect = TxSelect deriving (Show, Eq, Generic)
 
--- | 'select-ok': confirm transaction mode
+instance Validity TxSelect
+
+instance Method TxSelect where
+  methodClassId (Proxy) = 90
+  methodMethodId (Proxy) = 10
+
+-- | The @select-ok@ method: confirm transaction mode
 --
 -- This method confirms to the client that the channel was successfully set to use
 -- standard transactions.
 data TxSelectOk = TxSelectOk deriving (Show, Eq, Generic)
 
--- | 'commit': commit the current transaction
+instance Validity TxSelectOk
+
+instance Method TxSelectOk where
+  methodClassId (Proxy) = 90
+  methodMethodId (Proxy) = 11
+
+-- | The @commit@ method: commit the current transaction
 --
 -- This method commits all message publications and acknowledgments performed in
 -- the current transaction.  A new transaction starts immediately after a commit.
 data TxCommit = TxCommit deriving (Show, Eq, Generic)
 
--- | 'commit-ok': confirm a successful commit
+instance Validity TxCommit
+
+instance Method TxCommit where
+  methodClassId (Proxy) = 90
+  methodMethodId (Proxy) = 20
+
+-- | The @commit-ok@ method: confirm a successful commit
 --
 -- This method confirms to the client that the commit succeeded. Note that if a commit
 -- fails, the server raises a channel exception.
 data TxCommitOk = TxCommitOk deriving (Show, Eq, Generic)
 
--- | 'rollback': abandon the current transaction
+instance Validity TxCommitOk
+
+instance Method TxCommitOk where
+  methodClassId (Proxy) = 90
+  methodMethodId (Proxy) = 21
+
+-- | The @rollback@ method: abandon the current transaction
 --
 -- This method abandons all message publications and acknowledgments performed in
 -- the current transaction. A new transaction starts immediately after a rollback.
@@ -763,8 +1072,20 @@ data TxCommitOk = TxCommitOk deriving (Show, Eq, Generic)
 -- if that is required an explicit recover call should be issued.
 data TxRollback = TxRollback deriving (Show, Eq, Generic)
 
--- | 'rollback-ok': confirm successful rollback
+instance Validity TxRollback
+
+instance Method TxRollback where
+  methodClassId (Proxy) = 90
+  methodMethodId (Proxy) = 30
+
+-- | The @rollback-ok@ method: confirm successful rollback
 --
 -- This method confirms to the client that the rollback succeeded. Note that if an
 -- rollback fails, the server raises a channel exception.
 data TxRollbackOk = TxRollbackOk deriving (Show, Eq, Generic)
+
+instance Validity TxRollbackOk
+
+instance Method TxRollbackOk where
+  methodClassId (Proxy) = 90
+  methodMethodId (Proxy) = 31

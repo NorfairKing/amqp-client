@@ -36,6 +36,7 @@ buildChannelNumber = SBB.word16BE
 data Argument
   = ArgumentBit !Bit
   | ArgumentOctet !Octet
+  | ArgumentShortUInt !ShortUInt
   | ArgumentLongUInt !LongUInt
   | ArgumentLongLongUInt !LongLongUInt
   | ArgumentShortString !ShortString

@@ -51,8 +51,11 @@ genGeneratedModule AMQP.AMQPSpec {..} =
       text "module AMQP.Serialisation.Generated where",
       text "",
       text "import AMQP.Serialisation.Base",
+      text "import AMQP.Serialisation.Argument",
       text "import GHC.Generics (Generic)",
       text "import Data.Word",
+      text "import Data.Proxy",
+      text "import Data.Validity",
       text "",
       genConstantsDoc amqpSpecConstants,
       genDomainTypesDoc amqpSpecDomainTypes,
@@ -151,18 +154,18 @@ genClassesTypesDoc :: [Class] -> Doc
 genClassesTypesDoc = vcat . intersperse (text "\n") . map genClassTypesDoc
 
 genClassTypesDoc :: Class -> Doc
-genClassTypesDoc c@AMQP.Class {..} = vcat $ intersperse (text "") $ map (genClassMethodTypeDoc className) classMethods
+genClassTypesDoc c@AMQP.Class {..} = vcat $ intersperse (text "") $ map (genClassMethodTypeDoc className classIndex) classMethods
 
-genClassMethodTypeDoc :: Text -> Method -> Doc
-genClassMethodTypeDoc className m@AMQP.Method {..} =
+genClassMethodTypeDoc :: Text -> Word -> Method -> Doc
+genClassMethodTypeDoc className classIndex m@AMQP.Method {..} =
   vcat
-    [ genHaddocks (T.unwords [T.concat ["'", methodName, "':"], methodLabel]) methodDoc,
-      ppr_list (classMethodTypeDecs className m)
+    [ genHaddocks (T.unwords [T.concat ["The @", methodName, "@ method:"], methodLabel]) methodDoc,
+      ppr_list (classMethodTypeDecs className classIndex m)
     ]
 
-classMethodTypeDecs :: Text -> Method -> [Dec]
-classMethodTypeDecs className AMQP.Method {..} =
-  let n = mkMethodTypeName $ T.intercalate "-" [className, methodName]
+classMethodTypeDecs :: Text -> Word -> Method -> [Dec]
+classMethodTypeDecs className classIndex m@AMQP.Method {..} =
+  let n = mkMethodTypeName className methodName
    in [ DataD
           []
           n
@@ -176,18 +179,29 @@ classMethodTypeDecs className AMQP.Method {..} =
                   (map (classMethodFieldVarBangType className methodName) methodArguments)
           ]
           [ DerivClause Nothing [ConT (mkName "Show"), ConT (mkName "Eq"), ConT (mkName "Generic")]
+          ],
+        InstanceD Nothing [] (AppT (ConT (mkName "Validity")) (VarT n)) [],
+        InstanceD
+          Nothing
+          []
+          (AppT (ConT (mkName "Method")) (VarT n))
+          [ FunD (mkName "methodClassId") [Clause [ConP (mkName "Proxy") []] (NormalB (LitE (IntegerL (toInteger classIndex)))) []],
+            FunD (mkName "methodMethodId") [Clause [ConP (mkName "Proxy") []] (NormalB (LitE (IntegerL (toInteger methodIndex)))) []]
           ]
       ]
+
+mkMethodTypeName :: Text -> Text -> Name
+mkMethodTypeName className methodName = mkHaskellTypeName $ T.intercalate "-" [className, methodName]
 
 -- QUESTION: Should we unpack method fields?
 -- ANSWER: Let's try and see what happens.
 classMethodFieldVarBangType :: Text -> Text -> Field -> VarBangType
-classMethodFieldVarBangType className method AMQP.Field {..} =
-  ( mkHaskellVarName (T.intercalate "-" [className, method, fieldName]),
+classMethodFieldVarBangType className methodName AMQP.Field {..} =
+  ( mkMethodFieldTypeName className methodName fieldName,
     Bang SourceUnpack SourceStrict,
     -- This 'fromMaybe' should not be necessary, refactor it away?
     ConT (typeTranslator (fromMaybe (error "A field must have either a type or a domain type") $ fieldType <|> fieldDomain))
   )
 
-mkMethodTypeName :: Text -> Name
-mkMethodTypeName = mkHaskellTypeName
+mkMethodFieldTypeName :: Text -> Text -> Text -> Name
+mkMethodFieldTypeName className methodName fieldName = mkHaskellVarName (T.intercalate "-" [className, methodName, fieldName])
