@@ -163,7 +163,7 @@ withConnection ConnectionSettings {..} callback = do
       -- C: OPEN
       connectionPutBuilder networkConnection (buildGivenMethodFrame 0 connectionOpen)
       -- S: OPEN-OK
-      ConnectionOpenOk {..} <- connectionParseGivenMethodOrViolation networkConnection leftoversVar
+      ConnectionOpenOk {} <- connectionParseGivenMethodOrViolation networkConnection leftoversVar
       -- errOrRes <- connectionParseMethod networkConnection leftoversVar
       -- liftIO $ print (errOrRes :: Either String Method)
 
