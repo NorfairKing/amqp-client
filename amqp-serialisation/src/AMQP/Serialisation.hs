@@ -76,7 +76,12 @@ parseMethodFrame = label "Method Frame" $ do
     MethodFrameType -> case parseOnly parseMethodFramePayload rawFramePayload of
       Left err -> fail err
       Right r -> pure r
-    ft -> fail $ unwords ["Unable to parse method frame", show rf]
+    ft ->
+      fail $
+        unlines
+          [ unwords ["Unable to parse method because the frame type was not method but ", show ft],
+            show rf
+          ]
 
 buildMethodFrame :: ChannelNumber -> Method -> ByteString.Builder
 buildMethodFrame chan m =

@@ -981,6 +981,7 @@ parseMethodFramePayload =
           41 -> MethodConnectionOpenOk <$> parseMethodArguments
           50 -> MethodConnectionClose <$> parseMethodArguments
           51 -> MethodConnectionCloseOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class connection (10)" ++ show mid)
         20 -> case mid of
           10 -> MethodChannelOpen <$> parseMethodArguments
           11 -> MethodChannelOpenOk <$> parseMethodArguments
@@ -988,11 +989,13 @@ parseMethodFramePayload =
           21 -> MethodChannelFlowOk <$> parseMethodArguments
           40 -> MethodChannelClose <$> parseMethodArguments
           41 -> MethodChannelCloseOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class channel (20)" ++ show mid)
         40 -> case mid of
           10 -> MethodExchangeDeclare <$> parseMethodArguments
           11 -> MethodExchangeDeclareOk <$> parseMethodArguments
           20 -> MethodExchangeDelete <$> parseMethodArguments
           21 -> MethodExchangeDeleteOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class exchange (40)" ++ show mid)
         50 -> case mid of
           10 -> MethodQueueDeclare <$> parseMethodArguments
           11 -> MethodQueueDeclareOk <$> parseMethodArguments
@@ -1004,6 +1007,7 @@ parseMethodFramePayload =
           31 -> MethodQueuePurgeOk <$> parseMethodArguments
           40 -> MethodQueueDelete <$> parseMethodArguments
           41 -> MethodQueueDeleteOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class queue (50)" ++ show mid)
         60 -> case mid of
           10 -> MethodBasicQos <$> parseMethodArguments
           11 -> MethodBasicQosOk <$> parseMethodArguments
@@ -1022,6 +1026,7 @@ parseMethodFramePayload =
           100 -> MethodBasicRecoverAsync <$> parseMethodArguments
           110 -> MethodBasicRecover <$> parseMethodArguments
           111 -> MethodBasicRecoverOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class basic (60)" ++ show mid)
         90 -> case mid of
           10 -> MethodTxSelect <$> parseMethodArguments
           11 -> MethodTxSelectOk <$> parseMethodArguments
@@ -1029,4 +1034,6 @@ parseMethodFramePayload =
           21 -> MethodTxCommitOk <$> parseMethodArguments
           30 -> MethodTxRollback <$> parseMethodArguments
           31 -> MethodTxRollbackOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class tx (90)" ++ show mid)
+        _ -> fail ("Unknown class id" ++ show cid)
     )

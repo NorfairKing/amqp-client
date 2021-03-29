@@ -6,7 +6,6 @@
 module AMQP.Client where
 
 import AMQP.Serialisation
-import AMQP.Serialisation.Argument
 import AMQP.Serialisation.Base
 import AMQP.Serialisation.Frame
 import AMQP.Serialisation.Generated.Methods

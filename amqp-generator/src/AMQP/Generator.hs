@@ -330,7 +330,12 @@ genParseSumTypeFunction cs =
                             methodIdVar = mkName "mid"
                          in LamE
                               [VarP classIdVar, VarP methodIdVar]
-                              (CaseE (VarE classIdVar) (map parseSumFunctionMatchForClass cs))
+                              ( CaseE
+                                  (VarE classIdVar)
+                                  ( map parseSumFunctionMatchForClass cs
+                                      ++ [matchFailedMatch "class id" classIdVar]
+                                  )
+                              )
                       )
                   )
               )
@@ -341,11 +346,18 @@ genParseSumTypeFunction cs =
 -- TODO make exhaustive matches
 parseSumFunctionMatchForClass :: AMQP.Class -> Match
 parseSumFunctionMatchForClass AMQP.Class {..} =
-  Match
-    (LitP (IntegerL (toInteger classIndex)))
-    ( NormalB (CaseE (VarE (mkName "mid")) (map (parseSumFunctionMatchForMethod className) classMethods))
-    )
-    []
+  let methodIdVar = mkName "mid"
+   in Match
+        (LitP (IntegerL (toInteger classIndex)))
+        ( NormalB
+            ( CaseE
+                (VarE methodIdVar)
+                ( map (parseSumFunctionMatchForMethod className) classMethods
+                    ++ [matchFailedMatch ("method id for class " ++ T.unpack className ++ " (" ++ show classIndex ++ ")") methodIdVar]
+                )
+            )
+        )
+        []
 
 -- TODO make exhaustive matches
 parseSumFunctionMatchForMethod :: Text -> AMQP.Method -> Match
@@ -357,6 +369,27 @@ parseSumFunctionMatchForMethod className AMQP.Method {..} =
             (Just (VarE (mkMethodSumTypeConstructorName className methodName)))
             (VarE (mkName "<$>"))
             (Just (VarE (mkName "parseMethodArguments")))
+        )
+    )
+    []
+
+matchFailedMatch :: String -> Name -> Match
+matchFailedMatch thing var =
+  Match
+    WildP
+    ( NormalB
+        ( AppE
+            (VarE (mkName "fail"))
+            ( InfixE
+                ( Just
+                    ( LitE
+                        ( StringL $ "Unknown " ++ thing
+                        )
+                    )
+                )
+                (VarE (mkName "++"))
+                (Just (AppE (VarE (mkName "show")) (VarE var)))
+            )
         )
     )
     []
