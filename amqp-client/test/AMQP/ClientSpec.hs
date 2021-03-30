@@ -29,7 +29,19 @@ spec = rabbitMQSpec $ do
     withConnection settings $ \conn -> do
       chan <- channelOpen conn
       pure () :: IO ()
-  itWithOuter "can go trhough the tutorial steps" $ \RabbitMQHandle {..} -> do
+  itWithOuter "can make a connection and declare a queue" $ \RabbitMQHandle {..} -> do
+    let settings =
+          ConnectionSettings
+            { connectionSettingHostName = "127.0.0.1",
+              connectionSettingPort = rabbitMQHandlePort,
+              connectionSettingSASLMechanism = PLAINMechanism "guest" "guest"
+            }
+    withConnection settings $ \conn -> do
+      chan <- channelOpen conn
+      let myQueueName = "myQueueName"
+      queueDeclare chan myQueueName defaultQueueSettings
+      pure () :: IO ()
+  itWithOuter "can go through the tutorial steps" $ \RabbitMQHandle {..} -> do
     let settings =
           ConnectionSettings
             { connectionSettingHostName = "127.0.0.1",

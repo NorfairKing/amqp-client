@@ -70,6 +70,9 @@ instance Validity FieldTable where
           M.size fieldTableMap <= word32ToInt (maxBound :: LongUInt)
       ]
 
+emptyFieldTable :: FieldTable
+emptyFieldTable = FieldTable M.empty
+
 parseFieldTable :: Parser FieldTable
 parseFieldTable = label "FieldTable" $ do
   lu <- parseLongUInt -- This is the number of bytes that the fields take up, not the number of fields.

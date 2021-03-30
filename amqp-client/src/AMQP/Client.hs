@@ -24,6 +24,7 @@ import qualified Data.IntMap as IM
 import Data.List
 import qualified Data.Map as M
 import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import GHC.Generics (Generic)
 import qualified Network.Connection as Network
@@ -106,15 +107,48 @@ defaultQueueSettings = QueueSettings
 data QueueSettings = QueueSettings
   deriving (Show, Eq, Generic)
 
-data Queue = Queue
+data Queue = Queue {queueName :: ShortString}
   deriving (Show, Eq, Generic)
 
 queueDeclare :: MonadUnliftIO m => Channel -> QueueName -> QueueSettings -> m Queue
 queueDeclare Channel {..} name QueueSettings = do
-  pure Queue
+  let Connection {..} = channelConnection
+  QueueDeclareOk {..} <-
+    synchronouslyRequest
+      connectionNetworkConnection
+      connectionLeftoversVar
+      connectionSynchronousVar
+      channelNumber
+      QueueDeclare
+        { queueDeclareReserved1 = 0,
+          queueDeclareQueue = name,
+          queueDeclarePassive = False,
+          queueDeclareDurable = True,
+          queueDeclareExclusive = False,
+          queueDeclareAutoDelete = False,
+          queueDeclareNoWait = False,
+          queueDeclareArguments = emptyFieldTable
+        }
+  pure Queue {queueName = queueDeclareOkQueue}
 
 queueBind :: MonadUnliftIO m => Channel -> QueueName -> ExchangeName -> RoutingKey -> m ()
-queueBind Channel {..} queueName exchangeName routingKey = pure ()
+queueBind Channel {..} queueName exchangeName routingKey = do
+  let Connection {..} = channelConnection
+  QueueBindOk <-
+    synchronouslyRequest
+      connectionNetworkConnection
+      connectionLeftoversVar
+      connectionSynchronousVar
+      channelNumber
+      QueueBind
+        { queueBindReserved1 = 0,
+          queueBindQueue = queueName,
+          queueBindExchange = exchangeName,
+          queueBindRoutingKey = routingKey,
+          queueBindNoWait = False,
+          queueBindArguments = emptyFieldTable
+        }
+  pure ()
 
 type RoutingKey = ShortString
 
@@ -229,6 +263,12 @@ instance SynchronousRequest ConnectionOpen where
 instance SynchronousRequest ChannelOpen where
   type SynchronousResponse ChannelOpen = ChannelOpenOk
 
+instance SynchronousRequest QueueDeclare where
+  type SynchronousResponse QueueDeclare = QueueDeclareOk
+
+instance SynchronousRequest QueueBind where
+  type SynchronousResponse QueueBind = QueueBindOk
+
 instance SynchronousRequest ExchangeDeclare where
   type SynchronousResponse ExchangeDeclare = ExchangeDeclareOk
 
@@ -250,7 +290,17 @@ waitForSynchronousMessage conn leftoversVar = go
         Right r ->
           if methodIsSynchronous r
             then case fromMethod r of
-              Nothing -> throwIO $ ProtocolViolation "TODO better error message"
+              Nothing -> case fromMethod r of
+                Nothing ->
+                  throwIO $
+                    ProtocolViolation $
+                      unwords
+                        [ "Expected a response method of type",
+                          "TODO generated name",
+                          "but got this method instead:",
+                          show r
+                        ]
+                Just closed -> throwIO $ ServerClosedAMQPConnectionUnexpectedly closed
               Just m -> pure m
             else do
               -- TODO do something useful with this method, we probably don't just want to drop it.
@@ -317,6 +367,8 @@ data ClientException
     LocaleNotSupported
   | -- | The server does not support our SASL mechanism.
     SASLMechanismNotSupported ByteString
+  | -- | The server closed the AMQP connection (not the socket) unexpectedly
+    ServerClosedAMQPConnectionUnexpectedly !ConnectionClose
   | -- | The server comitted a protocol violation.
     ProtocolViolation String
   deriving (Show, Eq, Generic)
