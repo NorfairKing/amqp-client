@@ -45,7 +45,7 @@ spec = do
   describe "parseMethodFrame" $
     it "can parse whatever 'buildMethodFrame' builds'" $
       forAllValid $ \cn ->
-        roundtrips (buildMethodFrame cn) parseMethodFrame
+        roundtripsWithFloat (buildMethodFrame cn) parseMethodFrame
 
   describe "parseConnectionStartMethodFramePayload" $
     it "can parse the example that we got from the rabbitmq server" $ do
