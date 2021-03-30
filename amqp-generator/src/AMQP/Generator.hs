@@ -41,8 +41,8 @@ generateFrom inPath = do
       modules =
         [ ("amqp-serialisation/src/AMQP/Serialisation/Generated/Constants.hs", genGeneratedConstantsModule spec),
           ("amqp-serialisation/src/AMQP/Serialisation/Generated/DomainTypes.hs", genGeneratedTypesModule spec),
-          ("amqp-serialisation/src/AMQP/Serialisation/Generated/Methods.hs", genGeneratedMethodsModule spec),
-          ("amqp-serialisation-gen/src/AMQP/Serialisation/Generated/Methods/Gen.hs", genGeneratedGeneratorsModule spec)
+          ("amqp-serialisation-gen/src/AMQP/Serialisation/Generated/Methods/Gen.hs", genGeneratedGeneratorsModule spec),
+          ("amqp-serialisation/src/AMQP/Serialisation/Generated/Methods.hs", genGeneratedMethodsModule spec)
         ]
   forM_ modules $ \(path, m) -> do
     createDirectoryIfMissing True $ takeDirectory path
@@ -234,7 +234,8 @@ classMethodTypeDecs className classIndex AMQP.Method {..} =
           []
           (AppT (ConT (mkName "IsMethod")) (VarT n))
           [ FunD (mkName "methodClassId") [Clause [ConP (mkName "Proxy") []] (NormalB (LitE (IntegerL (toInteger classIndex)))) []],
-            FunD (mkName "methodMethodId") [Clause [ConP (mkName "Proxy") []] (NormalB (LitE (IntegerL (toInteger methodIndex)))) []]
+            FunD (mkName "methodMethodId") [Clause [ConP (mkName "Proxy") []] (NormalB (LitE (IntegerL (toInteger methodIndex)))) []],
+            FunD (mkName "methodSynchronous") [Clause [ConP (mkName "Proxy") []] (NormalB (ConE $ mkName (if methodSynchronous then "True" else "False"))) []]
           ]
       ]
 
@@ -262,7 +263,9 @@ genMethodSumType cs =
       haddockIntro "Turn a 'Method' into a 'ByteString.Builder'.",
       ppr_list $ genBuildSumTypeFunction cs,
       haddockIntro "Parse a 'Method' frame payload.",
-      ppr_list $ genParseSumTypeFunction cs
+      ppr_list $ genParseSumTypeFunction cs,
+      haddockIntro "Check if a 'Method' is synchronous.",
+      ppr_list $ genMethodSynchronousFunction cs
     ]
 
 methodsSumTypeDecs :: [AMQP.Class] -> [Dec]
@@ -363,7 +366,6 @@ genParseSumTypeFunction cs =
           ]
       ]
 
--- TODO make exhaustive matches
 parseSumFunctionMatchForClass :: AMQP.Class -> Match
 parseSumFunctionMatchForClass AMQP.Class {..} =
   let methodIdVar = mkName "mid"
@@ -379,7 +381,6 @@ parseSumFunctionMatchForClass AMQP.Class {..} =
         )
         []
 
--- TODO make exhaustive matches
 parseSumFunctionMatchForMethod :: Text -> AMQP.Method -> Match
 parseSumFunctionMatchForMethod className AMQP.Method {..} =
   Match
@@ -413,6 +414,36 @@ matchFailedMatch thing var =
         )
     )
     []
+
+genMethodSynchronousFunction :: [AMQP.Class] -> [Dec]
+genMethodSynchronousFunction cs =
+  let n = mkName "methodIsSynchronous"
+   in [ SigD n (AppT (AppT ArrowT (ConT (mkName "Method"))) (ConT (mkName "Bool"))),
+        FunD
+          n
+          [ Clause
+              []
+              ( NormalB
+                  ( LamCaseE
+                      ( flip concatMap cs $ \Class {..} -> flip map classMethods $ \Method {..} ->
+                          Match
+                            ( ConP
+                                (mkMethodSumTypeConstructorName className methodName)
+                                [WildP]
+                            )
+                            ( NormalB
+                                ( AppE
+                                    (VarE (mkName "methodSynchronous"))
+                                    (SigE (ConE (mkName "Proxy")) (AppT (ConT (mkName "Proxy")) (ConT (mkMethodTypeName className methodName))))
+                                )
+                            )
+                            []
+                      )
+                  )
+              )
+              []
+          ]
+      ]
 
 genGeneratedGeneratorsModule :: AMQPSpec -> Doc
 genGeneratedGeneratorsModule AMQPSpec {..} =

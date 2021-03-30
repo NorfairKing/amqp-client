@@ -16,6 +16,7 @@ import GHC.Generics
 class IsMethod a where
   methodClassId :: Proxy a -> ClassId
   methodMethodId :: Proxy a -> MethodId
+  methodSynchronous :: Proxy a -> Bool
   buildMethodArguments :: a -> [Argument]
   default buildMethodArguments :: (Generic a, GIsMethod (Rep a)) => a -> [Argument]
   buildMethodArguments = gBuildArguments . from

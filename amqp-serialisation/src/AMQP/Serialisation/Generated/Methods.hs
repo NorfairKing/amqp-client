@@ -52,6 +52,7 @@ instance Validity ConnectionStart
 instance IsMethod ConnectionStart where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 10
+  methodSynchronous (Proxy) = True
 
 -- | The @start-ok@ method: select security mechanism and locale
 --
@@ -69,6 +70,7 @@ instance Validity ConnectionStartOk
 instance IsMethod ConnectionStartOk where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 11
+  methodSynchronous (Proxy) = True
 
 -- | The @secure@ method: security mechanism challenge
 --
@@ -83,6 +85,7 @@ instance Validity ConnectionSecure
 instance IsMethod ConnectionSecure where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 20
+  methodSynchronous (Proxy) = True
 
 -- | The @secure-ok@ method: security mechanism response
 --
@@ -96,6 +99,7 @@ instance Validity ConnectionSecureOk
 instance IsMethod ConnectionSecureOk where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 21
+  methodSynchronous (Proxy) = True
 
 -- | The @tune@ method: propose connection tuning parameters
 --
@@ -113,6 +117,7 @@ instance Validity ConnectionTune
 instance IsMethod ConnectionTune where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 30
+  methodSynchronous (Proxy) = True
 
 -- | The @tune-ok@ method: negotiate connection tuning parameters
 --
@@ -130,6 +135,7 @@ instance Validity ConnectionTuneOk
 instance IsMethod ConnectionTuneOk where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 31
+  methodSynchronous (Proxy) = True
 
 -- | The @open@ method: open connection to virtual host
 --
@@ -149,6 +155,7 @@ instance Validity ConnectionOpen
 instance IsMethod ConnectionOpen where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 40
+  methodSynchronous (Proxy) = True
 
 -- | The @open-ok@ method: signal that connection is ready
 --
@@ -161,6 +168,7 @@ instance Validity ConnectionOpenOk
 instance IsMethod ConnectionOpenOk where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 41
+  methodSynchronous (Proxy) = True
 
 -- | The @close@ method: request a connection close
 --
@@ -181,6 +189,7 @@ instance Validity ConnectionClose
 instance IsMethod ConnectionClose where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 50
+  methodSynchronous (Proxy) = True
 
 -- | The @close-ok@ method: confirm a connection close
 --
@@ -195,6 +204,7 @@ instance Validity ConnectionCloseOk
 instance IsMethod ConnectionCloseOk where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 51
+  methodSynchronous (Proxy) = True
 
 -- * The @channel@ class
 
@@ -224,6 +234,7 @@ instance Validity ChannelOpen
 instance IsMethod ChannelOpen where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 10
+  methodSynchronous (Proxy) = True
 
 -- | The @open-ok@ method: signal that the channel is ready
 --
@@ -236,6 +247,7 @@ instance Validity ChannelOpenOk
 instance IsMethod ChannelOpenOk where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 11
+  methodSynchronous (Proxy) = True
 
 -- | The @flow@ method: enable/disable flow from peer
 --
@@ -252,6 +264,7 @@ instance Validity ChannelFlow
 instance IsMethod ChannelFlow where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 20
+  methodSynchronous (Proxy) = True
 
 -- | The @flow-ok@ method: confirm a flow method
 --
@@ -264,6 +277,7 @@ instance Validity ChannelFlowOk
 instance IsMethod ChannelFlowOk where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 21
+  methodSynchronous (Proxy) = False
 
 -- | The @close@ method: request a channel close
 --
@@ -284,6 +298,7 @@ instance Validity ChannelClose
 instance IsMethod ChannelClose where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 40
+  methodSynchronous (Proxy) = True
 
 -- | The @close-ok@ method: confirm a channel close
 --
@@ -296,6 +311,7 @@ instance Validity ChannelCloseOk
 instance IsMethod ChannelCloseOk where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 41
+  methodSynchronous (Proxy) = True
 
 -- * The @exchange@ class
 
@@ -331,6 +347,7 @@ instance Validity ExchangeDeclare
 instance IsMethod ExchangeDeclare where
   methodClassId (Proxy) = 40
   methodMethodId (Proxy) = 10
+  methodSynchronous (Proxy) = True
 
 -- | The @declare-ok@ method: confirm exchange declaration
 --
@@ -345,6 +362,7 @@ instance Validity ExchangeDeclareOk
 instance IsMethod ExchangeDeclareOk where
   methodClassId (Proxy) = 40
   methodMethodId (Proxy) = 11
+  methodSynchronous (Proxy) = True
 
 -- | The @delete@ method: delete an exchange
 --
@@ -363,6 +381,7 @@ instance Validity ExchangeDelete
 instance IsMethod ExchangeDelete where
   methodClassId (Proxy) = 40
   methodMethodId (Proxy) = 20
+  methodSynchronous (Proxy) = True
 
 -- | The @delete-ok@ method: confirm deletion of an exchange
 --
@@ -376,6 +395,7 @@ instance Validity ExchangeDeleteOk
 instance IsMethod ExchangeDeleteOk where
   methodClassId (Proxy) = 40
   methodMethodId (Proxy) = 21
+  methodSynchronous (Proxy) = True
 
 -- * The @queue@ class
 
@@ -415,6 +435,7 @@ instance Validity QueueDeclare
 instance IsMethod QueueDeclare where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 10
+  methodSynchronous (Proxy) = True
 
 -- | The @declare-ok@ method: confirms a queue definition
 --
@@ -432,6 +453,7 @@ instance Validity QueueDeclareOk
 instance IsMethod QueueDeclareOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 11
+  methodSynchronous (Proxy) = True
 
 -- | The @bind@ method: bind queue to an exchange
 --
@@ -454,6 +476,7 @@ instance Validity QueueBind
 instance IsMethod QueueBind where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 20
+  methodSynchronous (Proxy) = True
 
 -- | The @bind-ok@ method: confirm bind successful
 --
@@ -465,6 +488,7 @@ instance Validity QueueBindOk
 instance IsMethod QueueBindOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 21
+  methodSynchronous (Proxy) = True
 
 -- | The @unbind@ method: unbind a queue from an exchange
 --
@@ -483,6 +507,7 @@ instance Validity QueueUnbind
 instance IsMethod QueueUnbind where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 50
+  methodSynchronous (Proxy) = True
 
 -- | The @unbind-ok@ method: confirm unbind successful
 --
@@ -494,6 +519,7 @@ instance Validity QueueUnbindOk
 instance IsMethod QueueUnbindOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 51
+  methodSynchronous (Proxy) = True
 
 -- | The @purge@ method: purge a queue
 --
@@ -511,6 +537,7 @@ instance Validity QueuePurge
 instance IsMethod QueuePurge where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 30
+  methodSynchronous (Proxy) = True
 
 -- | The @purge-ok@ method: confirms a queue purge
 --
@@ -523,6 +550,7 @@ instance Validity QueuePurgeOk
 instance IsMethod QueuePurgeOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 31
+  methodSynchronous (Proxy) = True
 
 -- | The @delete@ method: delete a queue
 --
@@ -543,6 +571,7 @@ instance Validity QueueDelete
 instance IsMethod QueueDelete where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 40
+  methodSynchronous (Proxy) = True
 
 -- | The @delete-ok@ method: confirm deletion of a queue
 --
@@ -555,6 +584,7 @@ instance Validity QueueDeleteOk
 instance IsMethod QueueDeleteOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 41
+  methodSynchronous (Proxy) = True
 
 -- * The @basic@ class
 
@@ -595,6 +625,7 @@ instance Validity BasicQos
 instance IsMethod BasicQos where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 10
+  methodSynchronous (Proxy) = True
 
 -- | The @qos-ok@ method: confirm the requested qos
 --
@@ -608,6 +639,7 @@ instance Validity BasicQosOk
 instance IsMethod BasicQosOk where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 11
+  methodSynchronous (Proxy) = True
 
 -- | The @consume@ method: start a queue consumer
 --
@@ -631,6 +663,7 @@ instance Validity BasicConsume
 instance IsMethod BasicConsume where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 20
+  methodSynchronous (Proxy) = True
 
 -- | The @consume-ok@ method: confirm a new consumer
 --
@@ -644,6 +677,7 @@ instance Validity BasicConsumeOk
 instance IsMethod BasicConsumeOk where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 21
+  methodSynchronous (Proxy) = True
 
 -- | The @cancel@ method: end a queue consumer
 --
@@ -662,6 +696,7 @@ instance Validity BasicCancel
 instance IsMethod BasicCancel where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 30
+  methodSynchronous (Proxy) = True
 
 -- | The @cancel-ok@ method: confirm a cancelled consumer
 --
@@ -674,6 +709,7 @@ instance Validity BasicCancelOk
 instance IsMethod BasicCancelOk where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 31
+  methodSynchronous (Proxy) = True
 
 -- | The @publish@ method: publish a message
 --
@@ -694,6 +730,7 @@ instance Validity BasicPublish
 instance IsMethod BasicPublish where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 40
+  methodSynchronous (Proxy) = False
 
 -- | The @return@ method: return a failed message
 --
@@ -714,6 +751,7 @@ instance Validity BasicReturn
 instance IsMethod BasicReturn where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 50
+  methodSynchronous (Proxy) = False
 
 -- | The @deliver@ method: notify the client of a consumer message
 --
@@ -735,6 +773,7 @@ instance Validity BasicDeliver
 instance IsMethod BasicDeliver where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 60
+  methodSynchronous (Proxy) = False
 
 -- | The @get@ method: direct access to a queue
 --
@@ -753,6 +792,7 @@ instance Validity BasicGet
 instance IsMethod BasicGet where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 70
+  methodSynchronous (Proxy) = True
 
 -- | The @get-ok@ method: provide client with a message
 --
@@ -773,6 +813,7 @@ instance Validity BasicGetOk
 instance IsMethod BasicGetOk where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 71
+  methodSynchronous (Proxy) = True
 
 -- | The @get-empty@ method: indicate no messages available
 --
@@ -786,6 +827,7 @@ instance Validity BasicGetEmpty
 instance IsMethod BasicGetEmpty where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 72
+  methodSynchronous (Proxy) = True
 
 -- | The @ack@ method: acknowledge one or more messages
 --
@@ -803,6 +845,7 @@ instance Validity BasicAck
 instance IsMethod BasicAck where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 80
+  methodSynchronous (Proxy) = False
 
 -- | The @reject@ method: reject an incoming message
 --
@@ -820,6 +863,7 @@ instance Validity BasicReject
 instance IsMethod BasicReject where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 90
+  methodSynchronous (Proxy) = False
 
 -- | The @recover-async@ method: redeliver unacknowledged messages
 --
@@ -834,6 +878,7 @@ instance Validity BasicRecoverAsync
 instance IsMethod BasicRecoverAsync where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 100
+  methodSynchronous (Proxy) = False
 
 -- | The @recover@ method: redeliver unacknowledged messages
 --
@@ -848,6 +893,7 @@ instance Validity BasicRecover
 instance IsMethod BasicRecover where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 110
+  methodSynchronous (Proxy) = False
 
 -- | The @recover-ok@ method: confirm recovery
 --
@@ -859,6 +905,7 @@ instance Validity BasicRecoverOk
 instance IsMethod BasicRecoverOk where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 111
+  methodSynchronous (Proxy) = True
 
 -- * The @tx@ class
 
@@ -891,6 +938,7 @@ instance Validity TxSelect
 instance IsMethod TxSelect where
   methodClassId (Proxy) = 90
   methodMethodId (Proxy) = 10
+  methodSynchronous (Proxy) = True
 
 -- | The @select-ok@ method: confirm transaction mode
 --
@@ -903,6 +951,7 @@ instance Validity TxSelectOk
 instance IsMethod TxSelectOk where
   methodClassId (Proxy) = 90
   methodMethodId (Proxy) = 11
+  methodSynchronous (Proxy) = True
 
 -- | The @commit@ method: commit the current transaction
 --
@@ -915,6 +964,7 @@ instance Validity TxCommit
 instance IsMethod TxCommit where
   methodClassId (Proxy) = 90
   methodMethodId (Proxy) = 20
+  methodSynchronous (Proxy) = True
 
 -- | The @commit-ok@ method: confirm a successful commit
 --
@@ -927,6 +977,7 @@ instance Validity TxCommitOk
 instance IsMethod TxCommitOk where
   methodClassId (Proxy) = 90
   methodMethodId (Proxy) = 21
+  methodSynchronous (Proxy) = True
 
 -- | The @rollback@ method: abandon the current transaction
 --
@@ -941,6 +992,7 @@ instance Validity TxRollback
 instance IsMethod TxRollback where
   methodClassId (Proxy) = 90
   methodMethodId (Proxy) = 30
+  methodSynchronous (Proxy) = True
 
 -- | The @rollback-ok@ method: confirm successful rollback
 --
@@ -953,6 +1005,7 @@ instance Validity TxRollbackOk
 instance IsMethod TxRollbackOk where
   methodClassId (Proxy) = 90
   methodMethodId (Proxy) = 31
+  methodSynchronous (Proxy) = True
 
 -- | A sum type of all the methods
 data Method
@@ -1142,3 +1195,60 @@ parseMethodFramePayload =
           _ -> fail ("Unknown method id for class tx (90)" ++ show mid)
         _ -> fail ("Unknown class id" ++ show cid)
     )
+
+-- | Check if a 'Method' is synchronous.
+methodIsSynchronous :: Method -> Bool
+methodIsSynchronous = \case
+  MethodConnectionStart _ -> methodSynchronous (Proxy :: Proxy ConnectionStart)
+  MethodConnectionStartOk _ -> methodSynchronous (Proxy :: Proxy ConnectionStartOk)
+  MethodConnectionSecure _ -> methodSynchronous (Proxy :: Proxy ConnectionSecure)
+  MethodConnectionSecureOk _ -> methodSynchronous (Proxy :: Proxy ConnectionSecureOk)
+  MethodConnectionTune _ -> methodSynchronous (Proxy :: Proxy ConnectionTune)
+  MethodConnectionTuneOk _ -> methodSynchronous (Proxy :: Proxy ConnectionTuneOk)
+  MethodConnectionOpen _ -> methodSynchronous (Proxy :: Proxy ConnectionOpen)
+  MethodConnectionOpenOk _ -> methodSynchronous (Proxy :: Proxy ConnectionOpenOk)
+  MethodConnectionClose _ -> methodSynchronous (Proxy :: Proxy ConnectionClose)
+  MethodConnectionCloseOk _ -> methodSynchronous (Proxy :: Proxy ConnectionCloseOk)
+  MethodChannelOpen _ -> methodSynchronous (Proxy :: Proxy ChannelOpen)
+  MethodChannelOpenOk _ -> methodSynchronous (Proxy :: Proxy ChannelOpenOk)
+  MethodChannelFlow _ -> methodSynchronous (Proxy :: Proxy ChannelFlow)
+  MethodChannelFlowOk _ -> methodSynchronous (Proxy :: Proxy ChannelFlowOk)
+  MethodChannelClose _ -> methodSynchronous (Proxy :: Proxy ChannelClose)
+  MethodChannelCloseOk _ -> methodSynchronous (Proxy :: Proxy ChannelCloseOk)
+  MethodExchangeDeclare _ -> methodSynchronous (Proxy :: Proxy ExchangeDeclare)
+  MethodExchangeDeclareOk _ -> methodSynchronous (Proxy :: Proxy ExchangeDeclareOk)
+  MethodExchangeDelete _ -> methodSynchronous (Proxy :: Proxy ExchangeDelete)
+  MethodExchangeDeleteOk _ -> methodSynchronous (Proxy :: Proxy ExchangeDeleteOk)
+  MethodQueueDeclare _ -> methodSynchronous (Proxy :: Proxy QueueDeclare)
+  MethodQueueDeclareOk _ -> methodSynchronous (Proxy :: Proxy QueueDeclareOk)
+  MethodQueueBind _ -> methodSynchronous (Proxy :: Proxy QueueBind)
+  MethodQueueBindOk _ -> methodSynchronous (Proxy :: Proxy QueueBindOk)
+  MethodQueueUnbind _ -> methodSynchronous (Proxy :: Proxy QueueUnbind)
+  MethodQueueUnbindOk _ -> methodSynchronous (Proxy :: Proxy QueueUnbindOk)
+  MethodQueuePurge _ -> methodSynchronous (Proxy :: Proxy QueuePurge)
+  MethodQueuePurgeOk _ -> methodSynchronous (Proxy :: Proxy QueuePurgeOk)
+  MethodQueueDelete _ -> methodSynchronous (Proxy :: Proxy QueueDelete)
+  MethodQueueDeleteOk _ -> methodSynchronous (Proxy :: Proxy QueueDeleteOk)
+  MethodBasicQos _ -> methodSynchronous (Proxy :: Proxy BasicQos)
+  MethodBasicQosOk _ -> methodSynchronous (Proxy :: Proxy BasicQosOk)
+  MethodBasicConsume _ -> methodSynchronous (Proxy :: Proxy BasicConsume)
+  MethodBasicConsumeOk _ -> methodSynchronous (Proxy :: Proxy BasicConsumeOk)
+  MethodBasicCancel _ -> methodSynchronous (Proxy :: Proxy BasicCancel)
+  MethodBasicCancelOk _ -> methodSynchronous (Proxy :: Proxy BasicCancelOk)
+  MethodBasicPublish _ -> methodSynchronous (Proxy :: Proxy BasicPublish)
+  MethodBasicReturn _ -> methodSynchronous (Proxy :: Proxy BasicReturn)
+  MethodBasicDeliver _ -> methodSynchronous (Proxy :: Proxy BasicDeliver)
+  MethodBasicGet _ -> methodSynchronous (Proxy :: Proxy BasicGet)
+  MethodBasicGetOk _ -> methodSynchronous (Proxy :: Proxy BasicGetOk)
+  MethodBasicGetEmpty _ -> methodSynchronous (Proxy :: Proxy BasicGetEmpty)
+  MethodBasicAck _ -> methodSynchronous (Proxy :: Proxy BasicAck)
+  MethodBasicReject _ -> methodSynchronous (Proxy :: Proxy BasicReject)
+  MethodBasicRecoverAsync _ -> methodSynchronous (Proxy :: Proxy BasicRecoverAsync)
+  MethodBasicRecover _ -> methodSynchronous (Proxy :: Proxy BasicRecover)
+  MethodBasicRecoverOk _ -> methodSynchronous (Proxy :: Proxy BasicRecoverOk)
+  MethodTxSelect _ -> methodSynchronous (Proxy :: Proxy TxSelect)
+  MethodTxSelectOk _ -> methodSynchronous (Proxy :: Proxy TxSelectOk)
+  MethodTxCommit _ -> methodSynchronous (Proxy :: Proxy TxCommit)
+  MethodTxCommitOk _ -> methodSynchronous (Proxy :: Proxy TxCommitOk)
+  MethodTxRollback _ -> methodSynchronous (Proxy :: Proxy TxRollback)
+  MethodTxRollbackOk _ -> methodSynchronous (Proxy :: Proxy TxRollbackOk)
