@@ -2,6 +2,7 @@ resolver: lts-16.31
 packages:
 - amqp-generator
 - amqp-serialisation
+- amqp-serialisation-gen
 - amqp-client
 extra-deps:
 - github: NorfairKing/sydtest

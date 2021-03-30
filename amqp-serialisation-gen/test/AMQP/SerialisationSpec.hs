@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-{-# OPTIONS -fno-warn-orphans #-}
 module AMQP.SerialisationSpec (spec) where
 
 import AMQP.Serialisation
 import AMQP.Serialisation.Base
 import AMQP.Serialisation.Frame
+import AMQP.Serialisation.Gen ()
 import AMQP.Serialisation.Generated.Methods
 import AMQP.Serialisation.TestUtils
 import Control.Monad
@@ -14,24 +14,8 @@ import qualified Data.ByteString as SB
 import qualified Data.ByteString.Builder as SBB
 import qualified Data.ByteString.Lazy as LB
 import Data.Char as Char
-import Data.GenValidity
-import Data.GenValidity.ByteString ()
-import Data.GenValidity.Containers ()
 import qualified Data.Map as M
 import Test.Syd
-
--- TODO move thees instances into their own package
-instance GenValid ProtocolHeader where
-  genValid = genValidStructurallyWithoutExtraChecking
-  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
-
-instance GenValid FrameType where
-  genValid = genValidStructurallyWithoutExtraChecking
-  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
-
-instance GenValid RawFrame where
-  genValid = genValidStructurallyWithoutExtraChecking
-  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 spec :: Spec
 spec = do

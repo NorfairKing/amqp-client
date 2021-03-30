@@ -1,0 +1,67 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           amqp-serialisation-gen
+version:        0.0.0.0
+homepage:       https://github.com/NorfairKing/amqp-client#readme
+bug-reports:    https://github.com/NorfairKing/amqp-client/issues
+author:         Tom Sydney Kerckhove
+maintainer:     syd@cs-syd.eu
+copyright:      Copyright (c) 2021 Tom Sydney Kerckhove
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/NorfairKing/amqp-client
+
+library
+  exposed-modules:
+      AMQP.Serialisation.Base.Gen
+      AMQP.Serialisation.Gen
+      AMQP.Serialisation.TestUtils
+  other-modules:
+      Paths_amqp_serialisation_gen
+  hs-source-dirs:
+      src
+  build-depends:
+      QuickCheck
+    , amqp-serialisation
+    , attoparsec
+    , base >=4.7 && <5
+    , bytestring
+    , genvalidity
+    , genvalidity-bytestring
+    , genvalidity-containers
+    , genvalidity-sydtest
+    , sydtest
+  default-language: Haskell2010
+
+test-suite amqp-serialisation-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      AMQP.Serialisation.BaseSpec
+      AMQP.SerialisationSpec
+      Paths_amqp_serialisation_gen
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:
+      sydtest-discover:sydtest-discover
+  build-depends:
+      QuickCheck
+    , amqp-serialisation
+    , amqp-serialisation-gen
+    , attoparsec
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , genvalidity
+    , genvalidity-bytestring
+    , genvalidity-containers
+    , genvalidity-sydtest
+    , sydtest
+  default-language: Haskell2010

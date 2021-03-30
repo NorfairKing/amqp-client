@@ -24,6 +24,7 @@ with final.haskell.lib;
     {
       "amqp-generator" = amqpPkg "amqp-generator";
       "amqp-serialisation" = amqpPkg "amqp-serialisation";
+      "amqp-serialisation-gen" = amqpPkg "amqp-serialisation-gen";
       "amqp-client" = overrideCabal (amqpPkg "amqp-client") (old: {
         testDepends = (old.testDepends or [ ]) ++ [ final.rabbitmq-server ];
         doCheck = false; # Something goes wrong with testing; the tests hang?
