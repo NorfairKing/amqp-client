@@ -119,10 +119,11 @@ buildGivenMethodFrame chan a =
 
 buildGivenMethodFramePayload :: forall a. IsMethod a => a -> ByteString.Builder
 buildGivenMethodFramePayload a =
-  mconcat $
-    buildShortUInt (methodClassId (Proxy :: Proxy a)) :
-    buildShortUInt (methodMethodId (Proxy :: Proxy a)) :
-    map buildArgument (buildMethodArguments a)
+  mconcat
+    [ buildShortUInt (methodClassId (Proxy :: Proxy a)),
+      buildShortUInt (methodMethodId (Proxy :: Proxy a)),
+      buildArguments (buildMethodArguments a)
+    ]
 
 parseMethodFramePayloadHelper :: (ClassId -> MethodId -> ArgumentParser a) -> Parser a
 parseMethodFramePayloadHelper func = label "Method Payload" $ do

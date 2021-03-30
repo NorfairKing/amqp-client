@@ -60,6 +60,21 @@ buildArgument = \case
   ArgumentTimestamp ts -> buildTimestamp ts
   ArgumentFieldTable ft -> buildFieldTable ft
 
+buildArguments :: [Argument] -> ByteString.Builder
+buildArguments = go
+  where
+    go :: [Argument] -> ByteString.Builder
+    go [] = mempty
+    go (a : as) = case a of
+      ArgumentBit b -> goBits [b] as
+      _ -> buildArgument a <> go as
+
+    goBits :: [Bit] -> [Argument] -> ByteString.Builder
+    goBits acc [] = buildBits $ reverse acc
+    goBits acc (a : as) = case a of
+      ArgumentBit b -> goBits (b : acc) as
+      _ -> buildBits (reverse acc) <> go as
+
 data ArgumentParser a where
   ParseBit :: ArgumentParser Bit
   ParseOctet :: ArgumentParser Octet
