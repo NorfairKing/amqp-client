@@ -88,29 +88,27 @@ data ArgumentParser a where
   ParseFail :: String -> ArgumentParser a
   ParsePure :: a -> ArgumentParser a
   ParseFmap :: (a -> b) -> ArgumentParser a -> ArgumentParser b
-  ParseApp :: ArgumentParser (a -> b) -> ArgumentParser a -> ArgumentParser b
+  ParseBoth :: (a -> b -> c) -> ArgumentParser a -> ArgumentParser b -> ArgumentParser c
 
 instance Functor ArgumentParser where
   fmap = ParseFmap
 
-instance Applicative ArgumentParser where
-  pure = ParsePure
-  (<*>) = ParseApp
-
 runArgumentParser :: ArgumentParser a -> Parser a
-runArgumentParser = \case
-  ParseBit -> parseBit
-  ParseOctet -> parseOctet
-  ParseShortUInt -> parseShortUInt
-  ParseLongUInt -> parseLongUInt
-  ParseLongLongUInt -> parseLongLongUInt
-  ParseShortString -> parseShortString
-  ParseLongString -> parseLongString
-  ParseTimestamp -> parseTimestamp
-  ParseFieldTable -> parseFieldTable
-  ParsePure a -> pure a
-  ParseFmap f p -> f <$> runArgumentParser p
-  ParseApp fp p -> runArgumentParser fp <*> runArgumentParser p
+runArgumentParser = go
+  where
+    go = \case
+      ParseBit -> parseBit
+      ParseOctet -> parseOctet
+      ParseShortUInt -> parseShortUInt
+      ParseLongUInt -> parseLongUInt
+      ParseLongLongUInt -> parseLongLongUInt
+      ParseShortString -> parseShortString
+      ParseLongString -> parseLongString
+      ParseTimestamp -> parseTimestamp
+      ParseFieldTable -> parseFieldTable
+      ParsePure a -> pure a
+      ParseFmap f p -> f <$> runArgumentParser p
+      ParseBoth combine p1 p2 -> combine <$> runArgumentParser p1 <*> runArgumentParser p2
 
 newtype FieldTable = FieldTable {fieldTableMap :: Map FieldTableKey FieldTableValue}
   deriving (Show, Eq, Generic)

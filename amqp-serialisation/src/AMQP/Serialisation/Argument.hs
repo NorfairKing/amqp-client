@@ -101,13 +101,13 @@ class GIsMethod f where
 -- | Constructor without arguments
 instance GIsMethod U1 where
   gBuildArguments _ = [] -- No arguments
-  gParseArguments = pure U1
+  gParseArguments = ParsePure U1
 
 -- | Constructor for product types
 instance (GIsMethod a, GIsMethod b) => GIsMethod (a :*: b) where
   -- These are small lists anyway.
   gBuildArguments (a :*: b) = gBuildArguments a ++ gBuildArguments b
-  gParseArguments = (:*:) <$> gParseArguments <*> gParseArguments
+  gParseArguments = ParseBoth (:*:) gParseArguments gParseArguments
 
 -- | Constructor for Meta-info that we don't need: constructor names, etc
 instance GIsMethod a => GIsMethod (M1 i c a) where
