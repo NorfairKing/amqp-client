@@ -339,9 +339,6 @@ connectionPutBuilder conn b = liftIO $ mapM_ (Network.connectionPut conn) (LB.to
 connectionParseMethod :: (MonadUnliftIO m) => Network.Connection -> MVar ByteString -> m (Either String Method)
 connectionParseMethod conn leftoversVar = connectionParse conn leftoversVar parseMethodFrame
 
-connectionParseGivenMethod :: (IsMethod a, MonadUnliftIO m) => Network.Connection -> MVar ByteString -> m (Either String a)
-connectionParseGivenMethod conn leftoversVar = connectionParse conn leftoversVar parseGivenMethodFrame
-
 connectionParse :: MonadUnliftIO m => Network.Connection -> MVar ByteString -> Attoparsec.Parser a -> m (Either String a)
 connectionParse conn leftoversVar parser = modifyMVar leftoversVar $ \leftovers -> do
   result <- liftIO $ Attoparsec.parseWith (Network.connectionGet conn chunkSize) parser leftovers

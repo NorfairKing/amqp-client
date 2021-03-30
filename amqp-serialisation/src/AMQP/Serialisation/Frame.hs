@@ -106,7 +106,7 @@ parseGivenMethodFramePayload :: forall a. IsMethod a => Parser a
 parseGivenMethodFramePayload = label "Method Payload" $ do
   label "class" $ void $ Parse.word16be $ methodClassId (Proxy :: Proxy a)
   label "method" $ void $ Parse.word16be $ methodMethodId (Proxy :: Proxy a)
-  label "arguments" parseMethodArguments
+  label "arguments" $ runArgumentParser methodArgumentsParser
 
 buildGivenMethodFrame :: forall a. IsMethod a => ChannelNumber -> a -> ByteString.Builder
 buildGivenMethodFrame chan a =
@@ -124,8 +124,8 @@ buildGivenMethodFramePayload a =
     buildShortUInt (methodMethodId (Proxy :: Proxy a)) :
     map buildArgument (buildMethodArguments a)
 
-parseMethodFramePayloadHelper :: (ClassId -> MethodId -> Parser a) -> Parser a
+parseMethodFramePayloadHelper :: (ClassId -> MethodId -> ArgumentParser a) -> Parser a
 parseMethodFramePayloadHelper func = label "Method Payload" $ do
   cid <- label "ClassId" Parse.anyWord16be
   mid <- label "MethodId" Parse.anyWord16be
-  func cid mid
+  runArgumentParser $ func cid mid
