@@ -1,6 +1,7 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
 module AMQP.Serialisation.Argument where
@@ -23,6 +24,9 @@ class IsMethod a where
   parseMethodArguments :: Parser a
   default parseMethodArguments :: (Generic a, GIsMethod (Rep a)) => Parser a
   parseMethodArguments = to <$> gParseArguments
+
+class SynchronousRequest a where
+  type SynchronousResponse a :: *
 
 class IsArgument a where
   toArgument :: a -> Argument

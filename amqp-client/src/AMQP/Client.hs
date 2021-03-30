@@ -2,6 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module AMQP.Client where
 
@@ -9,6 +10,7 @@ import AMQP.Serialisation
 import AMQP.Serialisation.Argument
 import AMQP.Serialisation.Base
 import AMQP.Serialisation.Frame
+import AMQP.Serialisation.Generated.DomainTypes
 import AMQP.Serialisation.Generated.Methods
 import Control.Monad
 import qualified Data.Attoparsec.ByteString as Attoparsec
@@ -45,11 +47,17 @@ data SASLMechanism
 
 data Connection = Connection
   { connectionNetworkConnection :: !Network.Connection,
-    -- The leftover bytes that were already fetched but not yet parsed.
+    -- | The leftover bytes that were already fetched but not yet parsed.
+    --
     -- This matters in case the server pipelines multiple frames, for example.
     --
     -- Full whenever the connection is ready to parse the next piece
     connectionLeftoversVar :: !(MVar ByteString),
+    -- | An mvar to wrap lock around synchronous methods.
+    --
+    -- When a synchronous request is sent, this mvar is always taken before the 'connectionLeftoversVar'.
+    -- In this way, there can never be a deadlock because of these two @MVar@s alone.
+    connectionSynchronousVar :: !(MVar ()),
     connectionMaximumNumberOfChannels :: !ShortUInt,
     connectionMaximumFrameSize :: !LongUInt,
     connectionHeartbeatInterval :: !ShortUInt,
@@ -67,28 +75,61 @@ data ChannelMessage
   deriving (Show, Eq, Generic)
 
 data Channel = Channel
-  { channelNumber :: ChannelNumber,
-    channelMessageQueue :: TQueue ChannelMessage -- TODO we want to be able to consume other things than just methods
+  { channelConnection :: !Connection,
+    channelNumber :: !ChannelNumber,
+    channelMessageQueue :: !(TQueue ChannelMessage) -- TODO we want to be able to consume other things than just methods
   }
   deriving (Generic)
 
 data HandleResult = NotHandled | HandledButNotDone | HandledAndDone
   deriving (Generic)
 
-withChannel :: MonadUnliftIO m => Connection -> (Channel -> m a) -> m a
-withChannel conn func = do
+channelOpen :: MonadUnliftIO m => Connection -> m Channel
+channelOpen conn@Connection {..} = do
   let channelOpen = ChannelOpen {channelOpenReserved1 = ""}
   let number = 1 --
-  connectionPutGivenMethod (connectionNetworkConnection conn) number channelOpen
+  ChannelOpenOk {..} <- synchronouslyRequest connectionNetworkConnection connectionLeftoversVar connectionSynchronousVar number channelOpen
   messageQueue <- newTQueueIO
-  let chan = Channel {channelNumber = number, channelMessageQueue = messageQueue}
-  func chan
+  pure $
+    Channel
+      { channelConnection = conn,
+        channelNumber = number,
+        channelMessageQueue = messageQueue
+      }
 
 chanHasMessage :: MonadIO m => Channel -> m Bool
 chanHasMessage Channel {..} = atomically $ not <$> isEmptyTQueue channelMessageQueue
 
--- waitForMessageOnChan :: Connection -> ChannelNumber -> m a
--- waitForMessageOnChan conn channelNumber = do
+defaultQueueSettings :: QueueSettings
+defaultQueueSettings = QueueSettings
+
+data QueueSettings = QueueSettings
+  deriving (Show, Eq, Generic)
+
+data Queue = Queue
+  deriving (Show, Eq, Generic)
+
+queueDeclare :: MonadUnliftIO m => Channel -> QueueName -> QueueSettings -> m Queue
+queueDeclare Channel {..} name QueueSettings = do
+  pure Queue
+
+queueBind :: MonadUnliftIO m => Channel -> QueueName -> ExchangeName -> RoutingKey -> m ()
+queueBind Channel {..} queueName exchangeName routingKey = pure ()
+
+type RoutingKey = ShortString
+
+defaultExchangeSettings :: ExchangeSettings
+defaultExchangeSettings = ExchangeSettings
+
+data ExchangeSettings = ExchangeSettings
+  deriving (Show, Eq, Generic)
+
+data Exchange = Exchange
+  deriving (Show, Eq, Generic)
+
+exchangeDeclare :: MonadUnliftIO m => Channel -> ExchangeName -> ExchangeSettings -> m Exchange
+exchangeDeclare Channel {..} name ExchangeSettings = do
+  pure Exchange
 
 -- | Set up (and clean up) a connection to the AMQP server.
 --
@@ -113,6 +154,7 @@ withConnection ConnectionSettings {..} callback = do
       -- C: protocol-header
       connectionPutBuilder networkConnection (buildProtocolHeader protocolHeader)
       leftoversVar <- newMVar SB.empty
+      synchronousVar <- newMVar ()
       -- S: START
       frame <- connectionParse networkConnection leftoversVar parseProtocolNegotiationResponse
       f <- case frame of
@@ -138,7 +180,7 @@ withConnection ConnectionSettings {..} callback = do
       connectionPutBuilder networkConnection (buildGivenMethodFrame 0 connectionOk)
       -- TODO: Implement the challenge part of the protocol
       -- S: TUNE
-      ConnectionTune {..} <- connectionParseGivenMethodOrViolation networkConnection leftoversVar
+      ConnectionTune {..} <- waitForSynchronousMessage networkConnection leftoversVar
       -- QUESTION: do we want to negotiate down any of these?
       --
       -- NOTE: We can only negotiate down, so if we ever make these
@@ -154,6 +196,7 @@ withConnection ConnectionSettings {..} callback = do
               }
       -- C: TUNE-OK
       connectionPutBuilder networkConnection (buildGivenMethodFrame 0 connectionTuneOk)
+
       let connectionOpen =
             ConnectionOpen
               { connectionOpenVirtualHost = "/",
@@ -161,11 +204,8 @@ withConnection ConnectionSettings {..} callback = do
                 connectionOpenReserved2 = False
               }
       -- C: OPEN
-      connectionPutBuilder networkConnection (buildGivenMethodFrame 0 connectionOpen)
       -- S: OPEN-OK
-      ConnectionOpenOk {} <- connectionParseGivenMethodOrViolation networkConnection leftoversVar
-      -- errOrRes <- connectionParseMethod networkConnection leftoversVar
-      -- liftIO $ print (errOrRes :: Either String Method)
+      ConnectionOpenOk {..} <- synchronouslyRequest networkConnection leftoversVar synchronousVar 0 connectionOpen
 
       messageQueue <- newTQueueIO
       channelVar <- newTVarIO IM.empty
@@ -173,6 +213,7 @@ withConnection ConnectionSettings {..} callback = do
             Connection
               { connectionNetworkConnection = networkConnection,
                 connectionLeftoversVar = leftoversVar,
+                connectionSynchronousVar = synchronousVar,
                 connectionMaximumNumberOfChannels = maxChannels,
                 connectionMaximumFrameSize = maxFrameSize,
                 connectionHeartbeatInterval = heartbeatInterval,
@@ -181,31 +222,38 @@ withConnection ConnectionSettings {..} callback = do
               }
       callback amqpConnection
 
--- TODO deal with forceful disconnection. (Via exceptions?)
--- C: CLOSE
--- S: CLOSE-OK
--- S: CLOSE
--- C: CLOSE-OK
+-- TODO generate these.
+instance SynchronousRequest ConnectionOpen where
+  type SynchronousResponse ConnectionOpen = ConnectionOpenOk
+
+instance SynchronousRequest ChannelOpen where
+  type SynchronousResponse ChannelOpen = ChannelOpenOk
+
+instance SynchronousRequest ExchangeDeclare where
+  type SynchronousResponse ExchangeDeclare = ExchangeDeclareOk
 
 -- | Send a synchronous method to the server and wait for a synchronous answer.
 --
 -- This implements the pseudo logic in section 2.2.2: Mapping AMQP to a middleware API
---
--- TODO generate code to get the exact right response for a synchronous request
-synchronouslyRequest :: (MonadUnliftIO m, IsMethod a) => Network.Connection -> MVar ByteString -> ChannelNumber -> a -> m Method
-synchronouslyRequest conn leftovers cn a = do
+synchronouslyRequest :: (MonadUnliftIO m, IsMethod a, SynchronousResponse a ~ b, FromMethod b) => Network.Connection -> MVar ByteString -> MVar () -> ChannelNumber -> a -> m b
+synchronouslyRequest conn leftoversVar synchronousVar cn a = withMVar synchronousVar $ \() -> do
   connectionPutGivenMethod conn cn a
-  go
+  waitForSynchronousMessage conn leftoversVar
+
+waitForSynchronousMessage :: (MonadUnliftIO m, FromMethod b) => Network.Connection -> MVar ByteString -> m b
+waitForSynchronousMessage conn leftoversVar = go
   where
     go = do
-      errOrRes <- connectionParseMethod conn leftovers
+      errOrRes <- connectionParseMethod conn leftoversVar
       case errOrRes of
         Left err -> throwIO $ ProtocolViolation err
         Right r ->
           if methodIsSynchronous r
-            then pure r
+            then case fromMethod r of
+              Nothing -> throwIO $ ProtocolViolation "TODO better error message"
+              Just m -> pure m
             else do
-              -- TODO do something useful with this method, we don't just want to drop it.
+              -- TODO do something useful with this method, we probably don't just want to drop it.
               go
 
 saslMechanismName :: SASLMechanism -> ByteString
@@ -244,14 +292,6 @@ connectionParseMethod conn leftoversVar = connectionParse conn leftoversVar pars
 connectionParseGivenMethod :: (IsMethod a, MonadUnliftIO m) => Network.Connection -> MVar ByteString -> m (Either String a)
 connectionParseGivenMethod conn leftoversVar = connectionParse conn leftoversVar parseGivenMethodFrame
 
-connectionParseGivenMethodOrViolation :: (IsMethod a, MonadUnliftIO m) => Network.Connection -> MVar ByteString -> m a
-connectionParseGivenMethodOrViolation conn leftoversVar = do
-  errOrMethod <- connectionParse conn leftoversVar parseGivenMethodFrame
-  case errOrMethod of
-    Left err -> throwIO $ ProtocolViolation err
-    Right r -> pure r
-
--- TODO keep track of the last bit of bytestring that we already got.
 connectionParse :: MonadUnliftIO m => Network.Connection -> MVar ByteString -> Attoparsec.Parser a -> m (Either String a)
 connectionParse conn leftoversVar parser = modifyMVar leftoversVar $ \leftovers -> do
   result <- liftIO $ Attoparsec.parseWith (Network.connectionGet conn chunkSize) parser leftovers

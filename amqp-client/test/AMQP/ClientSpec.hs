@@ -27,5 +27,22 @@ spec = rabbitMQSpec $ do
               connectionSettingSASLMechanism = PLAINMechanism "guest" "guest"
             }
     withConnection settings $ \conn -> do
-      withChannel conn $ \_ -> do
-        pure () :: IO ()
+      chan <- channelOpen conn
+      pure () :: IO ()
+  itWithOuter "can go trhough the tutorial steps" $ \RabbitMQHandle {..} -> do
+    let settings =
+          ConnectionSettings
+            { connectionSettingHostName = "127.0.0.1",
+              connectionSettingPort = rabbitMQHandlePort,
+              connectionSettingSASLMechanism = PLAINMechanism "guest" "guest"
+            }
+    withConnection settings $ \conn -> do
+      chan <- channelOpen conn
+      let myQueueName = "myQueueName"
+          myExchangeName = "myExchangeName"
+          myRoutingKey = "myRoutingKey"
+      queueDeclare chan myQueueName defaultQueueSettings
+      exchangeDeclare chan myExchangeName defaultExchangeSettings
+      queueBind chan myQueueName myExchangeName myRoutingKey
+
+      pure () :: IO ()

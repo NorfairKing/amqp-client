@@ -257,6 +257,8 @@ classMethodTypeDecs className classIndex AMQP.Method {..} =
               ]
           ]
       ]
+        ++ [ undefined | methodSynchronous
+           ]
 
 mkMethodTypeName :: Text -> Text -> Name
 mkMethodTypeName className methodName = mkHaskellTypeName $ T.intercalate "-" [className, methodName]
