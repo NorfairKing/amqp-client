@@ -187,6 +187,27 @@ withConnection ConnectionSettings {..} callback = do
 -- S: CLOSE
 -- C: CLOSE-OK
 
+-- | Send a synchronous method to the server and wait for a synchronous answer.
+--
+-- This implements the pseudo logic in section 2.2.2: Mapping AMQP to a middleware API
+--
+-- TODO generate code to get the exact right response for a synchronous request
+synchronouslyRequest :: (MonadUnliftIO m, IsMethod a) => Network.Connection -> MVar ByteString -> ChannelNumber -> a -> m Method
+synchronouslyRequest conn leftovers cn a = do
+  connectionPutGivenMethod conn cn a
+  go
+  where
+    go = do
+      errOrRes <- connectionParseMethod conn leftovers
+      case errOrRes of
+        Left err -> throwIO $ ProtocolViolation err
+        Right r ->
+          if methodIsSynchronous r
+            then pure r
+            else do
+              -- TODO do something useful with this method, we don't just want to drop it.
+              go
+
 saslMechanismName :: SASLMechanism -> ByteString
 saslMechanismName = \case
   PLAINMechanism {} -> plainSASLName
