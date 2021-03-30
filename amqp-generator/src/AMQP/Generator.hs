@@ -22,6 +22,7 @@ import Language.Haskell.TH.Syntax
 import System.Directory
 import System.Environment
 import System.Exit
+import System.FilePath
 import System.Process.Typed
 import Text.Casing
 import Text.PrettyPrint (render)
@@ -36,20 +37,19 @@ main = do
 generateFrom :: FilePath -> IO ()
 generateFrom inPath = do
   spec <- AMQP.parseSpecFromFile inPath
-  let generatedDir = "amqp-serialisation/src/AMQP/Serialisation/Generated/"
   let modules :: [(FilePath, Doc)]
       modules =
-        [ ("Constants.hs", genGeneratedConstantsModule spec),
-          ("DomainTypes.hs", genGeneratedTypesModule spec),
-          ("Methods.hs", genGeneratedMethodsModule spec)
+        [ ("amqp-serialisation/src/AMQP/Serialisation/Generated/Constants.hs", genGeneratedConstantsModule spec),
+          ("amqp-serialisation/src/AMQP/Serialisation/Generated/DomainTypes.hs", genGeneratedTypesModule spec),
+          ("amqp-serialisation/src/AMQP/Serialisation/Generated/Methods.hs", genGeneratedMethodsModule spec),
+          ("amqp-serialisation-gen/src/AMQP/Serialisation/Generated/Methods/Gen.hs", genGeneratedGeneratorsModule spec)
         ]
-  createDirectoryIfMissing True generatedDir
-  forM_ modules $ \(name, m) -> do
+  forM_ modules $ \(path, m) -> do
+    createDirectoryIfMissing True $ takeDirectory path
     let moduleString = render $ to_HPJ_Doc m
-    let outPath = generatedDir ++ name
-    writeFile outPath moduleString
-    runProcess_ $ proc "ormolu" ["--mode", "inplace", outPath]
-    result <- readFile outPath
+    writeFile path moduleString
+    runProcess_ $ proc "ormolu" ["--mode", "inplace", path]
+    result <- readFile path
     putStrLn result
 
 genGeneratedConstantsModule :: AMQP.AMQPSpec -> Doc
@@ -413,3 +413,40 @@ matchFailedMatch thing var =
         )
     )
     []
+
+genGeneratedGeneratorsModule :: AMQPSpec -> Doc
+genGeneratedGeneratorsModule AMQPSpec {..} =
+  vcat
+    [ text "{-# OPTIONS_GHC -fno-warn-orphans #-}",
+      text "module AMQP.Serialisation.Generated.Methods.Gen where",
+      text "",
+      text "import Data.GenValidity",
+      text "import AMQP.Serialisation.Generated.Methods",
+      text "import AMQP.Serialisation.Base.Gen ()",
+      text "",
+      genGeneratorsDoc amqpSpecClasses
+    ]
+
+genGeneratorsDoc :: [AMQP.Class] -> Doc
+genGeneratorsDoc cs =
+  ppr_list $ concatMap genGeneratorInstances cs
+
+genGeneratorInstances :: AMQP.Class -> [Dec]
+genGeneratorInstances AMQP.Class {..} = concatMap (genGeneratorInstance className) classMethods
+
+genGeneratorInstance :: Text -> AMQP.Method -> [Dec]
+genGeneratorInstance className Method {..} =
+  [ InstanceD
+      Nothing
+      []
+      (AppT (ConT (mkName "GenValid")) (ConT (mkMethodTypeName className methodName)))
+      [ FunD
+          (mkName "genValid")
+          [ Clause [] (NormalB (VarE (mkName "genValidStructurallyWithoutExtraChecking"))) []
+          ],
+        FunD
+          (mkName "shrinkValid")
+          [ Clause [] (NormalB (VarE (mkName "shrinkValidStructurallyWithoutExtraFiltering"))) []
+          ]
+      ]
+  ]

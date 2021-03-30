@@ -7,6 +7,7 @@ import AMQP.Serialisation.Base
 import AMQP.Serialisation.Frame
 import AMQP.Serialisation.Gen ()
 import AMQP.Serialisation.Generated.Methods
+import AMQP.Serialisation.Methods.Gen ()
 import AMQP.Serialisation.TestUtils
 import Control.Monad
 import Data.Attoparsec.ByteString
@@ -16,6 +17,7 @@ import qualified Data.ByteString.Lazy as LB
 import Data.Char as Char
 import qualified Data.Map as M
 import Test.Syd
+import Test.Syd.Validity
 
 spec :: Spec
 spec = do
@@ -40,10 +42,10 @@ spec = do
     it "can parse whatever 'buildRawFrame' builds'" $
       roundtrips buildRawFrame parseRawFrame
 
-  -- describe "parseMethodFrame" $
-  --   it "can parse whatever 'buildMethodFrame' builds'" $
-  --     forAllValid $ \cn ->
-  --       roundtrips (buildMethodFrame cn) parseMethodFrame
+  describe "parseMethodFrame" $
+    it "can parse whatever 'buildMethodFrame' builds'" $
+      forAllValid $ \cn ->
+        roundtrips (buildMethodFrame cn) parseMethodFrame
 
   describe "parseConnectionStartMethodFramePayload" $
     it "can parse the example that we got from the rabbitmq server" $ do

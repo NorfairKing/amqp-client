@@ -30,6 +30,7 @@ library
     , casing
     , containers
     , directory
+    , filepath
     , pretty
     , pretty-show
     , template-haskell

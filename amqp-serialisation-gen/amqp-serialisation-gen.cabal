@@ -21,6 +21,8 @@ library
   exposed-modules:
       AMQP.Serialisation.Base.Gen
       AMQP.Serialisation.Gen
+      AMQP.Serialisation.Generated.Methods.Gen
+      AMQP.Serialisation.Methods.Gen
       AMQP.Serialisation.TestUtils
   other-modules:
       Paths_amqp_serialisation_gen
