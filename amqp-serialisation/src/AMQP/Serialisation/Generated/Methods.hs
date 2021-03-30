@@ -54,6 +54,11 @@ instance IsMethod ConnectionStart where
   methodMethodId (Proxy) = 10
   methodSynchronous (Proxy) = True
 
+instance FromMethod ConnectionStart where
+  fromMethod = \case
+    MethodConnectionStart m -> Just m
+    _ -> Nothing
+
 -- | The @start-ok@ method: select security mechanism and locale
 --
 -- This method selects a SASL security mechanism.
@@ -72,6 +77,11 @@ instance IsMethod ConnectionStartOk where
   methodMethodId (Proxy) = 11
   methodSynchronous (Proxy) = True
 
+instance FromMethod ConnectionStartOk where
+  fromMethod = \case
+    MethodConnectionStartOk m -> Just m
+    _ -> Nothing
+
 -- | The @secure@ method: security mechanism challenge
 --
 -- The SASL protocol works by exchanging challenges and responses until both peers have
@@ -87,6 +97,11 @@ instance IsMethod ConnectionSecure where
   methodMethodId (Proxy) = 20
   methodSynchronous (Proxy) = True
 
+instance FromMethod ConnectionSecure where
+  fromMethod = \case
+    MethodConnectionSecure m -> Just m
+    _ -> Nothing
+
 -- | The @secure-ok@ method: security mechanism response
 --
 -- This method attempts to authenticate, passing a block of SASL data for the security
@@ -100,6 +115,11 @@ instance IsMethod ConnectionSecureOk where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 21
   methodSynchronous (Proxy) = True
+
+instance FromMethod ConnectionSecureOk where
+  fromMethod = \case
+    MethodConnectionSecureOk m -> Just m
+    _ -> Nothing
 
 -- | The @tune@ method: propose connection tuning parameters
 --
@@ -119,6 +139,11 @@ instance IsMethod ConnectionTune where
   methodMethodId (Proxy) = 30
   methodSynchronous (Proxy) = True
 
+instance FromMethod ConnectionTune where
+  fromMethod = \case
+    MethodConnectionTune m -> Just m
+    _ -> Nothing
+
 -- | The @tune-ok@ method: negotiate connection tuning parameters
 --
 -- This method sends the client's connection tuning parameters to the server.
@@ -136,6 +161,11 @@ instance IsMethod ConnectionTuneOk where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 31
   methodSynchronous (Proxy) = True
+
+instance FromMethod ConnectionTuneOk where
+  fromMethod = \case
+    MethodConnectionTuneOk m -> Just m
+    _ -> Nothing
 
 -- | The @open@ method: open connection to virtual host
 --
@@ -157,6 +187,11 @@ instance IsMethod ConnectionOpen where
   methodMethodId (Proxy) = 40
   methodSynchronous (Proxy) = True
 
+instance FromMethod ConnectionOpen where
+  fromMethod = \case
+    MethodConnectionOpen m -> Just m
+    _ -> Nothing
+
 -- | The @open-ok@ method: signal that connection is ready
 --
 -- This method signals to the client that the connection is ready for use.
@@ -169,6 +204,11 @@ instance IsMethod ConnectionOpenOk where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 41
   methodSynchronous (Proxy) = True
+
+instance FromMethod ConnectionOpenOk where
+  fromMethod = \case
+    MethodConnectionOpenOk m -> Just m
+    _ -> Nothing
 
 -- | The @close@ method: request a connection close
 --
@@ -191,6 +231,11 @@ instance IsMethod ConnectionClose where
   methodMethodId (Proxy) = 50
   methodSynchronous (Proxy) = True
 
+instance FromMethod ConnectionClose where
+  fromMethod = \case
+    MethodConnectionClose m -> Just m
+    _ -> Nothing
+
 -- | The @close-ok@ method: confirm a connection close
 --
 -- This method confirms a Connection.Close method and tells the recipient that it is
@@ -205,6 +250,11 @@ instance IsMethod ConnectionCloseOk where
   methodClassId (Proxy) = 10
   methodMethodId (Proxy) = 51
   methodSynchronous (Proxy) = True
+
+instance FromMethod ConnectionCloseOk where
+  fromMethod = \case
+    MethodConnectionCloseOk m -> Just m
+    _ -> Nothing
 
 -- * The @channel@ class
 
@@ -236,6 +286,11 @@ instance IsMethod ChannelOpen where
   methodMethodId (Proxy) = 10
   methodSynchronous (Proxy) = True
 
+instance FromMethod ChannelOpen where
+  fromMethod = \case
+    MethodChannelOpen m -> Just m
+    _ -> Nothing
+
 -- | The @open-ok@ method: signal that the channel is ready
 --
 -- This method signals to the client that the channel is ready for use.
@@ -248,6 +303,11 @@ instance IsMethod ChannelOpenOk where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 11
   methodSynchronous (Proxy) = True
+
+instance FromMethod ChannelOpenOk where
+  fromMethod = \case
+    MethodChannelOpenOk m -> Just m
+    _ -> Nothing
 
 -- | The @flow@ method: enable/disable flow from peer
 --
@@ -266,6 +326,11 @@ instance IsMethod ChannelFlow where
   methodMethodId (Proxy) = 20
   methodSynchronous (Proxy) = True
 
+instance FromMethod ChannelFlow where
+  fromMethod = \case
+    MethodChannelFlow m -> Just m
+    _ -> Nothing
+
 -- | The @flow-ok@ method: confirm a flow method
 --
 -- Confirms to the peer that a flow command was received and processed.
@@ -278,6 +343,11 @@ instance IsMethod ChannelFlowOk where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 21
   methodSynchronous (Proxy) = False
+
+instance FromMethod ChannelFlowOk where
+  fromMethod = \case
+    MethodChannelFlowOk m -> Just m
+    _ -> Nothing
 
 -- | The @close@ method: request a channel close
 --
@@ -300,6 +370,11 @@ instance IsMethod ChannelClose where
   methodMethodId (Proxy) = 40
   methodSynchronous (Proxy) = True
 
+instance FromMethod ChannelClose where
+  fromMethod = \case
+    MethodChannelClose m -> Just m
+    _ -> Nothing
+
 -- | The @close-ok@ method: confirm a channel close
 --
 -- This method confirms a Channel.Close method and tells the recipient that it is safe
@@ -312,6 +387,11 @@ instance IsMethod ChannelCloseOk where
   methodClassId (Proxy) = 20
   methodMethodId (Proxy) = 41
   methodSynchronous (Proxy) = True
+
+instance FromMethod ChannelCloseOk where
+  fromMethod = \case
+    MethodChannelCloseOk m -> Just m
+    _ -> Nothing
 
 -- * The @exchange@ class
 
@@ -349,6 +429,11 @@ instance IsMethod ExchangeDeclare where
   methodMethodId (Proxy) = 10
   methodSynchronous (Proxy) = True
 
+instance FromMethod ExchangeDeclare where
+  fromMethod = \case
+    MethodExchangeDeclare m -> Just m
+    _ -> Nothing
+
 -- | The @declare-ok@ method: confirm exchange declaration
 --
 -- This method confirms a Declare method and confirms the name of the exchange,
@@ -363,6 +448,11 @@ instance IsMethod ExchangeDeclareOk where
   methodClassId (Proxy) = 40
   methodMethodId (Proxy) = 11
   methodSynchronous (Proxy) = True
+
+instance FromMethod ExchangeDeclareOk where
+  fromMethod = \case
+    MethodExchangeDeclareOk m -> Just m
+    _ -> Nothing
 
 -- | The @delete@ method: delete an exchange
 --
@@ -383,6 +473,11 @@ instance IsMethod ExchangeDelete where
   methodMethodId (Proxy) = 20
   methodSynchronous (Proxy) = True
 
+instance FromMethod ExchangeDelete where
+  fromMethod = \case
+    MethodExchangeDelete m -> Just m
+    _ -> Nothing
+
 -- | The @delete-ok@ method: confirm deletion of an exchange
 --
 -- This method confirms the deletion of an exchange.
@@ -396,6 +491,11 @@ instance IsMethod ExchangeDeleteOk where
   methodClassId (Proxy) = 40
   methodMethodId (Proxy) = 21
   methodSynchronous (Proxy) = True
+
+instance FromMethod ExchangeDeleteOk where
+  fromMethod = \case
+    MethodExchangeDeleteOk m -> Just m
+    _ -> Nothing
 
 -- * The @queue@ class
 
@@ -437,6 +537,11 @@ instance IsMethod QueueDeclare where
   methodMethodId (Proxy) = 10
   methodSynchronous (Proxy) = True
 
+instance FromMethod QueueDeclare where
+  fromMethod = \case
+    MethodQueueDeclare m -> Just m
+    _ -> Nothing
+
 -- | The @declare-ok@ method: confirms a queue definition
 --
 -- This method confirms a Declare method and confirms the name of the queue, essential
@@ -454,6 +559,11 @@ instance IsMethod QueueDeclareOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 11
   methodSynchronous (Proxy) = True
+
+instance FromMethod QueueDeclareOk where
+  fromMethod = \case
+    MethodQueueDeclareOk m -> Just m
+    _ -> Nothing
 
 -- | The @bind@ method: bind queue to an exchange
 --
@@ -478,6 +588,11 @@ instance IsMethod QueueBind where
   methodMethodId (Proxy) = 20
   methodSynchronous (Proxy) = True
 
+instance FromMethod QueueBind where
+  fromMethod = \case
+    MethodQueueBind m -> Just m
+    _ -> Nothing
+
 -- | The @bind-ok@ method: confirm bind successful
 --
 -- This method confirms that the bind was successful.
@@ -489,6 +604,11 @@ instance IsMethod QueueBindOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 21
   methodSynchronous (Proxy) = True
+
+instance FromMethod QueueBindOk where
+  fromMethod = \case
+    MethodQueueBindOk m -> Just m
+    _ -> Nothing
 
 -- | The @unbind@ method: unbind a queue from an exchange
 --
@@ -509,6 +629,11 @@ instance IsMethod QueueUnbind where
   methodMethodId (Proxy) = 50
   methodSynchronous (Proxy) = True
 
+instance FromMethod QueueUnbind where
+  fromMethod = \case
+    MethodQueueUnbind m -> Just m
+    _ -> Nothing
+
 -- | The @unbind-ok@ method: confirm unbind successful
 --
 -- This method confirms that the unbind was successful.
@@ -520,6 +645,11 @@ instance IsMethod QueueUnbindOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 51
   methodSynchronous (Proxy) = True
+
+instance FromMethod QueueUnbindOk where
+  fromMethod = \case
+    MethodQueueUnbindOk m -> Just m
+    _ -> Nothing
 
 -- | The @purge@ method: purge a queue
 --
@@ -539,6 +669,11 @@ instance IsMethod QueuePurge where
   methodMethodId (Proxy) = 30
   methodSynchronous (Proxy) = True
 
+instance FromMethod QueuePurge where
+  fromMethod = \case
+    MethodQueuePurge m -> Just m
+    _ -> Nothing
+
 -- | The @purge-ok@ method: confirms a queue purge
 --
 -- This method confirms the purge of a queue.
@@ -551,6 +686,11 @@ instance IsMethod QueuePurgeOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 31
   methodSynchronous (Proxy) = True
+
+instance FromMethod QueuePurgeOk where
+  fromMethod = \case
+    MethodQueuePurgeOk m -> Just m
+    _ -> Nothing
 
 -- | The @delete@ method: delete a queue
 --
@@ -573,6 +713,11 @@ instance IsMethod QueueDelete where
   methodMethodId (Proxy) = 40
   methodSynchronous (Proxy) = True
 
+instance FromMethod QueueDelete where
+  fromMethod = \case
+    MethodQueueDelete m -> Just m
+    _ -> Nothing
+
 -- | The @delete-ok@ method: confirm deletion of a queue
 --
 -- This method confirms the deletion of a queue.
@@ -585,6 +730,11 @@ instance IsMethod QueueDeleteOk where
   methodClassId (Proxy) = 50
   methodMethodId (Proxy) = 41
   methodSynchronous (Proxy) = True
+
+instance FromMethod QueueDeleteOk where
+  fromMethod = \case
+    MethodQueueDeleteOk m -> Just m
+    _ -> Nothing
 
 -- * The @basic@ class
 
@@ -627,6 +777,11 @@ instance IsMethod BasicQos where
   methodMethodId (Proxy) = 10
   methodSynchronous (Proxy) = True
 
+instance FromMethod BasicQos where
+  fromMethod = \case
+    MethodBasicQos m -> Just m
+    _ -> Nothing
+
 -- | The @qos-ok@ method: confirm the requested qos
 --
 -- This method tells the client that the requested QoS levels could be handled by the
@@ -640,6 +795,11 @@ instance IsMethod BasicQosOk where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 11
   methodSynchronous (Proxy) = True
+
+instance FromMethod BasicQosOk where
+  fromMethod = \case
+    MethodBasicQosOk m -> Just m
+    _ -> Nothing
 
 -- | The @consume@ method: start a queue consumer
 --
@@ -665,6 +825,11 @@ instance IsMethod BasicConsume where
   methodMethodId (Proxy) = 20
   methodSynchronous (Proxy) = True
 
+instance FromMethod BasicConsume where
+  fromMethod = \case
+    MethodBasicConsume m -> Just m
+    _ -> Nothing
+
 -- | The @consume-ok@ method: confirm a new consumer
 --
 -- The server provides the client with a consumer tag, which is used by the client
@@ -678,6 +843,11 @@ instance IsMethod BasicConsumeOk where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 21
   methodSynchronous (Proxy) = True
+
+instance FromMethod BasicConsumeOk where
+  fromMethod = \case
+    MethodBasicConsumeOk m -> Just m
+    _ -> Nothing
 
 -- | The @cancel@ method: end a queue consumer
 --
@@ -698,6 +868,11 @@ instance IsMethod BasicCancel where
   methodMethodId (Proxy) = 30
   methodSynchronous (Proxy) = True
 
+instance FromMethod BasicCancel where
+  fromMethod = \case
+    MethodBasicCancel m -> Just m
+    _ -> Nothing
+
 -- | The @cancel-ok@ method: confirm a cancelled consumer
 --
 -- This method confirms that the cancellation was completed.
@@ -710,6 +885,11 @@ instance IsMethod BasicCancelOk where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 31
   methodSynchronous (Proxy) = True
+
+instance FromMethod BasicCancelOk where
+  fromMethod = \case
+    MethodBasicCancelOk m -> Just m
+    _ -> Nothing
 
 -- | The @publish@ method: publish a message
 --
@@ -732,6 +912,11 @@ instance IsMethod BasicPublish where
   methodMethodId (Proxy) = 40
   methodSynchronous (Proxy) = False
 
+instance FromMethod BasicPublish where
+  fromMethod = \case
+    MethodBasicPublish m -> Just m
+    _ -> Nothing
+
 -- | The @return@ method: return a failed message
 --
 -- This method returns an undeliverable message that was published with the "immediate"
@@ -752,6 +937,11 @@ instance IsMethod BasicReturn where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 50
   methodSynchronous (Proxy) = False
+
+instance FromMethod BasicReturn where
+  fromMethod = \case
+    MethodBasicReturn m -> Just m
+    _ -> Nothing
 
 -- | The @deliver@ method: notify the client of a consumer message
 --
@@ -775,6 +965,11 @@ instance IsMethod BasicDeliver where
   methodMethodId (Proxy) = 60
   methodSynchronous (Proxy) = False
 
+instance FromMethod BasicDeliver where
+  fromMethod = \case
+    MethodBasicDeliver m -> Just m
+    _ -> Nothing
+
 -- | The @get@ method: direct access to a queue
 --
 -- This method provides a direct access to the messages in a queue using a synchronous
@@ -793,6 +988,11 @@ instance IsMethod BasicGet where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 70
   methodSynchronous (Proxy) = True
+
+instance FromMethod BasicGet where
+  fromMethod = \case
+    MethodBasicGet m -> Just m
+    _ -> Nothing
 
 -- | The @get-ok@ method: provide client with a message
 --
@@ -815,6 +1015,11 @@ instance IsMethod BasicGetOk where
   methodMethodId (Proxy) = 71
   methodSynchronous (Proxy) = True
 
+instance FromMethod BasicGetOk where
+  fromMethod = \case
+    MethodBasicGetOk m -> Just m
+    _ -> Nothing
+
 -- | The @get-empty@ method: indicate no messages available
 --
 -- This method tells the client that the queue has no messages available for the
@@ -828,6 +1033,11 @@ instance IsMethod BasicGetEmpty where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 72
   methodSynchronous (Proxy) = True
+
+instance FromMethod BasicGetEmpty where
+  fromMethod = \case
+    MethodBasicGetEmpty m -> Just m
+    _ -> Nothing
 
 -- | The @ack@ method: acknowledge one or more messages
 --
@@ -847,6 +1057,11 @@ instance IsMethod BasicAck where
   methodMethodId (Proxy) = 80
   methodSynchronous (Proxy) = False
 
+instance FromMethod BasicAck where
+  fromMethod = \case
+    MethodBasicAck m -> Just m
+    _ -> Nothing
+
 -- | The @reject@ method: reject an incoming message
 --
 -- This method allows a client to reject a message. It can be used to interrupt and
@@ -865,6 +1080,11 @@ instance IsMethod BasicReject where
   methodMethodId (Proxy) = 90
   methodSynchronous (Proxy) = False
 
+instance FromMethod BasicReject where
+  fromMethod = \case
+    MethodBasicReject m -> Just m
+    _ -> Nothing
+
 -- | The @recover-async@ method: redeliver unacknowledged messages
 --
 -- This method asks the server to redeliver all unacknowledged messages on a
@@ -879,6 +1099,11 @@ instance IsMethod BasicRecoverAsync where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 100
   methodSynchronous (Proxy) = False
+
+instance FromMethod BasicRecoverAsync where
+  fromMethod = \case
+    MethodBasicRecoverAsync m -> Just m
+    _ -> Nothing
 
 -- | The @recover@ method: redeliver unacknowledged messages
 --
@@ -895,6 +1120,11 @@ instance IsMethod BasicRecover where
   methodMethodId (Proxy) = 110
   methodSynchronous (Proxy) = False
 
+instance FromMethod BasicRecover where
+  fromMethod = \case
+    MethodBasicRecover m -> Just m
+    _ -> Nothing
+
 -- | The @recover-ok@ method: confirm recovery
 --
 -- This method acknowledges a Basic.Recover method.
@@ -906,6 +1136,11 @@ instance IsMethod BasicRecoverOk where
   methodClassId (Proxy) = 60
   methodMethodId (Proxy) = 111
   methodSynchronous (Proxy) = True
+
+instance FromMethod BasicRecoverOk where
+  fromMethod = \case
+    MethodBasicRecoverOk m -> Just m
+    _ -> Nothing
 
 -- * The @tx@ class
 
@@ -940,6 +1175,11 @@ instance IsMethod TxSelect where
   methodMethodId (Proxy) = 10
   methodSynchronous (Proxy) = True
 
+instance FromMethod TxSelect where
+  fromMethod = \case
+    MethodTxSelect m -> Just m
+    _ -> Nothing
+
 -- | The @select-ok@ method: confirm transaction mode
 --
 -- This method confirms to the client that the channel was successfully set to use
@@ -952,6 +1192,11 @@ instance IsMethod TxSelectOk where
   methodClassId (Proxy) = 90
   methodMethodId (Proxy) = 11
   methodSynchronous (Proxy) = True
+
+instance FromMethod TxSelectOk where
+  fromMethod = \case
+    MethodTxSelectOk m -> Just m
+    _ -> Nothing
 
 -- | The @commit@ method: commit the current transaction
 --
@@ -966,6 +1211,11 @@ instance IsMethod TxCommit where
   methodMethodId (Proxy) = 20
   methodSynchronous (Proxy) = True
 
+instance FromMethod TxCommit where
+  fromMethod = \case
+    MethodTxCommit m -> Just m
+    _ -> Nothing
+
 -- | The @commit-ok@ method: confirm a successful commit
 --
 -- This method confirms to the client that the commit succeeded. Note that if a commit
@@ -978,6 +1228,11 @@ instance IsMethod TxCommitOk where
   methodClassId (Proxy) = 90
   methodMethodId (Proxy) = 21
   methodSynchronous (Proxy) = True
+
+instance FromMethod TxCommitOk where
+  fromMethod = \case
+    MethodTxCommitOk m -> Just m
+    _ -> Nothing
 
 -- | The @rollback@ method: abandon the current transaction
 --
@@ -994,6 +1249,11 @@ instance IsMethod TxRollback where
   methodMethodId (Proxy) = 30
   methodSynchronous (Proxy) = True
 
+instance FromMethod TxRollback where
+  fromMethod = \case
+    MethodTxRollback m -> Just m
+    _ -> Nothing
+
 -- | The @rollback-ok@ method: confirm successful rollback
 --
 -- This method confirms to the client that the rollback succeeded. Note that if an
@@ -1006,6 +1266,11 @@ instance IsMethod TxRollbackOk where
   methodClassId (Proxy) = 90
   methodMethodId (Proxy) = 31
   methodSynchronous (Proxy) = True
+
+instance FromMethod TxRollbackOk where
+  fromMethod = \case
+    MethodTxRollbackOk m -> Just m
+    _ -> Nothing
 
 -- | A sum type of all the methods
 data Method
@@ -1065,6 +1330,10 @@ data Method
   deriving (Show, Eq, Generic)
 
 instance Validity Method
+
+-- | A type class of things that could be in a method frame
+class FromMethod a where
+  fromMethod :: Method -> Maybe a
 
 -- | Turn a 'Method' into a 'ByteString.Builder'.
 buildMethodFramePayload :: Method -> ByteString.Builder

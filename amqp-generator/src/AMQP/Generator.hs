@@ -236,6 +236,25 @@ classMethodTypeDecs className classIndex AMQP.Method {..} =
           [ FunD (mkName "methodClassId") [Clause [ConP (mkName "Proxy") []] (NormalB (LitE (IntegerL (toInteger classIndex)))) []],
             FunD (mkName "methodMethodId") [Clause [ConP (mkName "Proxy") []] (NormalB (LitE (IntegerL (toInteger methodIndex)))) []],
             FunD (mkName "methodSynchronous") [Clause [ConP (mkName "Proxy") []] (NormalB (ConE $ mkName (if methodSynchronous then "True" else "False"))) []]
+          ],
+        InstanceD
+          Nothing
+          []
+          (AppT (ConT (mkName "FromMethod")) (VarT n))
+          [ FunD
+              (mkName "fromMethod")
+              [ Clause
+                  []
+                  ( NormalB
+                      ( LamCaseE $
+                          let varName = mkName "m"
+                           in [ Match (ConP (mkMethodSumTypeConstructorName className methodName) [VarP varName]) (NormalB (AppE (ConE (mkName "Just")) (VarE varName))) [],
+                                Match WildP (NormalB (ConE (mkName "Nothing"))) []
+                              ]
+                      )
+                  )
+                  []
+              ]
           ]
       ]
 
@@ -260,6 +279,9 @@ genMethodSumType cs =
   vcat
     [ haddockIntro "A sum type of all the methods",
       ppr_list $ methodsSumTypeDecs cs,
+      haddockIntro "A type class of things that could be in a method frame",
+      text "class FromMethod a where",
+      text "  fromMethod :: Method -> Maybe a",
       haddockIntro "Turn a 'Method' into a 'ByteString.Builder'.",
       ppr_list $ genBuildSumTypeFunction cs,
       haddockIntro "Parse a 'Method' frame payload.",
