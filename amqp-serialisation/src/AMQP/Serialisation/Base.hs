@@ -237,11 +237,35 @@ parseBit = label "Bit" $ do
     _ -> pure True
 
 buildBit :: Bit -> ByteString.Builder
-buildBit b =
-  SBB.word8 $
-    if b
-      then 1
-      else 0
+buildBit = SBB.word8 . bitToWord8
+
+-- | Parse 'n' bits
+--
+-- This function only works for input 8 or fewer
+parseBits :: Word8 -> Parser [Bit]
+parseBits n = do
+  w <- anyWord8
+  pure $ go n w
+  where
+    go :: Word8 -> Word8 -> [Bit]
+    go bitsLeft w
+      | bitsLeft <= 0 = []
+      | otherwise = odd w : go (pred bitsLeft) (w `div` 2)
+
+-- | Build bits, packed into octets
+--
+-- This function only works for input list sizes 8 or smaller
+buildBits :: [Bit] -> ByteString.Builder
+buildBits = SBB.word8 . go
+  where
+    go :: [Bit] -> Word8
+    go [] = 0
+    go (b : bs) = 2 * go bs + bitToWord8 b
+
+bitToWord8 :: Bit -> Word8
+bitToWord8 = \case
+  True -> 1
+  False -> 0
 
 type Octet = Word8
 

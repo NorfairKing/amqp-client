@@ -21,6 +21,13 @@ roundtrips builder parser =
       Left err -> expectationFailure err
       Right actual -> actual `shouldBe` expected
 
+roundtripsFor :: (Show a, Eq a) => (a -> ByteString.Builder) -> Parser a -> a -> IO ()
+roundtripsFor builder parser expected = do
+  let errOrRes = parseOnly parser (builderToByteString (builder expected))
+  case errOrRes of
+    Left err -> expectationFailure err
+    Right actual -> actual `shouldBe` expected
+
 -- This re-encodes before comparing for equality so that NaN values don't cause trouble
 roundtripsWithFloat :: (Show a, Eq a, GenValid a) => (a -> ByteString.Builder) -> Parser a -> Property
 roundtripsWithFloat builder parser =

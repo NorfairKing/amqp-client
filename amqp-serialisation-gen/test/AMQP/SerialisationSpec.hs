@@ -95,3 +95,24 @@ spec = do
                 connectionStartMechanisms = LongString {longStringBytes = "PLAIN AMQPLAIN"},
                 connectionStartLocales = LongString {longStringBytes = "en_US"}
               }
+  describe "parseGivenMethodFrame" $ do
+    describe "QueueDeclare" $ do
+      let channelNumber = 42
+          exampleQueueDeclare =
+            QueueDeclare
+              { queueDeclareReserved1 = 0,
+                queueDeclareQueue = "example-name",
+                queueDeclarePassive = False,
+                queueDeclareDurable = True,
+                queueDeclareExclusive = False,
+                queueDeclareAutoDelete = False,
+                queueDeclareNoWait = False,
+                queueDeclareArguments = emptyFieldTable
+              }
+      it "roundtrips on this example" $
+        roundtripsFor
+          (uncurry buildGivenMethodFrame)
+          parseGivenMethodFrame
+          (channelNumber, exampleQueueDeclare)
+      it "outputs the same as before for this example" $
+        pureGoldenByteStringBuilderFile "test_resources/method-frame/queue-declare.dat" (buildGivenMethodFrame channelNumber exampleQueueDeclare)

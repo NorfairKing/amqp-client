@@ -93,13 +93,13 @@ parseRawFrame = label "RawFrame" $ do
   void $ Parse.word8 frameEnd
   pure RawFrame {..}
 
-parseGivenMethodFrame :: IsMethod a => Parser a
+parseGivenMethodFrame :: IsMethod a => Parser (ChannelNumber, a)
 parseGivenMethodFrame = label "Method Frame" $ do
   RawFrame {..} <- parseRawFrame
   case rawFrameType of
     MethodFrameType -> case parseOnly parseGivenMethodFramePayload rawFramePayload of
       Left err -> fail err
-      Right r -> pure r
+      Right r -> pure (rawFrameChannel, r)
     ft -> fail $ unwords ["Got a frame of type", show ft, "instead of a method frame."]
 
 parseGivenMethodFramePayload :: forall a. IsMethod a => Parser a

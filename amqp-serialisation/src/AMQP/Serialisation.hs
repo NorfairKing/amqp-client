@@ -66,7 +66,7 @@ parseProtocolNegotiationResponse =
   label "ProtocolNegotiationResponse" $
     choice
       [ ProtocolRejected <$> parseProtocolHeader,
-        ProtocolProposed <$> parseGivenMethodFrame
+        ProtocolProposed . snd <$> parseGivenMethodFrame
       ]
 
 parseMethodFrame :: Parser Method

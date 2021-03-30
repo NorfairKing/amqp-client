@@ -4,7 +4,11 @@ module AMQP.Serialisation.BaseSpec (spec) where
 import AMQP.Serialisation.Base
 import AMQP.Serialisation.Base.Gen ()
 import AMQP.Serialisation.TestUtils
+import qualified Data.Attoparsec.ByteString as Attoparsec
+import qualified Data.ByteString.Builder as SBB
+import Test.QuickCheck
 import Test.Syd
+import Test.Syd.Validity
 
 spec :: Spec
 spec = do
@@ -27,6 +31,23 @@ spec = do
   describe "parseBit" $
     it "can parse whatever 'buildBit' builds'" $
       roundtrips buildBit parseBit
+
+  describe "parseBits" $
+    it "can parse whatever 'buildBits' builds'" $
+      forAllValid $ \w1 ->
+        forAllValid $ \w2 ->
+          forAllValid $ \w3 ->
+            forAllValid $ \w4 ->
+              forAllValid $ \w5 ->
+                forAllValid $ \w6 ->
+                  forAllValid $ \w7 ->
+                    forAllValid $ \w8 ->
+                      forAll (choose (0, 8)) $ \n ->
+                        let l = take n [w1, w2, w3, w4, w5, w6, w7, w8]
+                            rendered = builderToByteString $ buildBits l
+                         in case Attoparsec.parseOnly (parseBits (fromIntegral (length l))) rendered of
+                              Left err -> expectationFailure err
+                              Right bits -> bits `shouldBe` l
 
   describe "parseOctet" $
     it "can parse whatever 'buildOctet' builds'" $
