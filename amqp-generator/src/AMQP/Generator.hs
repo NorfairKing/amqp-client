@@ -307,6 +307,25 @@ genParseMethodArguments className classIndex AMQP.Method {..} =
     )
     []
 
+groupFields :: [AMQP.Field] -> [GroupedField]
+groupFields = go
+  where
+    go :: [AMQP.Field] -> [GroupedField]
+    go [] = []
+    go (f : fs) = if fieldIsBit f then goBits [f] fs else NonBitField f : go fs
+
+    goBits :: [AMQP.Field] -> [AMQP.Field] -> [GroupedField]
+    goBits acc [] = [BitFields (reverse acc)]
+    goBits acc (f : fs) = if fieldIsBit f then goBits (f : acc) fs else BitFields (reverse acc) : go fs
+
+fieldIsBit :: Field -> Bool
+fieldIsBit Field {..} = case fromMaybe (error "A field must have either a type or a domain type") $ fieldType <|> fieldDomain of
+  "bit" -> True
+  _ -> False
+
+data GroupedField = NonBitField Field | BitFields [Field]
+  deriving (Show, Eq)
+
 mkMethodTypeName :: Text -> Text -> Name
 mkMethodTypeName className methodName = mkHaskellTypeName $ T.intercalate "-" [className, methodName]
 
