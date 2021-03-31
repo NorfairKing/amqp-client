@@ -87,7 +87,7 @@ data HandleResult = NotHandled | HandledButNotDone | HandledAndDone
 channelOpen :: MonadUnliftIO m => Connection -> m Channel
 channelOpen conn@Connection {..} = do
   let number = 1 -- TODO choose an open index for a new open channel.
-  ChannelOpenOk {..} <- synchronouslyRequest connectionNetworkConnection connectionLeftoversVar connectionSynchronousVar number ChannelOpen {channelOpenReserved1 = ""}
+  ChannelOpenOk {} <- synchronouslyRequest connectionNetworkConnection connectionLeftoversVar connectionSynchronousVar number ChannelOpen {channelOpenReserved1 = ""}
   messageQueue <- newTQueueIO
   pure $
     Channel
@@ -255,7 +255,7 @@ withConnection ConnectionSettings {..} callback = do
               }
       -- C: OPEN
       -- S: OPEN-OK
-      ConnectionOpenOk {..} <- synchronouslyRequest networkConnection leftoversVar synchronousVar 0 connectionOpen
+      ConnectionOpenOk {} <- synchronouslyRequest networkConnection leftoversVar synchronousVar 0 connectionOpen
 
       messageQueue <- newTQueueIO
       channelVar <- newTVarIO IM.empty

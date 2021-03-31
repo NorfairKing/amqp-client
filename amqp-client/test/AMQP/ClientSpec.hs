@@ -22,25 +22,25 @@ spec = rabbitMQSpec $ do
     withConnection settings $ \_ -> do
       pure () :: IO ()
   itWithLocalGuestConnection "can make a connection, open a channel and then do nothing" $ \conn -> do
-    chan <- channelOpen conn
+    _ <- channelOpen conn
     pure () :: IO ()
   itWithLocalGuestConnection "can make a connection and declare a queue" $ \conn -> do
     chan <- channelOpen conn
     let myQueueName = "myQueueName"
-    queueDeclare chan myQueueName defaultQueueSettings
+    _ <- queueDeclare chan myQueueName defaultQueueSettings
     pure () :: IO ()
   itWithLocalGuestConnection "can go through the tutorial steps" $ \conn -> do
     chan <- channelOpen conn
     let myQueueName = "myQueueName"
         myExchangeName = "myExchangeName"
         myRoutingKey = "myRoutingKey"
-    queueDeclare chan myQueueName defaultQueueSettings
-    exchangeDeclare chan myExchangeName defaultExchangeSettings
+    _ <- queueDeclare chan myQueueName defaultQueueSettings
+    _ <- exchangeDeclare chan myExchangeName defaultExchangeSettings
     queueBind chan myQueueName myExchangeName myRoutingKey
 
 itWithLocalGuestConnection :: String -> (Connection -> IO ()) -> TestDefM (RabbitMQHandle ': otherOuters) () ()
 itWithLocalGuestConnection s func =
-  itWithOuter "can go through the tutorial steps" $ \RabbitMQHandle {..} -> do
+  itWithOuter s $ \RabbitMQHandle {..} -> do
     let settings =
           ConnectionSettings
             { connectionSettingHostName = "127.0.0.1",
