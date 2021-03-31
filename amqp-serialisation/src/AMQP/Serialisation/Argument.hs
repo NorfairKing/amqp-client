@@ -18,12 +18,10 @@ class IsMethod a where
   methodClassId :: Proxy a -> ClassId
   methodMethodId :: Proxy a -> MethodId
   methodSynchronous :: Proxy a -> Bool
+  parseMethodArguments :: Parser a
   buildMethodArguments :: a -> [Argument]
   default buildMethodArguments :: (Generic a, GIsMethod (Rep a)) => a -> [Argument]
   buildMethodArguments = gBuildArguments . from
-  parseMethodArguments :: Parser a
-  default parseMethodArguments :: (Generic a, GIsMethod (Rep a)) => Parser a
-  parseMethodArguments = to <$> gParseArguments
 
 class SynchronousRequest a where
   type SynchronousResponse a :: *
@@ -94,27 +92,22 @@ instance IsArgument FieldTable where
 -- Note that this _does_ mean that the fields need to be in the right order.
 class GIsMethod f where
   gBuildArguments :: f a -> [Argument]
-  gParseArguments :: Parser (f a)
 
 -- No instance for the Void constructor.
 
 -- | Constructor without arguments
 instance GIsMethod U1 where
   gBuildArguments _ = [] -- No arguments
-  gParseArguments = pure U1
 
 -- | Constructor for product types
 instance (GIsMethod a, GIsMethod b) => GIsMethod (a :*: b) where
   -- These are small lists anyway.
   gBuildArguments (a :*: b) = gBuildArguments a ++ gBuildArguments b
-  gParseArguments = (:*:) <$> gParseArguments <*> gParseArguments
 
 -- | Constructor for Meta-info that we don't need: constructor names, etc
 instance GIsMethod a => GIsMethod (M1 i c a) where
   gBuildArguments = gBuildArguments . unM1
-  gParseArguments = M1 <$> gParseArguments
 
 -- | Constructor for the leaves: Where we get the arguments
 instance IsArgument a => GIsMethod (K1 R a) where
   gBuildArguments (K1 a) = [toArgument a]
-  gParseArguments = K1 <$> parseArgument

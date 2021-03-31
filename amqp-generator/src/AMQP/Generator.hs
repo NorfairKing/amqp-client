@@ -148,8 +148,8 @@ genGeneratedMethodsModule AMQP.AMQPSpec {..} =
       text "import Data.Proxy",
       text "import Data.Validity",
       text "",
-      genClassesTypesDoc amqpSpecClasses,
-      genMethodSumType amqpSpecClasses
+      genMethodSumType amqpSpecClasses, -- TODO move this back down when we finish the parsing code
+      genClassesTypesDoc amqpSpecClasses
     ]
 
 genHaddocks :: Text -> Maybe AMQP.Doc -> Doc
@@ -212,7 +212,7 @@ genClassMethodTypeDoc className classIndex m@AMQP.Method {..} =
     ]
 
 classMethodTypeDecs :: Text -> Word -> Method -> [Dec]
-classMethodTypeDecs className classIndex AMQP.Method {..} =
+classMethodTypeDecs className classIndex m@AMQP.Method {..} =
   let n = mkMethodTypeName className methodName
    in [ DataD
           []
@@ -235,7 +235,12 @@ classMethodTypeDecs className classIndex AMQP.Method {..} =
           (AppT (ConT (mkName "IsMethod")) (VarT n))
           [ FunD (mkName "methodClassId") [Clause [ConP (mkName "Proxy") []] (NormalB (LitE (IntegerL (toInteger classIndex)))) []],
             FunD (mkName "methodMethodId") [Clause [ConP (mkName "Proxy") []] (NormalB (LitE (IntegerL (toInteger methodIndex)))) []],
-            FunD (mkName "methodSynchronous") [Clause [ConP (mkName "Proxy") []] (NormalB (ConE $ mkName (if methodSynchronous then "True" else "False"))) []]
+            FunD
+              (mkName "methodSynchronous")
+              [Clause [ConP (mkName "Proxy") []] (NormalB (ConE $ mkName (if methodSynchronous then "True" else "False"))) []],
+            FunD
+              (mkName "parseMethodArguments")
+              [genParseMethodArguments className classIndex m]
           ],
         InstanceD
           Nothing
@@ -261,6 +266,47 @@ classMethodTypeDecs className classIndex AMQP.Method {..} =
 -- ++ [ undefined | methodSynchronous
 --    ]
 
+genParseMethodArguments :: Text -> Word -> Method -> Clause
+genParseMethodArguments className classIndex AMQP.Method {..} =
+  Clause
+    []
+    ( NormalB
+        ( DoE $
+            concat
+              [ map
+                  ( \Field {..} ->
+                      BindS
+                        (VarP (mkMethodFieldTypeVarName className methodName fieldName))
+                        ( VarE (mkName "parseArgument")
+                        )
+                  )
+                  methodArguments,
+                [ NoBindS
+                    ( AppE
+                        (VarE (mkName "pure"))
+                        ( if null methodArguments -- No need for the extra braces.
+                            then ConE (mkMethodTypeName className methodName)
+                            else
+                              RecConE
+                                (mkMethodTypeName className methodName)
+                                ( map
+                                    ( \Field {..} ->
+                                        ( mkMethodFieldTypeName className methodName fieldName,
+                                          VarE
+                                            ( mkMethodFieldTypeVarName className methodName fieldName
+                                            )
+                                        )
+                                    )
+                                    methodArguments
+                                )
+                        )
+                    )
+                ]
+              ]
+        )
+    )
+    []
+
 mkMethodTypeName :: Text -> Text -> Name
 mkMethodTypeName className methodName = mkHaskellTypeName $ T.intercalate "-" [className, methodName]
 
@@ -276,6 +322,9 @@ classMethodFieldVarBangType className methodName AMQP.Field {..} =
 
 mkMethodFieldTypeName :: Text -> Text -> Text -> Name
 mkMethodFieldTypeName className methodName fieldName = mkHaskellVarName (T.intercalate "-" [className, methodName, fieldName])
+
+mkMethodFieldTypeVarName :: Text -> Text -> Text -> Name
+mkMethodFieldTypeVarName className methodName fieldName = mkHaskellVarName (T.intercalate "-" [className, methodName, fieldName, "parsed"])
 
 genMethodSumType :: [AMQP.Class] -> Doc
 genMethodSumType cs =
