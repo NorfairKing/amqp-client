@@ -1,5 +1,7 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeOperators #-}
 
 module AMQP.ClientSpec (spec) where
 
@@ -19,28 +21,25 @@ spec = rabbitMQSpec $ do
             }
     withConnection settings $ \_ -> do
       pure () :: IO ()
-  itWithOuter "can make a connection, open a channel and then do nothing" $ \RabbitMQHandle {..} -> do
-    let settings =
-          ConnectionSettings
-            { connectionSettingHostName = "127.0.0.1",
-              connectionSettingPort = rabbitMQHandlePort,
-              connectionSettingSASLMechanism = PLAINMechanism "guest" "guest"
-            }
-    withConnection settings $ \conn -> do
-      chan <- channelOpen conn
-      pure () :: IO ()
-  itWithOuter "can make a connection and declare a queue" $ \RabbitMQHandle {..} -> do
-    let settings =
-          ConnectionSettings
-            { connectionSettingHostName = "127.0.0.1",
-              connectionSettingPort = rabbitMQHandlePort,
-              connectionSettingSASLMechanism = PLAINMechanism "guest" "guest"
-            }
-    withConnection settings $ \conn -> do
-      chan <- channelOpen conn
-      let myQueueName = "myQueueName"
-      queueDeclare chan myQueueName defaultQueueSettings
-      pure () :: IO ()
+  itWithLocalGuestConnection "can make a connection, open a channel and then do nothing" $ \conn -> do
+    chan <- channelOpen conn
+    pure () :: IO ()
+  itWithLocalGuestConnection "can make a connection and declare a queue" $ \conn -> do
+    chan <- channelOpen conn
+    let myQueueName = "myQueueName"
+    queueDeclare chan myQueueName defaultQueueSettings
+    pure () :: IO ()
+  itWithLocalGuestConnection "can go through the tutorial steps" $ \conn -> do
+    chan <- channelOpen conn
+    let myQueueName = "myQueueName"
+        myExchangeName = "myExchangeName"
+        myRoutingKey = "myRoutingKey"
+    queueDeclare chan myQueueName defaultQueueSettings
+    exchangeDeclare chan myExchangeName defaultExchangeSettings
+    queueBind chan myQueueName myExchangeName myRoutingKey
+
+itWithLocalGuestConnection :: String -> (Connection -> IO ()) -> TestDefM (RabbitMQHandle ': otherOuters) () ()
+itWithLocalGuestConnection s func =
   itWithOuter "can go through the tutorial steps" $ \RabbitMQHandle {..} -> do
     let settings =
           ConnectionSettings
@@ -48,13 +47,4 @@ spec = rabbitMQSpec $ do
               connectionSettingPort = rabbitMQHandlePort,
               connectionSettingSASLMechanism = PLAINMechanism "guest" "guest"
             }
-    withConnection settings $ \conn -> do
-      chan <- channelOpen conn
-      let myQueueName = "myQueueName"
-          myExchangeName = "myExchangeName"
-          myRoutingKey = "myRoutingKey"
-      queueDeclare chan myQueueName defaultQueueSettings
-      exchangeDeclare chan myExchangeName defaultExchangeSettings
-      queueBind chan myQueueName myExchangeName myRoutingKey
-
-      pure () :: IO ()
+    withConnection settings $ \conn -> func conn
