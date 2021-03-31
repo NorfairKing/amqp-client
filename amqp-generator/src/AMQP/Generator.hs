@@ -136,6 +136,7 @@ genGeneratedMethodsModule AMQP.AMQPSpec {..} =
   vcat
     [ text "{-# LANGUAGE DeriveGeneric #-}",
       text "{-# LANGUAGE LambdaCase #-}",
+      text "{-# LANGUAGE TypeFamilies #-}",
       text "module AMQP.Serialisation.Generated.Methods where",
       text "",
       text "import AMQP.Serialisation.Argument",
@@ -262,9 +263,23 @@ classMethodTypeDecs className classIndex m@AMQP.Method {..} =
               ]
           ]
       ]
+        ++ if methodSynchronous then genResponseSumTypeAndInstances className m else []
 
--- ++ [ undefined | methodSynchronous
---    ]
+genResponseSumTypeAndInstances :: Text -> Method -> [Dec]
+genResponseSumTypeAndInstances className Method {..} =
+  let n = mkMethodTypeName className methodName
+   in case methodResponses of
+        [] -> []
+        [Response {..}] ->
+          [ InstanceD
+              Nothing
+              []
+              (AppT (ConT (mkName "SynchronousRequest")) (VarT n))
+              [ TySynD (mkName "SynchronousResponse") [PlainTV n] (VarT (mkMethodTypeName className responseName))
+              ]
+          ]
+        _ ->
+          [] -- TODO generate a sum type and an instance.
 
 genParseMethodArguments :: Text -> Method -> Clause
 genParseMethodArguments className AMQP.Method {..} =

@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module AMQP.Serialisation.Generated.Methods where
 
@@ -323,6 +324,9 @@ instance FromMethod ConnectionStart where
     MethodConnectionStart m -> Just m
     _ -> Nothing
 
+instance SynchronousRequest ConnectionStart where
+  type SynchronousResponse ConnectionStart = ConnectionStartOk
+
 -- | The @start-ok@ method: select security mechanism and locale
 --
 -- This method selects a SASL security mechanism.
@@ -381,6 +385,9 @@ instance FromMethod ConnectionSecure where
     MethodConnectionSecure m -> Just m
     _ -> Nothing
 
+instance SynchronousRequest ConnectionSecure where
+  type SynchronousResponse ConnectionSecure = ConnectionSecureOk
+
 -- | The @secure-ok@ method: security mechanism response
 --
 -- This method attempts to authenticate, passing a block of SASL data for the security
@@ -435,6 +442,9 @@ instance FromMethod ConnectionTune where
   fromMethod = \case
     MethodConnectionTune m -> Just m
     _ -> Nothing
+
+instance SynchronousRequest ConnectionTune where
+  type SynchronousResponse ConnectionTune = ConnectionTuneOk
 
 -- | The @tune-ok@ method: negotiate connection tuning parameters
 --
@@ -504,6 +514,9 @@ instance FromMethod ConnectionOpen where
     MethodConnectionOpen m -> Just m
     _ -> Nothing
 
+instance SynchronousRequest ConnectionOpen where
+  type SynchronousResponse ConnectionOpen = ConnectionOpenOk
+
 -- | The @open-ok@ method: signal that connection is ready
 --
 -- This method signals to the client that the connection is ready for use.
@@ -562,6 +575,9 @@ instance FromMethod ConnectionClose where
   fromMethod = \case
     MethodConnectionClose m -> Just m
     _ -> Nothing
+
+instance SynchronousRequest ConnectionClose where
+  type SynchronousResponse ConnectionClose = ConnectionCloseOk
 
 -- | The @close-ok@ method: confirm a connection close
 --
@@ -622,6 +638,9 @@ instance FromMethod ChannelOpen where
     MethodChannelOpen m -> Just m
     _ -> Nothing
 
+instance SynchronousRequest ChannelOpen where
+  type SynchronousResponse ChannelOpen = ChannelOpenOk
+
 -- | The @open-ok@ method: signal that the channel is ready
 --
 -- This method signals to the client that the channel is ready for use.
@@ -667,6 +686,9 @@ instance FromMethod ChannelFlow where
   fromMethod = \case
     MethodChannelFlow m -> Just m
     _ -> Nothing
+
+instance SynchronousRequest ChannelFlow where
+  type SynchronousResponse ChannelFlow = ChannelFlowOk
 
 -- | The @flow-ok@ method: confirm a flow method
 --
@@ -726,6 +748,9 @@ instance FromMethod ChannelClose where
   fromMethod = \case
     MethodChannelClose m -> Just m
     _ -> Nothing
+
+instance SynchronousRequest ChannelClose where
+  type SynchronousResponse ChannelClose = ChannelCloseOk
 
 -- | The @close-ok@ method: confirm a channel close
 --
@@ -811,6 +836,9 @@ instance FromMethod ExchangeDeclare where
     MethodExchangeDeclare m -> Just m
     _ -> Nothing
 
+instance SynchronousRequest ExchangeDeclare where
+  type SynchronousResponse ExchangeDeclare = ExchangeDeclareOk
+
 -- | The @declare-ok@ method: confirm exchange declaration
 --
 -- This method confirms a Declare method and confirms the name of the exchange,
@@ -869,6 +897,9 @@ instance FromMethod ExchangeDelete where
   fromMethod = \case
     MethodExchangeDelete m -> Just m
     _ -> Nothing
+
+instance SynchronousRequest ExchangeDelete where
+  type SynchronousResponse ExchangeDelete = ExchangeDeleteOk
 
 -- | The @delete-ok@ method: confirm deletion of an exchange
 --
@@ -957,6 +988,9 @@ instance FromMethod QueueDeclare where
     MethodQueueDeclare m -> Just m
     _ -> Nothing
 
+instance SynchronousRequest QueueDeclare where
+  type SynchronousResponse QueueDeclare = QueueDeclareOk
+
 -- | The @declare-ok@ method: confirms a queue definition
 --
 -- This method confirms a Declare method and confirms the name of the queue, essential
@@ -1034,6 +1068,9 @@ instance FromMethod QueueBind where
     MethodQueueBind m -> Just m
     _ -> Nothing
 
+instance SynchronousRequest QueueBind where
+  type SynchronousResponse QueueBind = QueueBindOk
+
 -- | The @bind-ok@ method: confirm bind successful
 --
 -- This method confirms that the bind was successful.
@@ -1090,6 +1127,9 @@ instance FromMethod QueueUnbind where
     MethodQueueUnbind m -> Just m
     _ -> Nothing
 
+instance SynchronousRequest QueueUnbind where
+  type SynchronousResponse QueueUnbind = QueueUnbindOk
+
 -- | The @unbind-ok@ method: confirm unbind successful
 --
 -- This method confirms that the unbind was successful.
@@ -1140,6 +1180,9 @@ instance FromMethod QueuePurge where
   fromMethod = \case
     MethodQueuePurge m -> Just m
     _ -> Nothing
+
+instance SynchronousRequest QueuePurge where
+  type SynchronousResponse QueuePurge = QueuePurgeOk
 
 -- | The @purge-ok@ method: confirms a queue purge
 --
@@ -1203,6 +1246,9 @@ instance FromMethod QueueDelete where
   fromMethod = \case
     MethodQueueDelete m -> Just m
     _ -> Nothing
+
+instance SynchronousRequest QueueDelete where
+  type SynchronousResponse QueueDelete = QueueDeleteOk
 
 -- | The @delete-ok@ method: confirm deletion of a queue
 --
@@ -1281,6 +1327,9 @@ instance FromMethod BasicQos where
     MethodBasicQos m -> Just m
     _ -> Nothing
 
+instance SynchronousRequest BasicQos where
+  type SynchronousResponse BasicQos = BasicQosOk
+
 -- | The @qos-ok@ method: confirm the requested qos
 --
 -- This method tells the client that the requested QoS levels could be handled by the
@@ -1352,6 +1401,9 @@ instance FromMethod BasicConsume where
     MethodBasicConsume m -> Just m
     _ -> Nothing
 
+instance SynchronousRequest BasicConsume where
+  type SynchronousResponse BasicConsume = BasicConsumeOk
+
 -- | The @consume-ok@ method: confirm a new consumer
 --
 -- The server provides the client with a consumer tag, which is used by the client
@@ -1405,6 +1457,9 @@ instance FromMethod BasicCancel where
   fromMethod = \case
     MethodBasicCancel m -> Just m
     _ -> Nothing
+
+instance SynchronousRequest BasicCancel where
+  type SynchronousResponse BasicCancel = BasicCancelOk
 
 -- | The @cancel-ok@ method: confirm a cancelled consumer
 --
@@ -1809,6 +1864,9 @@ instance FromMethod TxSelect where
     MethodTxSelect m -> Just m
     _ -> Nothing
 
+instance SynchronousRequest TxSelect where
+  type SynchronousResponse TxSelect = TxSelectOk
+
 -- | The @select-ok@ method: confirm transaction mode
 --
 -- This method confirms to the client that the channel was successfully set to use
@@ -1846,6 +1904,9 @@ instance FromMethod TxCommit where
   fromMethod = \case
     MethodTxCommit m -> Just m
     _ -> Nothing
+
+instance SynchronousRequest TxCommit where
+  type SynchronousResponse TxCommit = TxCommitOk
 
 -- | The @commit-ok@ method: confirm a successful commit
 --
@@ -1886,6 +1947,9 @@ instance FromMethod TxRollback where
   fromMethod = \case
     MethodTxRollback m -> Just m
     _ -> Nothing
+
+instance SynchronousRequest TxRollback where
+  type SynchronousResponse TxRollback = TxRollbackOk
 
 -- | The @rollback-ok@ method: confirm successful rollback
 --

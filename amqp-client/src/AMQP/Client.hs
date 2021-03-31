@@ -272,22 +272,6 @@ withConnection ConnectionSettings {..} callback = do
               }
       callback amqpConnection
 
--- TODO generate these.
-instance SynchronousRequest ConnectionOpen where
-  type SynchronousResponse ConnectionOpen = ConnectionOpenOk
-
-instance SynchronousRequest ChannelOpen where
-  type SynchronousResponse ChannelOpen = ChannelOpenOk
-
-instance SynchronousRequest QueueDeclare where
-  type SynchronousResponse QueueDeclare = QueueDeclareOk
-
-instance SynchronousRequest QueueBind where
-  type SynchronousResponse QueueBind = QueueBindOk
-
-instance SynchronousRequest ExchangeDeclare where
-  type SynchronousResponse ExchangeDeclare = ExchangeDeclareOk
-
 -- | Send a synchronous method to the server and wait for a synchronous answer.
 --
 -- This implements the pseudo logic in section 2.2.2: Mapping AMQP to a middleware API
