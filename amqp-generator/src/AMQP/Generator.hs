@@ -240,7 +240,7 @@ classMethodTypeDecs className classIndex m@AMQP.Method {..} =
               [Clause [ConP (mkName "Proxy") []] (NormalB (ConE $ mkName (if methodSynchronous then "True" else "False"))) []],
             FunD
               (mkName "parseMethodArguments")
-              [genParseMethodArguments className classIndex m]
+              [genParseMethodArguments className m]
           ],
         InstanceD
           Nothing
@@ -266,8 +266,8 @@ classMethodTypeDecs className classIndex m@AMQP.Method {..} =
 -- ++ [ undefined | methodSynchronous
 --    ]
 
-genParseMethodArguments :: Text -> Word -> Method -> Clause
-genParseMethodArguments className classIndex AMQP.Method {..} =
+genParseMethodArguments :: Text -> Method -> Clause
+genParseMethodArguments className AMQP.Method {..} =
   Clause
     []
     ( NormalB

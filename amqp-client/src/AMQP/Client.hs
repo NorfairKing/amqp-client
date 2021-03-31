@@ -24,7 +24,6 @@ import qualified Data.IntMap as IM
 import Data.List
 import qualified Data.Map as M
 import Data.Text (Text)
-import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import GHC.Generics (Generic)
 import qualified Network.Connection as Network
@@ -87,9 +86,8 @@ data HandleResult = NotHandled | HandledButNotDone | HandledAndDone
 
 channelOpen :: MonadUnliftIO m => Connection -> m Channel
 channelOpen conn@Connection {..} = do
-  let channelOpen = ChannelOpen {channelOpenReserved1 = ""}
-  let number = 1 --
-  ChannelOpenOk {..} <- synchronouslyRequest connectionNetworkConnection connectionLeftoversVar connectionSynchronousVar number channelOpen
+  let number = 1 -- TODO choose an open index for a new open channel.
+  ChannelOpenOk {..} <- synchronouslyRequest connectionNetworkConnection connectionLeftoversVar connectionSynchronousVar number ChannelOpen {channelOpenReserved1 = ""}
   messageQueue <- newTQueueIO
   pure $
     Channel

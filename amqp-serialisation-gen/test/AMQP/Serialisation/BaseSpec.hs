@@ -5,7 +5,6 @@ import AMQP.Serialisation.Base
 import AMQP.Serialisation.Base.Gen ()
 import AMQP.Serialisation.TestUtils
 import qualified Data.Attoparsec.ByteString as Attoparsec
-import qualified Data.ByteString.Builder as SBB
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
