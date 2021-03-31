@@ -258,9 +258,8 @@ classMethodTypeDecs className classIndex AMQP.Method {..} =
           ]
       ]
 
--- TODO generate the type family instance
---  ++ [ undefined | methodSynchronous
---     ]
+-- ++ [ undefined | methodSynchronous
+--    ]
 
 mkMethodTypeName :: Text -> Text -> Name
 mkMethodTypeName className methodName = mkHaskellTypeName $ T.intercalate "-" [className, methodName]
@@ -401,7 +400,7 @@ parseSumFunctionMatchForClass AMQP.Class {..} =
             ( CaseE
                 (VarE methodIdVar)
                 ( map (parseSumFunctionMatchForMethod className) classMethods
-                    ++ [matchFailedMatch ("method id for class " ++ T.unpack className ++ " (" ++ show classIndex ++ ")") methodIdVar]
+                    ++ [matchFailedMatch ("method id for class '" ++ T.unpack className ++ "' (" ++ show classIndex ++ ")") methodIdVar]
                 )
             )
         )
@@ -415,7 +414,7 @@ parseSumFunctionMatchForMethod className AMQP.Method {..} =
         ( InfixE
             (Just (VarE (mkMethodSumTypeConstructorName className methodName)))
             (VarE (mkName "<$>"))
-            (Just (VarE (mkName "methodArgumentsParser")))
+            (Just (VarE (mkName "parseMethodArguments")))
         )
     )
     []
@@ -426,7 +425,7 @@ matchFailedMatch thing var =
     WildP
     ( NormalB
         ( AppE
-            (VarE (mkName "ParseFail"))
+            (VarE (mkName "fail"))
             ( InfixE
                 ( Just
                     ( LitE

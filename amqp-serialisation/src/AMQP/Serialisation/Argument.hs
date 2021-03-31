@@ -21,52 +21,52 @@ class IsMethod a where
   buildMethodArguments :: a -> [Argument]
   default buildMethodArguments :: (Generic a, GIsMethod (Rep a)) => a -> [Argument]
   buildMethodArguments = gBuildArguments . from
-  methodArgumentsParser :: ArgumentParser a
-  default methodArgumentsParser :: (Generic a, GIsMethod (Rep a)) => ArgumentParser a
-  methodArgumentsParser = to <$> gParseArguments
+  parseMethodArguments :: Parser a
+  default parseMethodArguments :: (Generic a, GIsMethod (Rep a)) => Parser a
+  parseMethodArguments = to <$> gParseArguments
 
 class SynchronousRequest a where
   type SynchronousResponse a :: *
 
 class IsArgument a where
   toArgument :: a -> Argument
-  argumentParser :: ArgumentParser a
+  parseArgument :: Parser a
 
 instance IsArgument Bit where
   toArgument = ArgumentBit
-  argumentParser = ParseBit
+  parseArgument = parseBit
 
 instance IsArgument Octet where
   toArgument = ArgumentOctet
-  argumentParser = ParseOctet
+  parseArgument = parseOctet
 
 instance IsArgument ShortUInt where
   toArgument = ArgumentShortUInt
-  argumentParser = ParseShortUInt
+  parseArgument = parseShortUInt
 
 instance IsArgument LongUInt where
   toArgument = ArgumentLongUInt
-  argumentParser = ParseLongUInt
+  parseArgument = parseLongUInt
 
 instance IsArgument LongLongUInt where
   toArgument = ArgumentLongLongUInt
-  argumentParser = ParseLongLongUInt
+  parseArgument = parseLongLongUInt
 
 instance IsArgument ShortString where
   toArgument = ArgumentShortString
-  argumentParser = ParseShortString
+  parseArgument = parseShortString
 
 instance IsArgument LongString where
   toArgument = ArgumentLongString
-  argumentParser = ParseLongString
+  parseArgument = parseLongString
 
 instance IsArgument Timestamp where
   toArgument = ArgumentTimestamp
-  argumentParser = ParseTimestamp
+  parseArgument = parseTimestamp
 
 instance IsArgument FieldTable where
   toArgument = ArgumentFieldTable
-  argumentParser = ParseFieldTable
+  parseArgument = parseFieldTable
 
 -- Here comes the Generic deriving of 'Method'
 --
@@ -85,29 +85,29 @@ instance IsArgument FieldTable where
 -- >     ]
 -- >   parseMethodArguments =
 -- >     OurMethod
--- >       <$> argumentParser
--- >       <*> argumentParser
--- >       <*> argumentParser
+-- >       <$> parseArgument
+-- >       <*> parseArgument
+-- >       <*> parseArgument
 --
 -- So we try to derive them using Generics instead of generating all that.
 --
 -- Note that this _does_ mean that the fields need to be in the right order.
 class GIsMethod f where
   gBuildArguments :: f a -> [Argument]
-  gParseArguments :: ArgumentParser (f a)
+  gParseArguments :: Parser (f a)
 
 -- No instance for the Void constructor.
 
 -- | Constructor without arguments
 instance GIsMethod U1 where
   gBuildArguments _ = [] -- No arguments
-  gParseArguments = ParsePure U1
+  gParseArguments = pure U1
 
 -- | Constructor for product types
 instance (GIsMethod a, GIsMethod b) => GIsMethod (a :*: b) where
   -- These are small lists anyway.
   gBuildArguments (a :*: b) = gBuildArguments a ++ gBuildArguments b
-  gParseArguments = ParseBoth (:*:) gParseArguments gParseArguments
+  gParseArguments = (:*:) <$> gParseArguments <*> gParseArguments
 
 -- | Constructor for Meta-info that we don't need: constructor names, etc
 instance GIsMethod a => GIsMethod (M1 i c a) where
@@ -117,4 +117,4 @@ instance GIsMethod a => GIsMethod (M1 i c a) where
 -- | Constructor for the leaves: Where we get the arguments
 instance IsArgument a => GIsMethod (K1 R a) where
   gBuildArguments (K1 a) = [toArgument a]
-  gParseArguments = K1 <$> argumentParser
+  gParseArguments = K1 <$> parseArgument

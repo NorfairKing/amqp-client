@@ -1398,71 +1398,71 @@ parseMethodFramePayload =
   parseMethodFramePayloadHelper
     ( \cid mid -> case cid of
         10 -> case mid of
-          10 -> MethodConnectionStart <$> methodArgumentsParser
-          11 -> MethodConnectionStartOk <$> methodArgumentsParser
-          20 -> MethodConnectionSecure <$> methodArgumentsParser
-          21 -> MethodConnectionSecureOk <$> methodArgumentsParser
-          30 -> MethodConnectionTune <$> methodArgumentsParser
-          31 -> MethodConnectionTuneOk <$> methodArgumentsParser
-          40 -> MethodConnectionOpen <$> methodArgumentsParser
-          41 -> MethodConnectionOpenOk <$> methodArgumentsParser
-          50 -> MethodConnectionClose <$> methodArgumentsParser
-          51 -> MethodConnectionCloseOk <$> methodArgumentsParser
-          _ -> ParseFail ("Unknown method id for class connection (10)" ++ show mid)
+          10 -> MethodConnectionStart <$> parseMethodArguments
+          11 -> MethodConnectionStartOk <$> parseMethodArguments
+          20 -> MethodConnectionSecure <$> parseMethodArguments
+          21 -> MethodConnectionSecureOk <$> parseMethodArguments
+          30 -> MethodConnectionTune <$> parseMethodArguments
+          31 -> MethodConnectionTuneOk <$> parseMethodArguments
+          40 -> MethodConnectionOpen <$> parseMethodArguments
+          41 -> MethodConnectionOpenOk <$> parseMethodArguments
+          50 -> MethodConnectionClose <$> parseMethodArguments
+          51 -> MethodConnectionCloseOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class 'connection' (10)" ++ show mid)
         20 -> case mid of
-          10 -> MethodChannelOpen <$> methodArgumentsParser
-          11 -> MethodChannelOpenOk <$> methodArgumentsParser
-          20 -> MethodChannelFlow <$> methodArgumentsParser
-          21 -> MethodChannelFlowOk <$> methodArgumentsParser
-          40 -> MethodChannelClose <$> methodArgumentsParser
-          41 -> MethodChannelCloseOk <$> methodArgumentsParser
-          _ -> ParseFail ("Unknown method id for class channel (20)" ++ show mid)
+          10 -> MethodChannelOpen <$> parseMethodArguments
+          11 -> MethodChannelOpenOk <$> parseMethodArguments
+          20 -> MethodChannelFlow <$> parseMethodArguments
+          21 -> MethodChannelFlowOk <$> parseMethodArguments
+          40 -> MethodChannelClose <$> parseMethodArguments
+          41 -> MethodChannelCloseOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class 'channel' (20)" ++ show mid)
         40 -> case mid of
-          10 -> MethodExchangeDeclare <$> methodArgumentsParser
-          11 -> MethodExchangeDeclareOk <$> methodArgumentsParser
-          20 -> MethodExchangeDelete <$> methodArgumentsParser
-          21 -> MethodExchangeDeleteOk <$> methodArgumentsParser
-          _ -> ParseFail ("Unknown method id for class exchange (40)" ++ show mid)
+          10 -> MethodExchangeDeclare <$> parseMethodArguments
+          11 -> MethodExchangeDeclareOk <$> parseMethodArguments
+          20 -> MethodExchangeDelete <$> parseMethodArguments
+          21 -> MethodExchangeDeleteOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class 'exchange' (40)" ++ show mid)
         50 -> case mid of
-          10 -> MethodQueueDeclare <$> methodArgumentsParser
-          11 -> MethodQueueDeclareOk <$> methodArgumentsParser
-          20 -> MethodQueueBind <$> methodArgumentsParser
-          21 -> MethodQueueBindOk <$> methodArgumentsParser
-          50 -> MethodQueueUnbind <$> methodArgumentsParser
-          51 -> MethodQueueUnbindOk <$> methodArgumentsParser
-          30 -> MethodQueuePurge <$> methodArgumentsParser
-          31 -> MethodQueuePurgeOk <$> methodArgumentsParser
-          40 -> MethodQueueDelete <$> methodArgumentsParser
-          41 -> MethodQueueDeleteOk <$> methodArgumentsParser
-          _ -> ParseFail ("Unknown method id for class queue (50)" ++ show mid)
+          10 -> MethodQueueDeclare <$> parseMethodArguments
+          11 -> MethodQueueDeclareOk <$> parseMethodArguments
+          20 -> MethodQueueBind <$> parseMethodArguments
+          21 -> MethodQueueBindOk <$> parseMethodArguments
+          50 -> MethodQueueUnbind <$> parseMethodArguments
+          51 -> MethodQueueUnbindOk <$> parseMethodArguments
+          30 -> MethodQueuePurge <$> parseMethodArguments
+          31 -> MethodQueuePurgeOk <$> parseMethodArguments
+          40 -> MethodQueueDelete <$> parseMethodArguments
+          41 -> MethodQueueDeleteOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class 'queue' (50)" ++ show mid)
         60 -> case mid of
-          10 -> MethodBasicQos <$> methodArgumentsParser
-          11 -> MethodBasicQosOk <$> methodArgumentsParser
-          20 -> MethodBasicConsume <$> methodArgumentsParser
-          21 -> MethodBasicConsumeOk <$> methodArgumentsParser
-          30 -> MethodBasicCancel <$> methodArgumentsParser
-          31 -> MethodBasicCancelOk <$> methodArgumentsParser
-          40 -> MethodBasicPublish <$> methodArgumentsParser
-          50 -> MethodBasicReturn <$> methodArgumentsParser
-          60 -> MethodBasicDeliver <$> methodArgumentsParser
-          70 -> MethodBasicGet <$> methodArgumentsParser
-          71 -> MethodBasicGetOk <$> methodArgumentsParser
-          72 -> MethodBasicGetEmpty <$> methodArgumentsParser
-          80 -> MethodBasicAck <$> methodArgumentsParser
-          90 -> MethodBasicReject <$> methodArgumentsParser
-          100 -> MethodBasicRecoverAsync <$> methodArgumentsParser
-          110 -> MethodBasicRecover <$> methodArgumentsParser
-          111 -> MethodBasicRecoverOk <$> methodArgumentsParser
-          _ -> ParseFail ("Unknown method id for class basic (60)" ++ show mid)
+          10 -> MethodBasicQos <$> parseMethodArguments
+          11 -> MethodBasicQosOk <$> parseMethodArguments
+          20 -> MethodBasicConsume <$> parseMethodArguments
+          21 -> MethodBasicConsumeOk <$> parseMethodArguments
+          30 -> MethodBasicCancel <$> parseMethodArguments
+          31 -> MethodBasicCancelOk <$> parseMethodArguments
+          40 -> MethodBasicPublish <$> parseMethodArguments
+          50 -> MethodBasicReturn <$> parseMethodArguments
+          60 -> MethodBasicDeliver <$> parseMethodArguments
+          70 -> MethodBasicGet <$> parseMethodArguments
+          71 -> MethodBasicGetOk <$> parseMethodArguments
+          72 -> MethodBasicGetEmpty <$> parseMethodArguments
+          80 -> MethodBasicAck <$> parseMethodArguments
+          90 -> MethodBasicReject <$> parseMethodArguments
+          100 -> MethodBasicRecoverAsync <$> parseMethodArguments
+          110 -> MethodBasicRecover <$> parseMethodArguments
+          111 -> MethodBasicRecoverOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class 'basic' (60)" ++ show mid)
         90 -> case mid of
-          10 -> MethodTxSelect <$> methodArgumentsParser
-          11 -> MethodTxSelectOk <$> methodArgumentsParser
-          20 -> MethodTxCommit <$> methodArgumentsParser
-          21 -> MethodTxCommitOk <$> methodArgumentsParser
-          30 -> MethodTxRollback <$> methodArgumentsParser
-          31 -> MethodTxRollbackOk <$> methodArgumentsParser
-          _ -> ParseFail ("Unknown method id for class tx (90)" ++ show mid)
-        _ -> ParseFail ("Unknown class id" ++ show cid)
+          10 -> MethodTxSelect <$> parseMethodArguments
+          11 -> MethodTxSelectOk <$> parseMethodArguments
+          20 -> MethodTxCommit <$> parseMethodArguments
+          21 -> MethodTxCommitOk <$> parseMethodArguments
+          30 -> MethodTxRollback <$> parseMethodArguments
+          31 -> MethodTxRollbackOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class 'tx' (90)" ++ show mid)
+        _ -> fail ("Unknown class id" ++ show cid)
     )
 
 -- | Check if a 'Method' is synchronous.

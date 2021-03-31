@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -75,71 +74,6 @@ buildArguments = go
     goBits acc (a : as) = case a of
       ArgumentBit b -> goBits (b : acc) as
       _ -> buildBits (reverse acc) <> go as
-
-data ArgumentParser a where
-  ParseBit :: ArgumentParser Bit
-  ParseBits :: Word8 -> ([Bit] -> a) -> ArgumentParser a
-  ParseOctet :: ArgumentParser Octet
-  ParseShortUInt :: ArgumentParser ShortUInt
-  ParseLongUInt :: ArgumentParser LongUInt
-  ParseLongLongUInt :: ArgumentParser LongLongUInt
-  ParseShortString :: ArgumentParser ShortString
-  ParseLongString :: ArgumentParser LongString
-  ParseTimestamp :: ArgumentParser Timestamp
-  ParseFieldTable :: ArgumentParser FieldTable
-  ParseFail :: String -> ArgumentParser a
-  ParsePure :: a -> ArgumentParser a
-  ParseFmap :: (a -> b) -> ArgumentParser a -> ArgumentParser b
-  ParseBoth :: (a -> b -> c) -> ArgumentParser a -> ArgumentParser b -> ArgumentParser c
-
-instance Functor ArgumentParser where
-  fmap = ParseFmap
-
-runArgumentParser :: ArgumentParser a -> Parser a
-runArgumentParser = go . combineBits . rearrangeBoths
-  where
-    go :: ArgumentParser a -> Parser a
-    go = \case
-      ParseBit -> parseBit
-      ParseOctet -> parseOctet
-      ParseShortUInt -> parseShortUInt
-      ParseLongUInt -> parseLongUInt
-      ParseLongLongUInt -> parseLongLongUInt
-      ParseShortString -> parseShortString
-      ParseLongString -> parseLongString
-      ParseTimestamp -> parseTimestamp
-      ParseFieldTable -> parseFieldTable
-      ParsePure a -> pure a
-      ParseFmap f p -> f <$> runArgumentParser p
-      ParseBoth combine p1 p2 -> combine <$> runArgumentParser p1 <*> runArgumentParser p2
-    combineBits :: ArgumentParser a -> ArgumentParser a
-    combineBits = \case
-      ParseBoth combine p1 p2 -> case (combineBits p1, combineBits p2) of
-        (ParseBit, ParseBit) -> ParseBits 2 (\[b1, b2] -> combine b1 b2)
-        (ParseBit, ParseBits n f) -> ParseBits (succ n) (\(b : bs) -> combine b (f bs))
-        (ParseBits n f, ParseBit) ->
-          ParseBits
-            (succ n)
-            ( \bss ->
-                let (b : bs) = reverse bss
-                 in combine (f (reverse bs)) b
-            )
-        (ParseBits n fn, ParseBits m fm) ->
-          ParseBits
-            (n + m)
-            (\bss -> combine (fn (take (word8ToInt n) bss)) (fm (drop (word8ToInt n) bss)))
-        (ParseBit, pb) -> case pb of
-          ParseBit -> ParseBits 2 (\[b1, b2] -> combine b1 b2)
-          ParseBits n f -> ParseBits (succ n) (\(b : bs) -> combine b (f bs))
-          p -> ParseBoth combine ParseBit p
-        (_, _) -> ParseBoth combine p1 p2
-      ParseFmap f p -> ParseFmap f $ combineBits p
-      p -> p
-    rearrangeBoths :: ArgumentParser a -> ArgumentParser a
-    rearrangeBoths = \case
-      ParseBoth c2 (ParseBoth c1 p1 p2) p3 -> ParseBoth (flip c2) p3 (ParseBoth c1 p1 p2)
-      ParseBoth c p1 p2 -> case (rearrangeBoths p1, rearrangeBoths p2) of
-      p -> p
 
 newtype FieldTable = FieldTable {fieldTableMap :: Map FieldTableKey FieldTableValue}
   deriving (Show, Eq, Generic)
@@ -337,6 +271,16 @@ unpackBits = go
     go bitsLeft w
       | bitsLeft <= 0 = []
       | otherwise = odd w : go (pred bitsLeft) (w `div` 2)
+
+parse2Bits :: Parser (Bit, Bit)
+parse2Bits = do
+  [b1, b2] <- parseBits 2
+  pure (b1, b2)
+
+parse3Bits :: Parser (Bit, Bit, Bit)
+parse3Bits = do
+  [b1, b2, b3] <- parseBits 3
+  pure (b1, b2, b3)
 
 -- | Build bits, packed into octets
 --
