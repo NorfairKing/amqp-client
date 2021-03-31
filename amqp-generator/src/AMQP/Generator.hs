@@ -274,13 +274,23 @@ genParseMethodArguments className classIndex AMQP.Method {..} =
         ( DoE $
             concat
               [ map
-                  ( \Field {..} ->
-                      BindS
-                        (VarP (mkMethodFieldTypeVarName className methodName fieldName))
-                        ( VarE (mkName "parseArgument")
-                        )
+                  ( \case
+                      NonBitField Field {..} ->
+                        BindS
+                          (VarP (mkMethodFieldTypeVarName className methodName fieldName))
+                          ( VarE (mkName "parseArgument")
+                          )
+                      BitFields [Field {..}] ->
+                        BindS
+                          (VarP (mkMethodFieldTypeVarName className methodName fieldName))
+                          ( VarE (mkName "parseArgument")
+                          )
+                      BitFields fs ->
+                        BindS
+                          (TupP (map (\Field {..} -> VarP (mkMethodFieldTypeVarName className methodName fieldName)) fs))
+                          (VarE (parseNBitsFunctionName (length fs)))
                   )
-                  methodArguments,
+                  (groupFields methodArguments),
                 [ NoBindS
                     ( AppE
                         (VarE (mkName "pure"))
@@ -316,7 +326,10 @@ groupFields = go
 
     goBits :: [AMQP.Field] -> [AMQP.Field] -> [GroupedField]
     goBits acc [] = [BitFields (reverse acc)]
-    goBits acc (f : fs) = if fieldIsBit f then goBits (f : acc) fs else BitFields (reverse acc) : go fs
+    goBits acc (f : fs) =
+      if fieldIsBit f
+        then goBits (f : acc) fs
+        else BitFields (reverse acc) : go (f : fs)
 
 fieldIsBit :: Field -> Bool
 fieldIsBit Field {..} = case fromMaybe (error "A field must have either a type or a domain type") $ fieldType <|> fieldDomain of
@@ -325,6 +338,9 @@ fieldIsBit Field {..} = case fromMaybe (error "A field must have either a type o
 
 data GroupedField = NonBitField Field | BitFields [Field]
   deriving (Show, Eq)
+
+parseNBitsFunctionName :: Int -> Name
+parseNBitsFunctionName n = mkName $ concat ["parse", show n, "Bits"]
 
 mkMethodTypeName :: Text -> Text -> Name
 mkMethodTypeName className methodName = mkHaskellTypeName $ T.intercalate "-" [className, methodName]

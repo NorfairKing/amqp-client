@@ -163,6 +163,24 @@ data Exchange = Exchange
 
 exchangeDeclare :: MonadUnliftIO m => Channel -> ExchangeName -> ExchangeSettings -> m Exchange
 exchangeDeclare Channel {..} name ExchangeSettings = do
+  let Connection {..} = channelConnection
+  ExchangeDeclareOk <-
+    synchronouslyRequest
+      connectionNetworkConnection
+      connectionLeftoversVar
+      connectionSynchronousVar
+      channelNumber
+      ExchangeDeclare
+        { exchangeDeclareReserved1 = 0,
+          exchangeDeclareExchange = name,
+          exchangeDeclareType = "direct",
+          exchangeDeclarePassive = False,
+          exchangeDeclareDurable = True,
+          exchangeDeclareReserved2 = False,
+          exchangeDeclareReserved3 = False,
+          exchangeDeclareNoWait = False,
+          exchangeDeclareArguments = emptyFieldTable
+        }
   pure Exchange
 
 -- | Set up (and clean up) a connection to the AMQP server.

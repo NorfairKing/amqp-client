@@ -73,7 +73,7 @@ buildArguments = go
     goBits acc [] = buildBits $ reverse acc
     goBits acc (a : as) = case a of
       ArgumentBit b -> goBits (b : acc) as
-      _ -> buildBits (reverse acc) <> go as
+      _ -> buildBits (reverse acc) <> go (a : as)
 
 newtype FieldTable = FieldTable {fieldTableMap :: Map FieldTableKey FieldTableValue}
   deriving (Show, Eq, Generic)
@@ -281,6 +281,11 @@ parse3Bits :: Parser (Bit, Bit, Bit)
 parse3Bits = do
   [b1, b2, b3] <- parseBits 3
   pure (b1, b2, b3)
+
+parse4Bits :: Parser (Bit, Bit, Bit, Bit)
+parse4Bits = do
+  [b1, b2, b3, b4] <- parseBits 4
+  pure (b1, b2, b3, b4)
 
 -- | Build bits, packed into octets
 --

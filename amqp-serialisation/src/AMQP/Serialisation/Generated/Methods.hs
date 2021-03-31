@@ -785,10 +785,12 @@ instance IsMethod ExchangeDeclare where
     exchangeDeclareReserved1Parsed <- parseArgument
     exchangeDeclareExchangeParsed <- parseArgument
     exchangeDeclareTypeParsed <- parseArgument
-    exchangeDeclarePassiveParsed <- parseArgument
-    exchangeDeclareDurableParsed <- parseArgument
-    exchangeDeclareReserved2Parsed <- parseArgument
-    exchangeDeclareReserved3Parsed <- parseArgument
+    ( exchangeDeclarePassiveParsed,
+      exchangeDeclareDurableParsed,
+      exchangeDeclareReserved2Parsed,
+      exchangeDeclareReserved3Parsed
+      ) <-
+      parse4Bits
     exchangeDeclareNoWaitParsed <- parseArgument
     exchangeDeclareArgumentsParsed <- parseArgument
     pure
@@ -928,10 +930,12 @@ instance IsMethod QueueDeclare where
   parseMethodArguments = do
     queueDeclareReserved1Parsed <- parseArgument
     queueDeclareQueueParsed <- parseArgument
-    queueDeclarePassiveParsed <- parseArgument
-    queueDeclareDurableParsed <- parseArgument
-    queueDeclareExclusiveParsed <- parseArgument
-    queueDeclareAutoDeleteParsed <- parseArgument
+    ( queueDeclarePassiveParsed,
+      queueDeclareDurableParsed,
+      queueDeclareExclusiveParsed,
+      queueDeclareAutoDeleteParsed
+      ) <-
+      parse4Bits
     queueDeclareNoWaitParsed <- parseArgument
     queueDeclareArgumentsParsed <- parseArgument
     pure
@@ -1179,8 +1183,10 @@ instance IsMethod QueueDelete where
   parseMethodArguments = do
     queueDeleteReserved1Parsed <- parseArgument
     queueDeleteQueueParsed <- parseArgument
-    queueDeleteIfUnusedParsed <- parseArgument
-    queueDeleteIfEmptyParsed <- parseArgument
+    ( queueDeleteIfUnusedParsed,
+      queueDeleteIfEmptyParsed
+      ) <-
+      parse2Bits
     queueDeleteNoWaitParsed <- parseArgument
     pure
       QueueDelete
@@ -1441,8 +1447,10 @@ instance IsMethod BasicPublish where
     basicPublishReserved1Parsed <- parseArgument
     basicPublishExchangeParsed <- parseArgument
     basicPublishRoutingKeyParsed <- parseArgument
-    basicPublishMandatoryParsed <- parseArgument
-    basicPublishImmediateParsed <- parseArgument
+    ( basicPublishMandatoryParsed,
+      basicPublishImmediateParsed
+      ) <-
+      parse2Bits
     pure
       BasicPublish
         { basicPublishReserved1 = basicPublishReserved1Parsed,
