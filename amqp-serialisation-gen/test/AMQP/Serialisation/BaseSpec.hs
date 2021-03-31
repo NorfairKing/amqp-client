@@ -32,6 +32,26 @@ spec = do
     it "can parse whatever 'buildBit' builds'" $
       roundtrips buildBit parseBit
 
+  describe "packBits" $ do
+    it "builds no bits to 0" $ packBits [] `shouldBe` 0
+    it "builds one false bits to 0" $ packBits [False] `shouldBe` 0
+    it "builds one true bits to 1" $ packBits [True] `shouldBe` 1
+
+  describe "unpackBits" $ do
+    it "can unpack whatever packBits packs." $
+      forAllValid $ \w1 ->
+        forAllValid $ \w2 ->
+          forAllValid $ \w3 ->
+            forAllValid $ \w4 ->
+              forAllValid $ \w5 ->
+                forAllValid $ \w6 ->
+                  forAllValid $ \w7 ->
+                    forAllValid $ \w8 ->
+                      forAll (choose (0, 8)) $ \n ->
+                        let l = take n [w1, w2, w3, w4, w5, w6, w7, w8]
+                            rendered = packBits l
+                         in unpackBits (fromIntegral (length l)) rendered `shouldBe` l
+
   describe "parseBits" $
     it "can parse whatever 'buildBits' builds'" $
       forAllValid $ \w1 ->

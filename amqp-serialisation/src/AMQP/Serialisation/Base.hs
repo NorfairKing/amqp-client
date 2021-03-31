@@ -7,8 +7,9 @@
 module AMQP.Serialisation.Base where
 
 import Control.Monad
-import Data.Attoparsec.Binary as Parse
-import Data.Attoparsec.ByteString as Parse
+import qualified Data.Attoparsec.Binary as Parse
+import Data.Attoparsec.ByteString (Parser)
+import qualified Data.Attoparsec.ByteString as Parse
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as SB
 import Data.ByteString.Builder as ByteString (Builder)
@@ -29,7 +30,7 @@ import GHC.Generics (Generic)
 type ChannelNumber = Word16
 
 parseChannelNumber :: Parser ChannelNumber
-parseChannelNumber = label "ChannelNumber" anyWord16be
+parseChannelNumber = label "ChannelNumber" Parse.anyWord16be
 
 buildChannelNumber :: ChannelNumber -> ByteString.Builder
 buildChannelNumber = SBB.word16BE
@@ -77,6 +78,7 @@ buildArguments = go
 
 data ArgumentParser a where
   ParseBit :: ArgumentParser Bit
+  ParseBits :: Word8 -> ([Bit] -> a) -> ArgumentParser a
   ParseOctet :: ArgumentParser Octet
   ParseShortUInt :: ArgumentParser ShortUInt
   ParseLongUInt :: ArgumentParser LongUInt
@@ -94,8 +96,9 @@ instance Functor ArgumentParser where
   fmap = ParseFmap
 
 runArgumentParser :: ArgumentParser a -> Parser a
-runArgumentParser = go
+runArgumentParser = go . combineBits . rearrangeBoths
   where
+    go :: ArgumentParser a -> Parser a
     go = \case
       ParseBit -> parseBit
       ParseOctet -> parseOctet
@@ -109,6 +112,34 @@ runArgumentParser = go
       ParsePure a -> pure a
       ParseFmap f p -> f <$> runArgumentParser p
       ParseBoth combine p1 p2 -> combine <$> runArgumentParser p1 <*> runArgumentParser p2
+    combineBits :: ArgumentParser a -> ArgumentParser a
+    combineBits = \case
+      ParseBoth combine p1 p2 -> case (combineBits p1, combineBits p2) of
+        (ParseBit, ParseBit) -> ParseBits 2 (\[b1, b2] -> combine b1 b2)
+        (ParseBit, ParseBits n f) -> ParseBits (succ n) (\(b : bs) -> combine b (f bs))
+        (ParseBits n f, ParseBit) ->
+          ParseBits
+            (succ n)
+            ( \bss ->
+                let (b : bs) = reverse bss
+                 in combine (f (reverse bs)) b
+            )
+        (ParseBits n fn, ParseBits m fm) ->
+          ParseBits
+            (n + m)
+            (\bss -> combine (fn (take (word8ToInt n) bss)) (fm (drop (word8ToInt n) bss)))
+        (ParseBit, pb) -> case pb of
+          ParseBit -> ParseBits 2 (\[b1, b2] -> combine b1 b2)
+          ParseBits n f -> ParseBits (succ n) (\(b : bs) -> combine b (f bs))
+          p -> ParseBoth combine ParseBit p
+        (_, _) -> ParseBoth combine p1 p2
+      ParseFmap f p -> ParseFmap f $ combineBits p
+      p -> p
+    rearrangeBoths :: ArgumentParser a -> ArgumentParser a
+    rearrangeBoths = \case
+      ParseBoth c2 (ParseBoth c1 p1 p2) p3 -> ParseBoth (flip c2) p3 (ParseBoth c1 p1 p2)
+      ParseBoth c p1 p2 -> case (rearrangeBoths p1, rearrangeBoths p2) of
+      p -> p
 
 newtype FieldTable = FieldTable {fieldTableMap :: Map FieldTableKey FieldTableValue}
   deriving (Show, Eq, Generic)
@@ -128,7 +159,7 @@ parseFieldTable :: Parser FieldTable
 parseFieldTable = label "FieldTable" $ do
   lu <- parseLongUInt -- This is the number of bytes that the fields take up, not the number of fields.
   fieldTableBytes <- Parse.take (word32ToInt lu)
-  case parseOnly parseManyFieldTablePairs fieldTableBytes of
+  case Parse.parseOnly parseManyFieldTablePairs fieldTableBytes of
     Left err -> fail err
     Right r -> pure $ FieldTable $ M.fromList r
 
@@ -292,11 +323,15 @@ buildBit = SBB.word8 . bitToWord8
 
 -- | Parse 'n' bits
 --
--- This function only works for input 8 or fewer
+-- This function only works for input 8 or fewer.
+-- TODO make it work for up to 256 arguments.
 parseBits :: Word8 -> Parser [Bit]
 parseBits n = do
-  w <- anyWord8
-  pure $ go n w
+  w <- Parse.anyWord8
+  pure $ unpackBits n w
+
+unpackBits :: Word8 -> Word8 -> [Bit]
+unpackBits = go
   where
     go :: Word8 -> Word8 -> [Bit]
     go bitsLeft w
@@ -306,8 +341,12 @@ parseBits n = do
 -- | Build bits, packed into octets
 --
 -- This function only works for input list sizes 8 or smaller
+-- TODO make it work for up to 256 arguments.
 buildBits :: [Bit] -> ByteString.Builder
-buildBits = SBB.word8 . go
+buildBits = SBB.word8 . packBits
+
+packBits :: [Bit] -> Word8
+packBits = go
   where
     go :: [Bit] -> Word8
     go [] = 0
