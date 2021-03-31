@@ -1637,6 +1637,13 @@ instance FromMethod BasicGet where
     MethodBasicGet m -> Just m
     _ -> Nothing
 
+instance SynchronousRequest BasicGet where
+  type SynchronousResponse BasicGet = BasicGetResponse
+
+data BasicGetResponse
+  = BasicGetResponseGetOk !BasicGetOk
+  | BasicGetResponseGetEmpty !BasicGetEmpty
+
 -- | The @get-ok@ method: provide client with a message
 --
 -- This method delivers a message to the client following a get method. A message

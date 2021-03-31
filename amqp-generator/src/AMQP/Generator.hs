@@ -279,7 +279,33 @@ genResponseSumTypeAndInstances className Method {..} =
               ]
           ]
         _ ->
-          [] -- TODO generate a sum type and an instance.
+          let sumTypeName = mkMethodResponseTypeName className methodName
+           in [ InstanceD
+                  Nothing
+                  []
+                  (AppT (ConT (mkName "SynchronousRequest")) (VarT n))
+                  [ TySynD (mkName "SynchronousResponse") [PlainTV n] (VarT sumTypeName)
+                  ],
+                DataD
+                  []
+                  sumTypeName
+                  []
+                  Nothing
+                  ( map
+                      ( \Response {..} ->
+                          NormalC
+                            (mkMethodResponseTypeConstructorName className methodName responseName)
+                            [ (Bang NoSourceUnpackedness SourceStrict, ConT (mkMethodTypeName className responseName))
+                            ]
+                      )
+                      methodResponses
+                  )
+                  []
+              ]
+
+-- This function assumes that responses are always in the same class.
+mkMethodResponseTypeConstructorName :: Text -> Text -> Text -> Name
+mkMethodResponseTypeConstructorName className methodName responseName = mkHaskellTypeName $ T.intercalate "-" [className, methodName, "response", responseName]
 
 genParseMethodArguments :: Text -> Method -> Clause
 genParseMethodArguments className AMQP.Method {..} =
@@ -364,6 +390,9 @@ parseNBitsFunctionName n = mkName $ concat ["parse", show n, "Bits"]
 
 mkMethodTypeName :: Text -> Text -> Name
 mkMethodTypeName className methodName = mkHaskellTypeName $ T.intercalate "-" [className, methodName]
+
+mkMethodResponseTypeName :: Text -> Text -> Name
+mkMethodResponseTypeName className methodName = mkHaskellTypeName $ T.intercalate "-" [className, methodName, "response"]
 
 -- QUESTION: Should we unpack method fields?
 -- ANSWER: Maybe, but it doesn't work on every field so let's revisit this later.
