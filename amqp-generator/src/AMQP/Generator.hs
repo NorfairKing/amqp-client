@@ -300,7 +300,43 @@ genResponseSumTypeAndInstances className Method {..} =
                       )
                       methodResponses
                   )
+                  [],
+                InstanceD
+                  Nothing
                   []
+                  (AppT (ConT (mkName "FromMethod")) (VarT sumTypeName))
+                  [ FunD
+                      (mkName "fromMethod")
+                      [ Clause
+                          []
+                          ( NormalB
+                              ( LamCaseE $
+                                  let varName = mkName "m"
+                                   in concat
+                                        [ map
+                                            ( \Response {..} ->
+                                                Match
+                                                  (ConP (mkMethodSumTypeConstructorName className responseName) [VarP varName])
+                                                  ( NormalB
+                                                      ( AppE
+                                                          (ConE (mkName "Just"))
+                                                          ( AppE
+                                                              (ConE (mkMethodResponseTypeConstructorName className methodName responseName))
+                                                              (VarE varName)
+                                                          )
+                                                      )
+                                                  )
+                                                  []
+                                            )
+                                            methodResponses,
+                                          [ Match WildP (NormalB (ConE (mkName "Nothing"))) []
+                                          ]
+                                        ]
+                              )
+                          )
+                          []
+                      ]
+                  ]
               ]
 
 -- This function assumes that responses are always in the same class.

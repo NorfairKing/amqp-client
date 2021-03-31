@@ -1644,6 +1644,12 @@ data BasicGetResponse
   = BasicGetResponseGetOk !BasicGetOk
   | BasicGetResponseGetEmpty !BasicGetEmpty
 
+instance FromMethod BasicGetResponse where
+  fromMethod = \case
+    MethodBasicGetOk m -> Just (BasicGetResponseGetOk m)
+    MethodBasicGetEmpty m -> Just (BasicGetResponseGetEmpty m)
+    _ -> Nothing
+
 -- | The @get-ok@ method: provide client with a message
 --
 -- This method delivers a message to the client following a get method. A message
