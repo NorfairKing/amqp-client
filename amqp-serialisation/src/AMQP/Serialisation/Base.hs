@@ -287,6 +287,11 @@ parse4Bits = do
   [b1, b2, b3, b4] <- parseBits 4
   pure (b1, b2, b3, b4)
 
+parse5Bits :: Parser (Bit, Bit, Bit, Bit, Bit)
+parse5Bits = do
+  [b1, b2, b3, b4, b5] <- parseBits 5
+  pure (b1, b2, b3, b4, b5)
+
 -- | Build bits, packed into octets
 --
 -- This function only works for input list sizes 8 or smaller

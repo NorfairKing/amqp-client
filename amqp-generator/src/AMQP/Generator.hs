@@ -331,9 +331,14 @@ groupFields = go
         then goBits (f : acc) fs
         else BitFields (reverse acc) : go (f : fs)
 
+-- TODO we probably want to do this more robustly by using the "type" attribute on the domain types that we've parsed instead.
 fieldIsBit :: Field -> Bool
 fieldIsBit Field {..} = case fromMaybe (error "A field must have either a type or a domain type") $ fieldType <|> fieldDomain of
   "bit" -> True
+  "no-ack" -> True
+  "no-local" -> True
+  "no-wait" -> True
+  "redelivered" -> True
   _ -> False
 
 data GroupedField = NonBitField Field | BitFields [Field]

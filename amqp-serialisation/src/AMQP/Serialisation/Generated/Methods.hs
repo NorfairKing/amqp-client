@@ -788,10 +788,10 @@ instance IsMethod ExchangeDeclare where
     ( exchangeDeclarePassiveParsed,
       exchangeDeclareDurableParsed,
       exchangeDeclareReserved2Parsed,
-      exchangeDeclareReserved3Parsed
+      exchangeDeclareReserved3Parsed,
+      exchangeDeclareNoWaitParsed
       ) <-
-      parse4Bits
-    exchangeDeclareNoWaitParsed <- parseArgument
+      parse5Bits
     exchangeDeclareArgumentsParsed <- parseArgument
     pure
       ExchangeDeclare
@@ -853,8 +853,10 @@ instance IsMethod ExchangeDelete where
   parseMethodArguments = do
     exchangeDeleteReserved1Parsed <- parseArgument
     exchangeDeleteExchangeParsed <- parseArgument
-    exchangeDeleteIfUnusedParsed <- parseArgument
-    exchangeDeleteNoWaitParsed <- parseArgument
+    ( exchangeDeleteIfUnusedParsed,
+      exchangeDeleteNoWaitParsed
+      ) <-
+      parse2Bits
     pure
       ExchangeDelete
         { exchangeDeleteReserved1 = exchangeDeleteReserved1Parsed,
@@ -933,10 +935,10 @@ instance IsMethod QueueDeclare where
     ( queueDeclarePassiveParsed,
       queueDeclareDurableParsed,
       queueDeclareExclusiveParsed,
-      queueDeclareAutoDeleteParsed
+      queueDeclareAutoDeleteParsed,
+      queueDeclareNoWaitParsed
       ) <-
-      parse4Bits
-    queueDeclareNoWaitParsed <- parseArgument
+      parse5Bits
     queueDeclareArgumentsParsed <- parseArgument
     pure
       QueueDeclare
@@ -1184,10 +1186,10 @@ instance IsMethod QueueDelete where
     queueDeleteReserved1Parsed <- parseArgument
     queueDeleteQueueParsed <- parseArgument
     ( queueDeleteIfUnusedParsed,
-      queueDeleteIfEmptyParsed
+      queueDeleteIfEmptyParsed,
+      queueDeleteNoWaitParsed
       ) <-
-      parse2Bits
-    queueDeleteNoWaitParsed <- parseArgument
+      parse3Bits
     pure
       QueueDelete
         { queueDeleteReserved1 = queueDeleteReserved1Parsed,
@@ -1326,10 +1328,12 @@ instance IsMethod BasicConsume where
     basicConsumeReserved1Parsed <- parseArgument
     basicConsumeQueueParsed <- parseArgument
     basicConsumeConsumerTagParsed <- parseArgument
-    basicConsumeNoLocalParsed <- parseArgument
-    basicConsumeNoAckParsed <- parseArgument
-    basicConsumeExclusiveParsed <- parseArgument
-    basicConsumeNoWaitParsed <- parseArgument
+    ( basicConsumeNoLocalParsed,
+      basicConsumeNoAckParsed,
+      basicConsumeExclusiveParsed,
+      basicConsumeNoWaitParsed
+      ) <-
+      parse4Bits
     basicConsumeArgumentsParsed <- parseArgument
     pure
       BasicConsume
