@@ -15,7 +15,11 @@ import Text.Printf
 
 spec :: Spec
 spec = rabbitMQSpec $ do
-  describe "1.6 Class exchange" $
+  describe "1.6 Class exchange" $ do
+    pending "Client attempts to declare an exchange with each of these standard types: fanout, direct"
+    pending "Client attempts to declare an exchange with each of these standard types: topic, headers"
+    pending "Client declares a temporary queue and attempts to bind to each required exchange instance (\"amq.fanout\", \"amq.direct\", \"amq.topic\", and \"amq.headers\" if those types are defined)."
+    pending "Client checks that the default exchange is active by specifying a queue binding with no exchange name, and publishing a message with a suitable routing key but without specifying the exchange name, then ensuring that the message arrives in the queue correctly."
     describe "1.6.2" $
       describe "1.6.2.1" $
         describe "The client declares as many exchanges as it can until the server reports an error; the number of exchanges successfully declared must be at least sixteen." $
