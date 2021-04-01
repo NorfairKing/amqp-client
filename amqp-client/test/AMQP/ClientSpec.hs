@@ -1,11 +1,10 @@
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeOperators #-}
 
 module AMQP.ClientSpec (spec) where
 
 import AMQP.Client
+import AMQP.Client.TestUtils
 import Test.Syd
 import Test.Syd.RabbitMQ
 
@@ -37,14 +36,3 @@ spec = rabbitMQSpec $ do
     _ <- queueDeclare chan myQueueName defaultQueueSettings
     _ <- exchangeDeclare chan myExchangeName defaultExchangeSettings
     queueBind chan myQueueName myExchangeName myRoutingKey
-
-itWithLocalGuestConnection :: String -> (Connection -> IO ()) -> TestDefM (RabbitMQHandle ': otherOuters) () ()
-itWithLocalGuestConnection s func =
-  itWithOuter s $ \RabbitMQHandle {..} -> do
-    let settings =
-          ConnectionSettings
-            { connectionSettingHostName = "127.0.0.1",
-              connectionSettingPort = rabbitMQHandlePort,
-              connectionSettingSASLMechanism = PLAINMechanism "guest" "guest"
-            }
-    withConnection settings $ \conn -> func conn

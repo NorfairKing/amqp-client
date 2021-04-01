@@ -41,6 +41,8 @@ test-suite amqp-client-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      AMQP.Client.SpecificationSpec
+      AMQP.Client.TestUtils
       AMQP.ClientSpec
       Paths_amqp_client
   hs-source-dirs:
@@ -52,6 +54,7 @@ test-suite amqp-client-test
       amqp-client
     , amqp-serialisation
     , base >=4.7 && <5
+    , bytestring
     , sydtest
     , sydtest-rabbitmq
   default-language: Haskell2010

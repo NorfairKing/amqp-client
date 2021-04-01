@@ -33,5 +33,6 @@ tests:
     dependencies:
     - amqp-client
     - amqp-serialisation
+    - bytestring
     - sydtest
     - sydtest-rabbitmq
