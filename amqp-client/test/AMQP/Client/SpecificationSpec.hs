@@ -6,7 +6,6 @@ module AMQP.Client.SpecificationSpec (spec) where
 import AMQP.Client
 import AMQP.Client.TestUtils
 import AMQP.Serialisation.Base
-import AMQP.Serialisation.Generated.DomainTypes
 import Control.Monad
 import qualified Data.ByteString.Char8 as SB8
 import Test.Syd

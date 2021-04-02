@@ -99,17 +99,32 @@ channelOpen conn@Connection {..} = do
 chanHasMessage :: MonadIO m => Channel -> m Bool
 chanHasMessage Channel {..} = atomically $ not <$> isEmptyTQueue channelMessageQueue
 
-defaultQueueSettings :: QueueSettings
-defaultQueueSettings = QueueSettings
-
 data QueueSettings = QueueSettings
+  { queueSetPassive :: !Bool,
+    queueSetDurable :: !Bool,
+    queueSetExclusive :: !Bool,
+    queueSetAutoDelete :: !Bool,
+    queueSetWait :: !Wait,
+    queueSetArguments :: !FieldTable
+  }
   deriving (Show, Eq, Generic)
+
+defaultQueueSettings :: QueueSettings
+defaultQueueSettings =
+  QueueSettings
+    { queueSetPassive = False,
+      queueSetDurable = True,
+      queueSetExclusive = False,
+      queueSetAutoDelete = False,
+      queueSetWait = DoWait,
+      queueSetArguments = emptyFieldTable
+    }
 
 data Queue = Queue {queueName :: ShortString}
   deriving (Show, Eq, Generic)
 
 queueDeclare :: MonadUnliftIO m => Channel -> QueueName -> QueueSettings -> m Queue
-queueDeclare Channel {..} name QueueSettings = do
+queueDeclare Channel {..} name QueueSettings {..} = do
   let Connection {..} = channelConnection
   QueueDeclareOk {..} <-
     synchronouslyRequest
@@ -120,11 +135,11 @@ queueDeclare Channel {..} name QueueSettings = do
       QueueDeclare
         { queueDeclareReserved1 = 0,
           queueDeclareQueue = name,
-          queueDeclarePassive = False,
-          queueDeclareDurable = True,
-          queueDeclareExclusive = False,
-          queueDeclareAutoDelete = False,
-          queueDeclareNoWait = False,
+          queueDeclarePassive = queueSetPassive,
+          queueDeclareDurable = queueSetDurable,
+          queueDeclareExclusive = queueSetExclusive,
+          queueDeclareAutoDelete = queueSetAutoDelete,
+          queueDeclareNoWait = waitToNoWait queueSetWait,
           queueDeclareArguments = emptyFieldTable
         }
   pure Queue {queueName = queueDeclareOkQueue}
@@ -371,3 +386,12 @@ data ClientException
   deriving (Show, Eq, Generic)
 
 instance Exception ClientException
+
+data Wait = DoWait | Don'tWait
+  deriving (Show, Eq, Generic)
+
+waitToNoWait :: Wait -> NoWait
+waitToNoWait = \case
+  -- Yes, it's backwards, I know.
+  DoWait -> False
+  Don'tWait -> True
