@@ -395,3 +395,14 @@ waitToNoWait = \case
   -- Yes, it's backwards, I know.
   DoWait -> False
   Don'tWait -> True
+
+basicPublish :: MonadUnliftIO m => Channel -> ExchangeName -> RoutingKey -> Message -> m ()
+basicPublish _ _ _ _ = undefined
+
+data Message = Message
+  { messageBody :: ByteString
+  }
+  deriving (Show, Eq, Generic)
+
+newMessage :: ByteString -> Message
+newMessage body = Message {messageBody = body}
