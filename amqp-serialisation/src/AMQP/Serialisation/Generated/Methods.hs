@@ -26,6 +26,10 @@ data Method
   | MethodConnectionOpenOk !ConnectionOpenOk
   | MethodConnectionClose !ConnectionClose
   | MethodConnectionCloseOk !ConnectionCloseOk
+  | MethodConnectionBlocked !ConnectionBlocked
+  | MethodConnectionUnblocked !ConnectionUnblocked
+  | MethodConnectionUpdateSecret !ConnectionUpdateSecret
+  | MethodConnectionUpdateSecretOk !ConnectionUpdateSecretOk
   | MethodChannelOpen !ChannelOpen
   | MethodChannelOpenOk !ChannelOpenOk
   | MethodChannelFlow !ChannelFlow
@@ -36,6 +40,10 @@ data Method
   | MethodExchangeDeclareOk !ExchangeDeclareOk
   | MethodExchangeDelete !ExchangeDelete
   | MethodExchangeDeleteOk !ExchangeDeleteOk
+  | MethodExchangeBind !ExchangeBind
+  | MethodExchangeBindOk !ExchangeBindOk
+  | MethodExchangeUnbind !ExchangeUnbind
+  | MethodExchangeUnbindOk !ExchangeUnbindOk
   | MethodQueueDeclare !QueueDeclare
   | MethodQueueDeclareOk !QueueDeclareOk
   | MethodQueueBind !QueueBind
@@ -63,12 +71,15 @@ data Method
   | MethodBasicRecoverAsync !BasicRecoverAsync
   | MethodBasicRecover !BasicRecover
   | MethodBasicRecoverOk !BasicRecoverOk
+  | MethodBasicNack !BasicNack
   | MethodTxSelect !TxSelect
   | MethodTxSelectOk !TxSelectOk
   | MethodTxCommit !TxCommit
   | MethodTxCommitOk !TxCommitOk
   | MethodTxRollback !TxRollback
   | MethodTxRollbackOk !TxRollbackOk
+  | MethodConfirmSelect !ConfirmSelect
+  | MethodConfirmSelectOk !ConfirmSelectOk
   deriving (Show, Eq, Generic)
 
 instance Validity Method
@@ -90,6 +101,10 @@ buildMethodFramePayload = \case
   MethodConnectionOpenOk m -> buildGivenMethodFramePayload m
   MethodConnectionClose m -> buildGivenMethodFramePayload m
   MethodConnectionCloseOk m -> buildGivenMethodFramePayload m
+  MethodConnectionBlocked m -> buildGivenMethodFramePayload m
+  MethodConnectionUnblocked m -> buildGivenMethodFramePayload m
+  MethodConnectionUpdateSecret m -> buildGivenMethodFramePayload m
+  MethodConnectionUpdateSecretOk m -> buildGivenMethodFramePayload m
   MethodChannelOpen m -> buildGivenMethodFramePayload m
   MethodChannelOpenOk m -> buildGivenMethodFramePayload m
   MethodChannelFlow m -> buildGivenMethodFramePayload m
@@ -100,6 +115,10 @@ buildMethodFramePayload = \case
   MethodExchangeDeclareOk m -> buildGivenMethodFramePayload m
   MethodExchangeDelete m -> buildGivenMethodFramePayload m
   MethodExchangeDeleteOk m -> buildGivenMethodFramePayload m
+  MethodExchangeBind m -> buildGivenMethodFramePayload m
+  MethodExchangeBindOk m -> buildGivenMethodFramePayload m
+  MethodExchangeUnbind m -> buildGivenMethodFramePayload m
+  MethodExchangeUnbindOk m -> buildGivenMethodFramePayload m
   MethodQueueDeclare m -> buildGivenMethodFramePayload m
   MethodQueueDeclareOk m -> buildGivenMethodFramePayload m
   MethodQueueBind m -> buildGivenMethodFramePayload m
@@ -127,12 +146,15 @@ buildMethodFramePayload = \case
   MethodBasicRecoverAsync m -> buildGivenMethodFramePayload m
   MethodBasicRecover m -> buildGivenMethodFramePayload m
   MethodBasicRecoverOk m -> buildGivenMethodFramePayload m
+  MethodBasicNack m -> buildGivenMethodFramePayload m
   MethodTxSelect m -> buildGivenMethodFramePayload m
   MethodTxSelectOk m -> buildGivenMethodFramePayload m
   MethodTxCommit m -> buildGivenMethodFramePayload m
   MethodTxCommitOk m -> buildGivenMethodFramePayload m
   MethodTxRollback m -> buildGivenMethodFramePayload m
   MethodTxRollbackOk m -> buildGivenMethodFramePayload m
+  MethodConfirmSelect m -> buildGivenMethodFramePayload m
+  MethodConfirmSelectOk m -> buildGivenMethodFramePayload m
 
 -- | Parse a 'Method' frame payload.
 parseMethodFramePayload :: Parser Method
@@ -150,6 +172,10 @@ parseMethodFramePayload =
           41 -> MethodConnectionOpenOk <$> parseMethodArguments
           50 -> MethodConnectionClose <$> parseMethodArguments
           51 -> MethodConnectionCloseOk <$> parseMethodArguments
+          60 -> MethodConnectionBlocked <$> parseMethodArguments
+          61 -> MethodConnectionUnblocked <$> parseMethodArguments
+          70 -> MethodConnectionUpdateSecret <$> parseMethodArguments
+          71 -> MethodConnectionUpdateSecretOk <$> parseMethodArguments
           _ -> fail ("Unknown method id for class 'connection' (10)" ++ show mid)
         20 -> case mid of
           10 -> MethodChannelOpen <$> parseMethodArguments
@@ -164,6 +190,10 @@ parseMethodFramePayload =
           11 -> MethodExchangeDeclareOk <$> parseMethodArguments
           20 -> MethodExchangeDelete <$> parseMethodArguments
           21 -> MethodExchangeDeleteOk <$> parseMethodArguments
+          30 -> MethodExchangeBind <$> parseMethodArguments
+          31 -> MethodExchangeBindOk <$> parseMethodArguments
+          40 -> MethodExchangeUnbind <$> parseMethodArguments
+          51 -> MethodExchangeUnbindOk <$> parseMethodArguments
           _ -> fail ("Unknown method id for class 'exchange' (40)" ++ show mid)
         50 -> case mid of
           10 -> MethodQueueDeclare <$> parseMethodArguments
@@ -195,6 +225,7 @@ parseMethodFramePayload =
           100 -> MethodBasicRecoverAsync <$> parseMethodArguments
           110 -> MethodBasicRecover <$> parseMethodArguments
           111 -> MethodBasicRecoverOk <$> parseMethodArguments
+          120 -> MethodBasicNack <$> parseMethodArguments
           _ -> fail ("Unknown method id for class 'basic' (60)" ++ show mid)
         90 -> case mid of
           10 -> MethodTxSelect <$> parseMethodArguments
@@ -204,6 +235,10 @@ parseMethodFramePayload =
           30 -> MethodTxRollback <$> parseMethodArguments
           31 -> MethodTxRollbackOk <$> parseMethodArguments
           _ -> fail ("Unknown method id for class 'tx' (90)" ++ show mid)
+        85 -> case mid of
+          10 -> MethodConfirmSelect <$> parseMethodArguments
+          11 -> MethodConfirmSelectOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class 'confirm' (85)" ++ show mid)
         _ -> fail ("Unknown class id" ++ show cid)
     )
 
@@ -220,6 +255,10 @@ methodIsSynchronous = \case
   MethodConnectionOpenOk _ -> methodSynchronous (Proxy :: Proxy ConnectionOpenOk)
   MethodConnectionClose _ -> methodSynchronous (Proxy :: Proxy ConnectionClose)
   MethodConnectionCloseOk _ -> methodSynchronous (Proxy :: Proxy ConnectionCloseOk)
+  MethodConnectionBlocked _ -> methodSynchronous (Proxy :: Proxy ConnectionBlocked)
+  MethodConnectionUnblocked _ -> methodSynchronous (Proxy :: Proxy ConnectionUnblocked)
+  MethodConnectionUpdateSecret _ -> methodSynchronous (Proxy :: Proxy ConnectionUpdateSecret)
+  MethodConnectionUpdateSecretOk _ -> methodSynchronous (Proxy :: Proxy ConnectionUpdateSecretOk)
   MethodChannelOpen _ -> methodSynchronous (Proxy :: Proxy ChannelOpen)
   MethodChannelOpenOk _ -> methodSynchronous (Proxy :: Proxy ChannelOpenOk)
   MethodChannelFlow _ -> methodSynchronous (Proxy :: Proxy ChannelFlow)
@@ -230,6 +269,10 @@ methodIsSynchronous = \case
   MethodExchangeDeclareOk _ -> methodSynchronous (Proxy :: Proxy ExchangeDeclareOk)
   MethodExchangeDelete _ -> methodSynchronous (Proxy :: Proxy ExchangeDelete)
   MethodExchangeDeleteOk _ -> methodSynchronous (Proxy :: Proxy ExchangeDeleteOk)
+  MethodExchangeBind _ -> methodSynchronous (Proxy :: Proxy ExchangeBind)
+  MethodExchangeBindOk _ -> methodSynchronous (Proxy :: Proxy ExchangeBindOk)
+  MethodExchangeUnbind _ -> methodSynchronous (Proxy :: Proxy ExchangeUnbind)
+  MethodExchangeUnbindOk _ -> methodSynchronous (Proxy :: Proxy ExchangeUnbindOk)
   MethodQueueDeclare _ -> methodSynchronous (Proxy :: Proxy QueueDeclare)
   MethodQueueDeclareOk _ -> methodSynchronous (Proxy :: Proxy QueueDeclareOk)
   MethodQueueBind _ -> methodSynchronous (Proxy :: Proxy QueueBind)
@@ -257,12 +300,15 @@ methodIsSynchronous = \case
   MethodBasicRecoverAsync _ -> methodSynchronous (Proxy :: Proxy BasicRecoverAsync)
   MethodBasicRecover _ -> methodSynchronous (Proxy :: Proxy BasicRecover)
   MethodBasicRecoverOk _ -> methodSynchronous (Proxy :: Proxy BasicRecoverOk)
+  MethodBasicNack _ -> methodSynchronous (Proxy :: Proxy BasicNack)
   MethodTxSelect _ -> methodSynchronous (Proxy :: Proxy TxSelect)
   MethodTxSelectOk _ -> methodSynchronous (Proxy :: Proxy TxSelectOk)
   MethodTxCommit _ -> methodSynchronous (Proxy :: Proxy TxCommit)
   MethodTxCommitOk _ -> methodSynchronous (Proxy :: Proxy TxCommitOk)
   MethodTxRollback _ -> methodSynchronous (Proxy :: Proxy TxRollback)
   MethodTxRollbackOk _ -> methodSynchronous (Proxy :: Proxy TxRollbackOk)
+  MethodConfirmSelect _ -> methodSynchronous (Proxy :: Proxy ConfirmSelect)
+  MethodConfirmSelectOk _ -> methodSynchronous (Proxy :: Proxy ConfirmSelectOk)
 
 -- * The @connection@ class
 
@@ -600,6 +646,102 @@ instance FromMethod ConnectionCloseOk where
     MethodConnectionCloseOk m -> Just m
     _ -> Nothing
 
+-- | The @blocked@ method: indicate that connection is blocked
+--
+-- This method indicates that a connection has been blocked
+-- and does not accept new publishes.
+data ConnectionBlocked = ConnectionBlocked {connectionBlockedReason :: !ShortString}
+  deriving (Show, Eq, Generic)
+
+instance Validity ConnectionBlocked
+
+instance IsMethod ConnectionBlocked where
+  methodClassId (Proxy) = 10
+  methodMethodId (Proxy) = 60
+  methodSynchronous (Proxy) = False
+  parseMethodArguments = do
+    connectionBlockedReasonParsed <- parseArgument
+    pure ConnectionBlocked {connectionBlockedReason = connectionBlockedReasonParsed}
+
+instance FromMethod ConnectionBlocked where
+  fromMethod = \case
+    MethodConnectionBlocked m -> Just m
+    _ -> Nothing
+
+-- | The @unblocked@ method: indicate that connection is unblocked
+--
+-- This method indicates that a connection has been unblocked
+-- and now accepts publishes.
+data ConnectionUnblocked
+  = ConnectionUnblocked
+  deriving (Show, Eq, Generic)
+
+instance Validity ConnectionUnblocked
+
+instance IsMethod ConnectionUnblocked where
+  methodClassId (Proxy) = 10
+  methodMethodId (Proxy) = 61
+  methodSynchronous (Proxy) = False
+  parseMethodArguments = do pure ConnectionUnblocked
+
+instance FromMethod ConnectionUnblocked where
+  fromMethod = \case
+    MethodConnectionUnblocked m -> Just m
+    _ -> Nothing
+
+-- | The @update-secret@ method: update secret
+--
+-- This method updates the secret used to authenticate this connection. It is used
+-- when secrets have an expiration date and need to be renewed, like OAuth 2 tokens.
+data ConnectionUpdateSecret = ConnectionUpdateSecret
+  { connectionUpdateSecretNewSecret :: !LongString,
+    connectionUpdateSecretReason :: !ShortString
+  }
+  deriving (Show, Eq, Generic)
+
+instance Validity ConnectionUpdateSecret
+
+instance IsMethod ConnectionUpdateSecret where
+  methodClassId (Proxy) = 10
+  methodMethodId (Proxy) = 70
+  methodSynchronous (Proxy) = True
+  parseMethodArguments = do
+    connectionUpdateSecretNewSecretParsed <- parseArgument
+    connectionUpdateSecretReasonParsed <- parseArgument
+    pure
+      ConnectionUpdateSecret
+        { connectionUpdateSecretNewSecret = connectionUpdateSecretNewSecretParsed,
+          connectionUpdateSecretReason = connectionUpdateSecretReasonParsed
+        }
+
+instance FromMethod ConnectionUpdateSecret where
+  fromMethod = \case
+    MethodConnectionUpdateSecret m -> Just m
+    _ -> Nothing
+
+instance SynchronousRequest ConnectionUpdateSecret where
+  type SynchronousResponse ConnectionUpdateSecret = ConnectionUpdateSecretOk
+
+-- | The @update-secret-ok@ method: update secret response
+--
+-- This method confirms the updated secret is valid.
+data ConnectionUpdateSecretOk
+  = ConnectionUpdateSecretOk
+  deriving (Show, Eq, Generic)
+
+instance Validity ConnectionUpdateSecretOk
+
+instance IsMethod ConnectionUpdateSecretOk where
+  methodClassId (Proxy) = 10
+  methodMethodId (Proxy) = 71
+  methodSynchronous (Proxy) = True
+  parseMethodArguments = do pure ConnectionUpdateSecretOk
+
+instance FromMethod ConnectionUpdateSecretOk where
+  fromMethod = \case
+    MethodConnectionUpdateSecretOk m -> Just m
+    _ -> Nothing
+
 -- * The @channel@ class
 
 -- The channel class provides methods for a client to establish a channel to a
@@ -781,6 +923,8 @@ instance FromMethod ChannelCloseOk where
 -- >
 -- >       exchange            = C:DECLARE  S:DECLARE-OK
 -- >                           / C:DELETE   S:DELETE-OK
+-- >                           / C:BIND     S:BIND-OK
+-- >                           / C:UNBIND   S:UNBIND-OK
 -- >
 
 -- | The @declare@ method: verify exchange exists, create if needed
@@ -793,8 +937,8 @@ data ExchangeDeclare = ExchangeDeclare
     exchangeDeclareType :: !ShortString,
     exchangeDeclarePassive :: !Bit,
     exchangeDeclareDurable :: !Bit,
-    exchangeDeclareReserved2 :: !Bit,
-    exchangeDeclareReserved3 :: !Bit,
+    exchangeDeclareAutoDelete :: !Bit,
+    exchangeDeclareInternal :: !Bit,
     exchangeDeclareNoWait :: !NoWait,
     exchangeDeclareArguments :: !FieldTable
   }
@@ -812,8 +956,8 @@ instance IsMethod ExchangeDeclare where
     exchangeDeclareTypeParsed <- parseArgument
     ( exchangeDeclarePassiveParsed,
       exchangeDeclareDurableParsed,
-      exchangeDeclareReserved2Parsed,
-      exchangeDeclareReserved3Parsed,
+      exchangeDeclareAutoDeleteParsed,
+      exchangeDeclareInternalParsed,
       exchangeDeclareNoWaitParsed
       ) <-
       parse5Bits
@@ -825,8 +969,8 @@ instance IsMethod ExchangeDeclare where
           exchangeDeclareType = exchangeDeclareTypeParsed,
           exchangeDeclarePassive = exchangeDeclarePassiveParsed,
           exchangeDeclareDurable = exchangeDeclareDurableParsed,
-          exchangeDeclareReserved2 = exchangeDeclareReserved2Parsed,
-          exchangeDeclareReserved3 = exchangeDeclareReserved3Parsed,
+          exchangeDeclareAutoDelete = exchangeDeclareAutoDeleteParsed,
+          exchangeDeclareInternal = exchangeDeclareInternalParsed,
           exchangeDeclareNoWait = exchangeDeclareNoWaitParsed,
           exchangeDeclareArguments = exchangeDeclareArgumentsParsed
         }
@@ -919,6 +1063,132 @@ instance IsMethod ExchangeDeleteOk where
 instance FromMethod ExchangeDeleteOk where
   fromMethod = \case
     MethodExchangeDeleteOk m -> Just m
+    _ -> Nothing
+
+-- | The @bind@ method: bind exchange to an exchange
+--
+-- This method binds an exchange to an exchange.
+data ExchangeBind = ExchangeBind
+  { exchangeBindReserved1 :: !ShortUInt,
+    exchangeBindDestination :: !ExchangeName,
+    exchangeBindSource :: !ExchangeName,
+    exchangeBindRoutingKey :: !ShortString,
+    exchangeBindNoWait :: !NoWait,
+    exchangeBindArguments :: !FieldTable
+  }
+  deriving (Show, Eq, Generic)
+
+instance Validity ExchangeBind
+
+instance IsMethod ExchangeBind where
+  methodClassId (Proxy) = 40
+  methodMethodId (Proxy) = 30
+  methodSynchronous (Proxy) = True
+  parseMethodArguments = do
+    exchangeBindReserved1Parsed <- parseArgument
+    exchangeBindDestinationParsed <- parseArgument
+    exchangeBindSourceParsed <- parseArgument
+    exchangeBindRoutingKeyParsed <- parseArgument
+    exchangeBindNoWaitParsed <- parseArgument
+    exchangeBindArgumentsParsed <- parseArgument
+    pure
+      ExchangeBind
+        { exchangeBindReserved1 = exchangeBindReserved1Parsed,
+          exchangeBindDestination = exchangeBindDestinationParsed,
+          exchangeBindSource = exchangeBindSourceParsed,
+          exchangeBindRoutingKey = exchangeBindRoutingKeyParsed,
+          exchangeBindNoWait = exchangeBindNoWaitParsed,
+          exchangeBindArguments = exchangeBindArgumentsParsed
+        }
+
+instance FromMethod ExchangeBind where
+  fromMethod = \case
+    MethodExchangeBind m -> Just m
+    _ -> Nothing
+
+instance SynchronousRequest ExchangeBind where
+  type SynchronousResponse ExchangeBind = ExchangeBindOk
+
+-- | The @bind-ok@ method: confirm bind successful
+--
+-- This method confirms that the bind was successful.
+data ExchangeBindOk = ExchangeBindOk deriving (Show, Eq, Generic)
+
+instance Validity ExchangeBindOk
+
+instance IsMethod ExchangeBindOk where
+  methodClassId (Proxy) = 40
+  methodMethodId (Proxy) = 31
+  methodSynchronous (Proxy) = True
+  parseMethodArguments = do pure ExchangeBindOk
+
+instance FromMethod ExchangeBindOk where
+  fromMethod = \case
+    MethodExchangeBindOk m -> Just m
+    _ -> Nothing
+
+-- | The @unbind@ method: unbind an exchange from an exchange
+--
+-- This method unbinds an exchange from an exchange.
+data ExchangeUnbind = ExchangeUnbind
+  { exchangeUnbindReserved1 :: !ShortUInt,
+    exchangeUnbindDestination :: !ExchangeName,
+    exchangeUnbindSource :: !ExchangeName,
+    exchangeUnbindRoutingKey :: !ShortString,
+    exchangeUnbindNoWait :: !NoWait,
+    exchangeUnbindArguments :: !FieldTable
+  }
+  deriving (Show, Eq, Generic)
+
+instance Validity ExchangeUnbind
+
+instance IsMethod ExchangeUnbind where
+  methodClassId (Proxy) = 40
+  methodMethodId (Proxy) = 40
+  methodSynchronous (Proxy) = True
+  parseMethodArguments = do
+    exchangeUnbindReserved1Parsed <- parseArgument
+    exchangeUnbindDestinationParsed <- parseArgument
+    exchangeUnbindSourceParsed <- parseArgument
+    exchangeUnbindRoutingKeyParsed <- parseArgument
+    exchangeUnbindNoWaitParsed <- parseArgument
+    exchangeUnbindArgumentsParsed <- parseArgument
+    pure
+      ExchangeUnbind
+        { exchangeUnbindReserved1 = exchangeUnbindReserved1Parsed,
+          exchangeUnbindDestination = exchangeUnbindDestinationParsed,
+          exchangeUnbindSource = exchangeUnbindSourceParsed,
+          exchangeUnbindRoutingKey = exchangeUnbindRoutingKeyParsed,
+          exchangeUnbindNoWait = exchangeUnbindNoWaitParsed,
+          exchangeUnbindArguments = exchangeUnbindArgumentsParsed
+        }
+
+instance FromMethod ExchangeUnbind where
+  fromMethod = \case
+    MethodExchangeUnbind m -> Just m
+    _ -> Nothing
+
+instance SynchronousRequest ExchangeUnbind where
+  type SynchronousResponse ExchangeUnbind = ExchangeUnbindOk
+
+-- | The @unbind-ok@ method: confirm unbind successful
+--
+-- This method confirms that the unbind was successful.
+data ExchangeUnbindOk
+  = ExchangeUnbindOk
+  deriving (Show, Eq, Generic)
+
+instance Validity ExchangeUnbindOk
+
+instance IsMethod ExchangeUnbindOk where
+  methodClassId (Proxy) = 40
+  methodMethodId (Proxy) = 51
+  methodSynchronous (Proxy) = True
+  parseMethodArguments = do pure ExchangeUnbindOk
+
+instance FromMethod ExchangeUnbindOk where
+  fromMethod = \case
+    MethodExchangeUnbindOk m -> Just m
     _ -> Nothing
 
 -- * The @queue@ class
@@ -1286,7 +1556,10 @@ instance FromMethod QueueDeleteOk where
 -- >                           / S:DELIVER content
 -- >                           / C:GET ( S:GET-OK content / S:GET-EMPTY )
 -- >                           / C:ACK
+-- >                           / S:ACK
 -- >                           / C:REJECT
+-- >                           / C:NACK
+-- >                           / S:NACK
 -- >                           / C:RECOVER-ASYNC
 -- >                           / C:RECOVER S:RECOVER-OK
 -- >
@@ -1432,6 +1705,17 @@ instance FromMethod BasicConsumeOk where
 -- messages, but it does mean the server will not send any more messages for
 -- that consumer. The client may receive an arbitrary number of messages in
 -- between sending the cancel method and receiving the cancel-ok reply.
+--
+-- It may also be sent from the server to the client in the event
+-- of the consumer being unexpectedly cancelled (i.e. cancelled
+-- for any reason other than the server receiving the
+-- corresponding basic.cancel from the client). This allows
+-- clients to be notified of the loss of consumers due to events
+-- such as queue deletion. Note that as it is not a MUST for
+-- clients to accept this method from the server, it is advisable
+-- for the broker to be able to identify those clients that are
+-- capable of accepting the method, through some means of
+-- capability negotiation.
 data BasicCancel = BasicCancel
   { basicCancelConsumerTag :: !ConsumerTag,
     basicCancelNoWait :: !NoWait
@@ -1714,9 +1998,15 @@ instance FromMethod BasicGetEmpty where
 
 -- | The @ack@ method: acknowledge one or more messages
 --
--- This method acknowledges one or more messages delivered via the Deliver or Get-Ok
--- methods. The client can ask to confirm a single message or a set of messages up to
--- and including a specific message.
+-- When sent by the client, this method acknowledges one or more
+-- messages delivered via the Deliver or Get-Ok methods.
+--
+-- When sent by server, this method acknowledges one or more
+-- messages published with the Publish method on a channel in
+-- confirm mode.
+--
+-- The acknowledgement can be for a single message or a set of
+-- messages up to and including a specific message.
 data BasicAck = BasicAck
   { basicAckDeliveryTag :: !DeliveryTag,
     basicAckMultiple :: !Bit
@@ -1836,6 +2126,46 @@ instance IsMethod BasicRecoverOk where
 instance FromMethod BasicRecoverOk where
   fromMethod = \case
     MethodBasicRecoverOk m -> Just m
+    _ -> Nothing
+
+-- | The @nack@ method: reject one or more incoming messages
+--
+-- This method allows a client to reject one or more incoming messages. It can be
+-- used to interrupt and cancel large incoming messages, or return untreatable
+-- messages to their original queue.
+--
+-- This method is also used by the server to inform publishers on channels in
+-- confirm mode of unhandled messages.  If a publisher receives this method, it
+-- probably needs to republish the offending messages.
+data BasicNack = BasicNack
+  { basicNackDeliveryTag :: !DeliveryTag,
+    basicNackMultiple :: !Bit,
+    basicNackRequeue :: !Bit
+  }
+  deriving (Show, Eq, Generic)
+
+instance Validity BasicNack
+
+instance IsMethod BasicNack where
+  methodClassId (Proxy) = 60
+  methodMethodId (Proxy) = 120
+  methodSynchronous (Proxy) = False
+  parseMethodArguments = do
+    basicNackDeliveryTagParsed <- parseArgument
+    ( basicNackMultipleParsed,
+      basicNackRequeueParsed
+      ) <-
+      parse2Bits
+    pure
+      BasicNack
+        { basicNackDeliveryTag = basicNackDeliveryTagParsed,
+          basicNackMultiple = basicNackMultipleParsed,
+          basicNackRequeue = basicNackRequeueParsed
+        }
+
+instance FromMethod BasicNack where
+  fromMethod = \case
+    MethodBasicNack m -> Just m
     _ -> Nothing
 
 -- * The @tx@ class
@@ -1981,4 +2311,77 @@ instance IsMethod TxRollbackOk where
 instance FromMethod TxRollbackOk where
   fromMethod = \case
     MethodTxRollbackOk m -> Just m
+    _ -> Nothing
+
+-- * The @confirm@ class
+
+-- The Confirm class allows publishers to put the channel in
+-- confirm mode and subsequently be notified when messages have been
+-- handled by the broker.  The intention is that all messages
+-- published on a channel in confirm mode will be acknowledged at
+-- some point.  By acknowledging a message the broker assumes
+-- responsibility for it and indicates that it has done something
+-- it deems reasonable with it.
+--
+-- Unroutable mandatory or immediate messages are acknowledged
+-- right after the Basic.Return method. Messages are acknowledged
+-- when all queues to which the message has been routed
+-- have either delivered the message and received an
+-- acknowledgement (if required), or enqueued the message (and
+-- persisted it if required).
+--
+-- Published messages are assigned ascending sequence numbers,
+-- starting at 1 with the first Confirm.Select method. The server
+-- confirms messages by sending Basic.Ack methods referring to these
+-- sequence numbers.
+--
+-- Grammar:
+--
+-- >
+-- >       confirm            = C:SELECT S:SELECT-OK
+-- >
+
+-- | The @select@ method:
+--
+-- This method sets the channel to use publisher acknowledgements.
+-- The client can only use this method on a non-transactional
+-- channel.
+data ConfirmSelect = ConfirmSelect {confirmSelectNowait :: !NoWait}
+  deriving (Show, Eq, Generic)
+
+instance Validity ConfirmSelect
+
+instance IsMethod ConfirmSelect where
+  methodClassId (Proxy) = 85
+  methodMethodId (Proxy) = 10
+  methodSynchronous (Proxy) = True
+  parseMethodArguments = do
+    confirmSelectNowaitParsed <- parseArgument
+    pure ConfirmSelect {confirmSelectNowait = confirmSelectNowaitParsed}
+
+instance FromMethod ConfirmSelect where
+  fromMethod = \case
+    MethodConfirmSelect m -> Just m
+    _ -> Nothing
+
+instance SynchronousRequest ConfirmSelect where
+  type SynchronousResponse ConfirmSelect = ConfirmSelectOk
+
+-- | The @select-ok@ method:
+--
+-- This method confirms to the client that the channel was successfully
+-- set to use publisher acknowledgements.
+data ConfirmSelectOk = ConfirmSelectOk deriving (Show, Eq, Generic)
+
+instance Validity ConfirmSelectOk
+
+instance IsMethod ConfirmSelectOk where
+  methodClassId (Proxy) = 85
+  methodMethodId (Proxy) = 11
+  methodSynchronous (Proxy) = True
+  parseMethodArguments = do pure ConfirmSelectOk
+
+instance FromMethod ConfirmSelectOk where
+  fromMethod = \case
+    MethodConfirmSelectOk m -> Just m
     _ -> Nothing

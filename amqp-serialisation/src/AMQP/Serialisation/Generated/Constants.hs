@@ -41,6 +41,13 @@ replySuccess = 200
 contentTooLarge :: Word
 contentTooLarge = 311
 
+-- | no-route
+--
+-- Returned when RabbitMQ sends back with 'basic.return' when a
+-- 'mandatory' message cannot be delivered to any queue.
+noRoute :: Word
+noRoute = 312
+
 -- | no-consumers
 --
 -- When the exchange cannot deliver to a consumer when the immediate flag is

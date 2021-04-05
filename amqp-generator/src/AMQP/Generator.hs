@@ -209,7 +209,7 @@ genClassTypesDoc AMQP.Class {..} =
 genClassMethodTypeDoc :: Text -> Word -> Method -> Doc
 genClassMethodTypeDoc className classIndex m@AMQP.Method {..} =
   vcat
-    [ genHaddocks (T.unwords [T.concat ["The @", methodName, "@ method:"], methodLabel]) methodDoc,
+    [ genHaddocks (T.unwords [T.concat ["The @", methodName, "@ method:"], fromMaybe "" methodLabel]) methodDoc,
       ppr_list (classMethodTypeDecs className classIndex m)
     ]
 

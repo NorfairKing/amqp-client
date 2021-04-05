@@ -79,3 +79,13 @@ instance Validity TxContentHeader
 instance IsContentHeader TxContentHeader where
   contentHeaderClassId (Proxy) = 90
   parseContentHeaderArguments = undefined
+
+data ConfirmContentHeader
+  = ConfirmContentHeader
+  deriving (Show, Eq, Generic)
+
+instance Validity ConfirmContentHeader
+
+instance IsContentHeader ConfirmContentHeader where
+  contentHeaderClassId (Proxy) = 85
+  parseContentHeaderArguments = undefined

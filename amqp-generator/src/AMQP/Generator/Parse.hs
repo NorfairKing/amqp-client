@@ -109,7 +109,7 @@ data Method = Method
   { methodName :: !Text,
     methodSynchronous :: !Bool,
     methodIndex :: !Word,
-    methodLabel :: !Text,
+    methodLabel :: !(Maybe Text),
     methodDoc :: !(Maybe Doc),
     methodArguments :: ![Field],
     methodResponses :: ![Response]
@@ -122,7 +122,7 @@ instance FromElement Method where
       <$> e .: "name"
       <*> (fromMaybe False <$> (e .:? "synchronous"))
       <*> e .: "index"
-      <*> e .: "label"
+      <*> e .:? "label"
       <*> firstElementBelow e "doc"
       <*> elementsBelow e "field"
       <*> elementsBelow e "response"
