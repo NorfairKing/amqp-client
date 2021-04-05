@@ -1,4 +1,12 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module AMQP.Serialisation.Generated.Content where
+
+import AMQP.Serialisation.Argument
+import AMQP.Serialisation.Base
+import Data.Proxy
+import Data.Validity
+import GHC.Generics (Generic)
 
 data ConnectionContentHeader
   = ConnectionContentHeader
@@ -6,8 +14,9 @@ data ConnectionContentHeader
 
 instance Validity ConnectionContentHeader
 
-instance IsContentHeaderContent ConnectionContentHeader where
-  methodClassId (Proxy) = 10
+instance IsContentHeader ConnectionContentHeader where
+  contentHeaderClassId (Proxy) = 10
+  parseContentHeaderArguments = undefined
 
 data ChannelContentHeader
   = ChannelContentHeader
@@ -15,8 +24,9 @@ data ChannelContentHeader
 
 instance Validity ChannelContentHeader
 
-instance IsContentHeaderContent ChannelContentHeader where
-  methodClassId (Proxy) = 20
+instance IsContentHeader ChannelContentHeader where
+  contentHeaderClassId (Proxy) = 20
+  parseContentHeaderArguments = undefined
 
 data ExchangeContentHeader
   = ExchangeContentHeader
@@ -24,8 +34,9 @@ data ExchangeContentHeader
 
 instance Validity ExchangeContentHeader
 
-instance IsContentHeaderContent ExchangeContentHeader where
-  methodClassId (Proxy) = 40
+instance IsContentHeader ExchangeContentHeader where
+  contentHeaderClassId (Proxy) = 40
+  parseContentHeaderArguments = undefined
 
 data QueueContentHeader
   = QueueContentHeader
@@ -33,8 +44,9 @@ data QueueContentHeader
 
 instance Validity QueueContentHeader
 
-instance IsContentHeaderContent QueueContentHeader where
-  methodClassId (Proxy) = 50
+instance IsContentHeader QueueContentHeader where
+  contentHeaderClassId (Proxy) = 50
+  parseContentHeaderArguments = undefined
 
 data BasicContentHeader = BasicContentHeader
   { basicContentHeaderContentType :: !(Maybe ShortString),
@@ -56,12 +68,14 @@ data BasicContentHeader = BasicContentHeader
 
 instance Validity BasicContentHeader
 
-instance IsContentHeaderContent BasicContentHeader where
-  methodClassId (Proxy) = 60
+instance IsContentHeader BasicContentHeader where
+  contentHeaderClassId (Proxy) = 60
+  parseContentHeaderArguments = undefined
 
 data TxContentHeader = TxContentHeader deriving (Show, Eq, Generic)
 
 instance Validity TxContentHeader
 
-instance IsContentHeaderContent TxContentHeader where
-  methodClassId (Proxy) = 90
+instance IsContentHeader TxContentHeader where
+  contentHeaderClassId (Proxy) = 90
+  parseContentHeaderArguments = undefined

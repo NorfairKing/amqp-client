@@ -680,9 +680,14 @@ genGeneratorInstance className Method {..} =
 genGeneratedContentModule :: AMQPSpec -> Doc
 genGeneratedContentModule AMQPSpec {..} =
   vcat
-    [ text "module AMQP.Serialisation.Generated.Content where",
+    [ text "{-# LANGUAGE DeriveGeneric #-}",
+      text "module AMQP.Serialisation.Generated.Content where",
       text "",
-      text "",
+      text "import GHC.Generics (Generic)",
+      text "import Data.Proxy",
+      text "import Data.Validity",
+      text "import AMQP.Serialisation.Argument",
+      text "import AMQP.Serialisation.Base",
       genGeneratedContentHeaderTypesDoc amqpSpecClasses
     ]
 
@@ -710,20 +715,19 @@ classContentHeaderTypeDecs m@AMQP.Class {..} =
         InstanceD
           Nothing
           []
-          (AppT (ConT (mkName "IsContentHeaderContent")) (VarT n))
-          [ FunD (mkName "methodClassId") [Clause [ConP (mkName "Proxy") []] (NormalB (LitE (IntegerL (toInteger classIndex)))) []],
+          (AppT (ConT (mkName "IsContentHeader")) (VarT n))
+          [ FunD (mkName "contentHeaderClassId") [Clause [ConP (mkName "Proxy") []] (NormalB (LitE (IntegerL (toInteger classIndex)))) []],
             FunD
               (mkName "parseContentHeaderArguments")
-              []
-              -- [genParseContentArguments m]
+              [genParseContentArguments m]
           ]
       ]
 
 mkContentHeaderTypeName :: Text -> Name
 mkContentHeaderTypeName className = mkHaskellTypeName $ T.intercalate "-" [className, "content", "header"]
 
-genParseContentArguments :: Class -> Clause
-genParseContentArguments = undefined
+genParseContentArguments :: AMQP.Class -> Clause
+genParseContentArguments AMQP.Class {..} = Clause [] (NormalB (VarE (mkName "undefined"))) []
 
 classContentHeaderPropertyBangType :: Text -> AMQP.Field -> VarBangType
 classContentHeaderPropertyBangType className AMQP.Field {..} =
