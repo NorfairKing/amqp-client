@@ -41,8 +41,9 @@ generateFrom inPath = do
       modules =
         [ ("amqp-serialisation/src/AMQP/Serialisation/Generated/Constants.hs", genGeneratedConstantsModule spec),
           ("amqp-serialisation/src/AMQP/Serialisation/Generated/DomainTypes.hs", genGeneratedTypesModule spec),
+          ("amqp-serialisation/src/AMQP/Serialisation/Generated/Methods.hs", genGeneratedMethodsModule spec),
           ("amqp-serialisation-gen/src/AMQP/Serialisation/Generated/Methods/Gen.hs", genGeneratedGeneratorsModule spec),
-          ("amqp-serialisation/src/AMQP/Serialisation/Generated/Methods.hs", genGeneratedMethodsModule spec)
+          ("amqp-serialisation/src/AMQP/Serialisation/Generated/Content.hs", genGeneratedContentModule spec)
         ]
   forM_ modules $ \(path, m) -> do
     createDirectoryIfMissing True $ takeDirectory path
@@ -675,3 +676,11 @@ genGeneratorInstance className Method {..} =
           ]
       ]
   ]
+
+genGeneratedContentModule :: AMQPSpec -> Doc
+genGeneratedContentModule AMQPSpec {..} =
+  vcat
+    [ text "module AMQP.Serialisation.Generated.Content where",
+      text "",
+      text ""
+    ]

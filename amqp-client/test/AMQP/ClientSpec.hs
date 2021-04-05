@@ -37,8 +37,9 @@ spec = rabbitMQSpec $ do
     _ <- exchangeDeclare chan myExchangeName defaultExchangeSettings
     queueBind chan myQueueName myExchangeName myRoutingKey
 
-    basicPublish
-      chan
-      myExchangeName
-      myRoutingKey
-      (newMessage "hello world")
+-- TODO: publish and get a message
+-- basicPublish
+--   chan
+--   myExchangeName
+--   myRoutingKey
+--   (newMessage "hello world")

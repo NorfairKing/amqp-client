@@ -88,7 +88,7 @@ data Class = Class
     classlabel :: !Text,
     classDoc :: !(Maybe Doc),
     classGrammar :: !(Maybe Grammar),
-    classFields :: ![Field],
+    classContentProperties :: ![Field],
     classMethods :: ![Method]
   }
   deriving (Show, Eq, Generic)
