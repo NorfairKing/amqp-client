@@ -93,6 +93,26 @@ parseRawFrame = label "RawFrame" $ do
   void $ Parse.word8 frameEnd
   pure RawFrame {..}
 
+givenMethodFrameToRawFrame :: forall a. IsMethod a => ChannelNumber -> a -> RawFrame
+givenMethodFrameToRawFrame chan a =
+  RawFrame
+    { rawFrameType = MethodFrameType,
+      rawFrameChannel = chan,
+      rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildGivenMethodFramePayload a
+    }
+
+buildGivenMethodFramePayload :: forall a. IsMethod a => a -> ByteString.Builder
+buildGivenMethodFramePayload a =
+  mconcat
+    [ buildShortUInt (methodClassId (Proxy :: Proxy a)),
+      buildShortUInt (methodMethodId (Proxy :: Proxy a)),
+      buildArguments (buildMethodArguments a)
+    ]
+
+buildGivenMethodFrame :: forall a. IsMethod a => ChannelNumber -> a -> ByteString.Builder
+buildGivenMethodFrame chan a =
+  buildRawFrame $ givenMethodFrameToRawFrame chan a
+
 parseGivenMethodFrame :: IsMethod a => Parser (ChannelNumber, a)
 parseGivenMethodFrame = label "Method Frame" $ do
   RawFrame {..} <- parseRawFrame
@@ -107,23 +127,6 @@ parseGivenMethodFramePayload = label "Method Payload" $ do
   label "class" $ void $ Parse.word16be $ methodClassId (Proxy :: Proxy a)
   label "method" $ void $ Parse.word16be $ methodMethodId (Proxy :: Proxy a)
   label "arguments" parseMethodArguments
-
-buildGivenMethodFrame :: forall a. IsMethod a => ChannelNumber -> a -> ByteString.Builder
-buildGivenMethodFrame chan a =
-  buildRawFrame $
-    RawFrame
-      { rawFrameType = MethodFrameType,
-        rawFrameChannel = chan,
-        rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildGivenMethodFramePayload a
-      }
-
-buildGivenMethodFramePayload :: forall a. IsMethod a => a -> ByteString.Builder
-buildGivenMethodFramePayload a =
-  mconcat
-    [ buildShortUInt (methodClassId (Proxy :: Proxy a)),
-      buildShortUInt (methodMethodId (Proxy :: Proxy a)),
-      buildArguments (buildMethodArguments a)
-    ]
 
 parseMethodFramePayloadHelper :: (ClassId -> MethodId -> Parser a) -> Parser a
 parseMethodFramePayloadHelper func = label "Method Payload" $ do

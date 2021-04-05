@@ -9,12 +9,10 @@ import AMQP.Serialisation.Gen ()
 import AMQP.Serialisation.Generated.Methods
 import AMQP.Serialisation.Methods.Gen ()
 import AMQP.Serialisation.TestUtils
-import Control.Monad
 import Data.Attoparsec.ByteString
 import qualified Data.ByteString as SB
 import qualified Data.ByteString.Builder as SBB
 import qualified Data.ByteString.Lazy as LB
-import Data.Char as Char
 import qualified Data.Map as M
 import Test.Syd
 import Test.Syd.Validity
@@ -28,19 +26,6 @@ spec = do
   describe "parseProtocolHeader" $
     it "can parse whatever 'buildProtocolHeader' builds'" $
       roundtrips buildProtocolHeader parseProtocolHeader
-
-  describe "buildFrameType" $
-    forM_ [minBound .. maxBound] $ \ft ->
-      it (unwords ["renders the", show ft, "frame type the same as before"]) $
-        pureGoldenByteStringBuilderFile ("test_resources/frame-type/" <> map Char.toLower (show ft)) (buildFrameType ft)
-
-  describe "parseFrameType" $
-    it "can parse whatever 'buildFrameType' builds'" $
-      roundtrips buildFrameType parseFrameType
-
-  describe "parseRawFrame" $
-    it "can parse whatever 'buildRawFrame' builds'" $
-      roundtrips buildRawFrame parseRawFrame
 
   describe "parseMethodFrame" $
     it "can parse whatever 'buildMethodFrame' builds'" $
@@ -95,24 +80,3 @@ spec = do
                 connectionStartMechanisms = LongString {longStringBytes = "PLAIN AMQPLAIN"},
                 connectionStartLocales = LongString {longStringBytes = "en_US"}
               }
-  describe "parseGivenMethodFrame" $ do
-    describe "QueueDeclare" $ do
-      let channelNumber = 42
-          exampleQueueDeclare =
-            QueueDeclare
-              { queueDeclareReserved1 = 0,
-                queueDeclareQueue = "example-name",
-                queueDeclarePassive = False,
-                queueDeclareDurable = True,
-                queueDeclareExclusive = False,
-                queueDeclareAutoDelete = False,
-                queueDeclareNoWait = False,
-                queueDeclareArguments = emptyFieldTable
-              }
-      it "roundtrips on this example" $
-        roundtripsFor
-          (uncurry buildGivenMethodFrame)
-          parseGivenMethodFrame
-          (channelNumber, exampleQueueDeclare)
-      it "outputs the same as before for this example" $
-        pureGoldenByteStringBuilderFile "test_resources/method-frame/queue-declare.dat" (buildGivenMethodFrame channelNumber exampleQueueDeclare)
