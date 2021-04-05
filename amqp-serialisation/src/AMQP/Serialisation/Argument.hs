@@ -106,6 +106,7 @@ instance IsArgument a => GIsMethod (K1 R a) where
 
 class IsContentHeader a where
   contentHeaderClassId :: Proxy a -> ClassId
+  parseContentHeaderArguments :: Parser a
   buildContentHeaderArguments :: a -> [Maybe Argument]
   default buildContentHeaderArguments :: (Generic a, GIsContentHeader (Rep a)) => a -> [Maybe Argument]
   buildContentHeaderArguments = gBuildContentHeaderArguments . from

@@ -6,3 +6,4 @@
     name: "Redundant bracket"
     within: 
       - AMQP.Serialisation.Generated.Methods
+      - AMQP.Serialisation.Generated.Content

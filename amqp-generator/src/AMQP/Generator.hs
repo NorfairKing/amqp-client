@@ -682,5 +682,58 @@ genGeneratedContentModule AMQPSpec {..} =
   vcat
     [ text "module AMQP.Serialisation.Generated.Content where",
       text "",
-      text ""
+      text "",
+      genGeneratedContentHeaderTypesDoc amqpSpecClasses
     ]
+
+genGeneratedContentHeaderTypesDoc :: [AMQP.Class] -> Doc
+genGeneratedContentHeaderTypesDoc = ppr_list . concatMap classContentHeaderTypeDecs
+
+classContentHeaderTypeDecs :: AMQP.Class -> [Dec]
+classContentHeaderTypeDecs m@AMQP.Class {..} =
+  let n = mkContentHeaderTypeName className
+   in [ DataD
+          []
+          n
+          []
+          Nothing
+          [ if null classContentProperties
+              then NormalC n [] -- No need to generate the extra braces
+              else
+                RecC
+                  n
+                  (map (classContentHeaderPropertyBangType className) classContentProperties)
+          ]
+          [ DerivClause Nothing [ConT (mkName "Show"), ConT (mkName "Eq"), ConT (mkName "Generic")]
+          ],
+        InstanceD Nothing [] (AppT (ConT (mkName "Validity")) (VarT n)) [],
+        InstanceD
+          Nothing
+          []
+          (AppT (ConT (mkName "IsContentHeaderContent")) (VarT n))
+          [ FunD (mkName "methodClassId") [Clause [ConP (mkName "Proxy") []] (NormalB (LitE (IntegerL (toInteger classIndex)))) []],
+            FunD
+              (mkName "parseContentHeaderArguments")
+              []
+              -- [genParseContentArguments m]
+          ]
+      ]
+
+mkContentHeaderTypeName :: Text -> Name
+mkContentHeaderTypeName className = mkHaskellTypeName $ T.intercalate "-" [className, "content", "header"]
+
+genParseContentArguments :: Class -> Clause
+genParseContentArguments = undefined
+
+classContentHeaderPropertyBangType :: Text -> AMQP.Field -> VarBangType
+classContentHeaderPropertyBangType className AMQP.Field {..} =
+  ( mkContentHeaderFieldTypeName className fieldName,
+    Bang NoSourceUnpackedness SourceStrict,
+    -- This 'fromMaybe' should not be necessary, refactor it away?
+    AppT
+      (ConT (mkName "Maybe"))
+      (ConT (typeTranslator (fromMaybe (error "A field must have either a type or a domain type") $ fieldType <|> fieldDomain)))
+  )
+
+mkContentHeaderFieldTypeName :: Text -> Text -> Name
+mkContentHeaderFieldTypeName className fieldName = mkHaskellVarName $ T.intercalate "-" [className, "content", "header", fieldName]
