@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -134,27 +135,42 @@ parseMethodFramePayloadHelper func = label "Method Payload" $ do
   mid <- label "MethodId" Parse.anyWord16be
   label "Arguments" $ func cid mid
 
-buildGivenContentHeaderFramePayload :: forall a. IsContentHeader a => a -> ByteString.Builder
-buildGivenContentHeaderFramePayload a =
+data ContentHeaderFrame a = ContentHeaderFrame
+  { -- | Unused, must be zero
+    -- contentHeaderFrameWeight :: !ShortUInt,
+    contentHeaderFrameBodySize :: !LongLongUInt,
+    contentHeaderFrameProperties :: !a
+  }
+  deriving (Show, Eq, Generic, Functor)
+
+instance Validity a => Validity (ContentHeaderFrame a)
+
+buildGivenContentHeaderFramePayload :: forall a. IsContentHeader a => ContentHeaderFrame a -> ByteString.Builder
+buildGivenContentHeaderFramePayload ContentHeaderFrame {..} =
   mconcat
     [ buildShortUInt (contentHeaderClassId (Proxy :: Proxy a)),
-      buildShortUInt 0,
-      buildPropertyArguments $ buildContentHeaderArguments a
+      buildShortUInt 0, -- Weight, must be zero
+      buildLongLongUInt contentHeaderFrameBodySize,
+      buildPropertyArguments $ buildContentHeaderArguments contentHeaderFrameProperties
     ]
 
-parseGivenContentHeaderFramePayload :: forall a. IsContentHeader a => Parser a
+parseGivenContentHeaderFramePayload :: forall a. IsContentHeader a => Parser (ContentHeaderFrame a)
 parseGivenContentHeaderFramePayload = label "Content Header" $ do
   label "ClassId" $ void $ Parse.word16be $ contentHeaderClassId (Proxy :: Proxy a)
   label "Weight" $ void $ Parse.word16be 0
-  label "Properties" parseContentHeaderArguments
+  contentHeaderFrameBodySize <- label "Body Size" parseLongLongUInt
+  contentHeaderFrameProperties <- label "Properties" parseContentHeaderArguments
+  pure ContentHeaderFrame {..}
 
-parseContentHeaderFramePayloadHelper :: (ClassId -> Parser a) -> Parser a
+parseContentHeaderFramePayloadHelper :: (ClassId -> Parser a) -> Parser (ContentHeaderFrame a)
 parseContentHeaderFramePayloadHelper func = label "Content Header Payload" $ do
   cid <- label "ClassId" Parse.anyWord16be
   label "Weight" $ void $ Parse.word16be 0
-  label "Properties" $ func cid
+  contentHeaderFrameBodySize <- label "Body Size" parseLongLongUInt
+  contentHeaderFrameProperties <- label "Properties" $ func cid
+  pure ContentHeaderFrame {..}
 
-givenContentHeaderFrameToRawFrame :: forall a. IsContentHeader a => ChannelNumber -> a -> RawFrame
+givenContentHeaderFrameToRawFrame :: forall a. IsContentHeader a => ChannelNumber -> ContentHeaderFrame a -> RawFrame
 givenContentHeaderFrameToRawFrame chan a =
   RawFrame
     { rawFrameType = ContentHeaderFrameType,
@@ -162,11 +178,11 @@ givenContentHeaderFrameToRawFrame chan a =
       rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildGivenContentHeaderFramePayload a
     }
 
-buildGivenContentHeaderFrame :: forall a. IsContentHeader a => ChannelNumber -> a -> ByteString.Builder
+buildGivenContentHeaderFrame :: forall a. IsContentHeader a => ChannelNumber -> ContentHeaderFrame a -> ByteString.Builder
 buildGivenContentHeaderFrame chan a =
   buildRawFrame $ givenContentHeaderFrameToRawFrame chan a
 
-parseGivenContentHeaderFrame :: IsContentHeader a => Parser (ChannelNumber, a)
+parseGivenContentHeaderFrame :: IsContentHeader a => Parser (ChannelNumber, ContentHeaderFrame a)
 parseGivenContentHeaderFrame = label "ContentHeader Frame" $ do
   RawFrame {..} <- parseRawFrame
   case rawFrameType of

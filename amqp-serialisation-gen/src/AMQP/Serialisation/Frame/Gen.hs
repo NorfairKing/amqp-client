@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module AMQP.Serialisation.Frame.Gen where
@@ -13,5 +14,9 @@ instance GenValid FrameType where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid RawFrame where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
+instance GenValid a => GenValid (ContentHeaderFrame a) where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering

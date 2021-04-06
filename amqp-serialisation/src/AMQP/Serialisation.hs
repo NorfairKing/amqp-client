@@ -93,7 +93,7 @@ buildMethodFrame chan m =
         rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildMethodFramePayload m
       }
 
-parseContentHeaderFrame :: Parser ContentHeader
+parseContentHeaderFrame :: Parser (ContentHeaderFrame ContentHeader)
 parseContentHeaderFrame = label "Content Header Frame" $ do
   rf@RawFrame {..} <- parseRawFrame
   case rawFrameType of
@@ -107,7 +107,7 @@ parseContentHeaderFrame = label "Content Header Frame" $ do
             show rf
           ]
 
-buildContentHeaderFrame :: ChannelNumber -> ContentHeader -> ByteString.Builder
+buildContentHeaderFrame :: ChannelNumber -> ContentHeaderFrame ContentHeader -> ByteString.Builder
 buildContentHeaderFrame chan m =
   buildRawFrame $
     RawFrame
@@ -118,6 +118,6 @@ buildContentHeaderFrame chan m =
 
 data FramePayload
   = MethodPayload !Method
-  | ContentHeaderPayload !ContentHeader
+  | ContentHeaderPayload !(ContentHeaderFrame ContentHeader)
   | HeartbeatPayload
   deriving (Show, Eq, Generic)

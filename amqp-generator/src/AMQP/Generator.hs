@@ -853,24 +853,26 @@ mkClassContentHeaderSumTypeConstructorName className = mkHaskellTypeName $ T.int
 genBuildContentHeaderSumTypeFunction :: [AMQP.Class] -> [Dec]
 genBuildContentHeaderSumTypeFunction cs =
   let n = mkName "buildContentHeaderFramePayload"
-   in [ SigD n (AppT (AppT ArrowT (ConT (mkName "ContentHeader"))) (ConT (mkName "ByteString.Builder"))),
+      frameVarName = mkName "chf"
+   in [ SigD n (AppT (AppT ArrowT (AppT (ConT (mkName "ContentHeaderFrame")) (ConT (mkName "ContentHeader")))) (ConT (mkName "ByteString.Builder"))),
         FunD
           n
           [ Clause
-              []
+              [VarP frameVarName]
               ( NormalB
-                  ( LamCaseE
+                  ( CaseE
+                      (AppE (VarE (mkName "contentHeaderFrameProperties")) (VarE frameVarName))
                       ( flip map cs $ \Class {..} ->
-                          let varName = mkName "ch"
+                          let propVarName = mkName "ch"
                            in Match
                                 ( ConP
                                     (mkClassContentHeaderSumTypeConstructorName className)
-                                    [VarP varName]
+                                    [VarP propVarName]
                                 )
                                 ( NormalB
                                     ( AppE
                                         (VarE (mkName "buildGivenContentHeaderFramePayload"))
-                                        (VarE varName)
+                                        (InfixE (Just (VarE propVarName)) (VarE (mkName "<$")) (Just (VarE frameVarName)))
                                     )
                                 )
                                 []
@@ -884,7 +886,7 @@ genBuildContentHeaderSumTypeFunction cs =
 genParseContentHeaderSumTypeFunction :: [AMQP.Class] -> [Dec]
 genParseContentHeaderSumTypeFunction cs =
   let n = mkName "parseContentHeaderFramePayload"
-   in [ SigD n (AppT (ConT (mkName "Parser")) (ConT (mkName "ContentHeader"))),
+   in [ SigD n (AppT (ConT (mkName "Parser")) (AppT (ConT (mkName "ContentHeaderFrame")) (ConT (mkName "ContentHeader")))),
         FunD
           n
           [ Clause

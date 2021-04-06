@@ -6,6 +6,7 @@ import AMQP.Serialisation
 import AMQP.Serialisation.Base
 import AMQP.Serialisation.Content.Gen ()
 import AMQP.Serialisation.Frame
+import AMQP.Serialisation.Frame.Gen ()
 import AMQP.Serialisation.Gen ()
 import AMQP.Serialisation.Generated.Methods
 import AMQP.Serialisation.Methods.Gen ()
