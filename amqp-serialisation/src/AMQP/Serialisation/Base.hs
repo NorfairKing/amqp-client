@@ -569,3 +569,7 @@ int32ToInt = fromIntegral
 -- Safe
 word8ToInt :: Word8 -> Int
 word8ToInt = fromIntegral
+
+-- Safe
+intToWord64 :: Int -> Word64
+intToWord64 = fromIntegral

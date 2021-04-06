@@ -10,6 +10,7 @@ import AMQP.Serialisation
 import AMQP.Serialisation.Argument
 import AMQP.Serialisation.Base
 import AMQP.Serialisation.Frame
+import AMQP.Serialisation.Generated.Content
 import AMQP.Serialisation.Generated.DomainTypes
 import AMQP.Serialisation.Generated.Methods
 import Control.Monad
@@ -194,6 +195,47 @@ exchangeDeclare Channel {..} name ExchangeSettings = do
           exchangeDeclareArguments = emptyFieldTable
         }
   pure Exchange
+
+basicPublish :: MonadUnliftIO m => Channel -> ExchangeName -> RoutingKey -> Message -> m ()
+basicPublish Channel {..} exchangeName routingKey Message {..} = do
+  let bp =
+        BasicPublish
+          { basicPublishReserved1 = 0,
+            basicPublishExchange = exchangeName,
+            basicPublishRoutingKey = routingKey,
+            basicPublishMandatory = True,
+            basicPublishImmediate = False
+          }
+      chf =
+        ContentHeaderFrame
+          { contentHeaderFrameBodySize = intToWord64 $ SB.length messageBody,
+            contentHeaderFrameProperties =
+              ContentHeaderBasic $
+                BasicContentHeader -- TODO allow the user to set these somehow
+                  { basicContentHeaderContentType = Nothing,
+                    basicContentHeaderContentEncoding = Nothing,
+                    basicContentHeaderHeaders = Nothing,
+                    basicContentHeaderDeliveryMode = Nothing,
+                    basicContentHeaderPriority = Nothing,
+                    basicContentHeaderCorrelationId = Nothing,
+                    basicContentHeaderReplyTo = Nothing,
+                    basicContentHeaderExpiration = Nothing,
+                    basicContentHeaderMessageId = Nothing,
+                    basicContentHeaderTimestamp = Nothing,
+                    basicContentHeaderType = Nothing,
+                    basicContentHeaderUserId = Nothing,
+                    basicContentHeaderAppId = Nothing,
+                    basicContentHeaderReserved = Nothing
+                  }
+          }
+      cb = ContentBody
+  -- TODO support payloads with multiple content body frames
+  connectionSendBuilder channelConnection $
+    mconcat
+      [ buildFrame $ MethodPayload channelNumber $ MethodBasicPublish bp,
+        buildFrame $ ContentHeaderPayload channelNumber chf,
+        buildFrame $ ContentBodyPayload channelNumber $ ContentBody {contentBodyPayload = messageBody}
+      ]
 
 -- | Set up (and clean up) a connection to the AMQP server.
 --
@@ -424,9 +466,6 @@ waitToNoWait = \case
   -- Yes, it's backwards, I know.
   DoWait -> False
   Don'tWait -> True
-
-basicPublish :: MonadUnliftIO m => Channel -> ExchangeName -> RoutingKey -> Message -> m ()
-basicPublish channel exchangeName routingKey message = undefined
 
 data Message = Message
   { messageBody :: ByteString
