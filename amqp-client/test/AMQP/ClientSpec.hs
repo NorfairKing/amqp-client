@@ -37,8 +37,17 @@ spec = rabbitMQSpec $ do
     _ <- exchangeDeclare chan myExchangeName defaultExchangeSettings
     queueBind chan myQueueName myExchangeName myRoutingKey
 
+    let testBody = "hello world"
+    let msg = newMessage testBody
     basicPublish
       chan
       myExchangeName
       myRoutingKey
-      (newMessage "hello world")
+      msg
+
+    m <-
+      basicGet
+        chan
+        myQueueName
+        NoAck
+    m `shouldBe` Just msg

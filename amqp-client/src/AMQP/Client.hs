@@ -196,6 +196,25 @@ exchangeDeclare Channel {..} name ExchangeSettings = do
         }
   pure Exchange
 
+basicGet :: MonadUnliftIO m => Channel -> QueueName -> Ack -> m (Maybe Message)
+basicGet Channel {..} queueName ack = withMVar (connectionSynchronousVar channelConnection) $ \() -> do
+  let bg = BasicGet {basicGetReserved1 = 0, basicGetQueue = queueName, basicGetNoAck = ackToNoAck ack}
+  connectionSendGivenMethodByItself channelConnection channelNumber bg
+  bgr <- waitForSynchronousMethod channelConnection
+  case bgr of
+    BasicGetResponseGetEmpty BasicGetEmpty {} -> pure Nothing
+    BasicGetResponseGetOk BasicGetOk {} -> do
+      frame <- connectionGetFrame channelConnection
+      case frame of
+        -- TODO deal with multiple channels
+        -- TODO deal with multi-body content
+        ContentHeaderPayload _ (ContentHeaderFrame _ _) -> do
+          frame2 <- connectionGetFrame channelConnection
+          case frame2 of
+            ContentBodyPayload _ ContentBody {..} -> pure $ Just $ Message {messageBody = contentBodyPayload}
+            _ -> throwIO $ ProtocolViolation $ "Expected a content body, got this instead: " <> show frame
+        _ -> throwIO $ ProtocolViolation $ "Expected a content header, got this instead: " <> show frame
+
 basicPublish :: MonadUnliftIO m => Channel -> ExchangeName -> RoutingKey -> Message -> m ()
 basicPublish Channel {..} exchangeName routingKey Message {..} = do
   let bp =
@@ -228,13 +247,13 @@ basicPublish Channel {..} exchangeName routingKey Message {..} = do
                     basicContentHeaderReserved = Nothing
                   }
           }
-      cb = ContentBody
+      cb = ContentBody {contentBodyPayload = messageBody}
   -- TODO support payloads with multiple content body frames
   connectionSendBuilder channelConnection $
     mconcat
       [ buildFrame $ MethodPayload channelNumber $ MethodBasicPublish bp,
         buildFrame $ ContentHeaderPayload channelNumber chf,
-        buildFrame $ ContentBodyPayload channelNumber $ ContentBody {contentBodyPayload = messageBody}
+        buildFrame $ ContentBodyPayload channelNumber cb
       ]
 
 -- | Set up (and clean up) a connection to the AMQP server.
@@ -422,6 +441,13 @@ connectionSendBuilderWithoutLock conn b =
 connectionParseMethod :: (MonadUnliftIO m) => Network.Connection -> MVar ByteString -> m (Either String Method)
 connectionParseMethod conn leftoversVar = connectionParse conn leftoversVar parseMethodFrame
 
+connectionGetFrame :: MonadUnliftIO m => Connection -> m Frame
+connectionGetFrame Connection {..} = do
+  errOrFrame <- connectionParseFrame connectionNetworkConnection connectionLeftoversVar
+  case errOrFrame of
+    Left err -> throwIO $ ProtocolViolation err
+    Right f -> pure f
+
 connectionParseFrame :: (MonadUnliftIO m) => Network.Connection -> MVar ByteString -> m (Either String Frame)
 connectionParseFrame conn leftoversVar = connectionParse conn leftoversVar parseFrame
 
@@ -466,6 +492,14 @@ waitToNoWait = \case
   -- Yes, it's backwards, I know.
   DoWait -> False
   Don'tWait -> True
+
+data Ack = Ack | NoAck
+
+ackToNoAck :: Ack -> NoAck
+ackToNoAck = \case
+  -- Yes, it's backwards, I know.
+  Ack -> False
+  NoAck -> True
 
 data Message = Message
   { messageBody :: ByteString
