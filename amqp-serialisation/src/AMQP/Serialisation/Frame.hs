@@ -142,8 +142,8 @@ buildGivenContentHeader a =
       buildPropertyArguments $ buildContentHeaderArguments a
     ]
 
-parseGivenContentHeader :: IsContentHeader a => Parser a
+parseGivenContentHeader :: forall a. IsContentHeader a => Parser a
 parseGivenContentHeader = label "Content Header" $ do
-  cid <- label "ClassId" Parse.anyWord16be
+  label "ClassId" $ void $ Parse.word16be $ contentHeaderClassId (Proxy :: Proxy a)
   label "weight" $ void $ Parse.word16be 0
   label "properties" parseContentHeaderArguments

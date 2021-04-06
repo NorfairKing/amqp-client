@@ -87,6 +87,7 @@ buildPropertyArguments = uncurry render . go
         let (bas, as) = go mas
          in case ma of
               Nothing -> (False : bas, as)
+              Just (ArgumentBit b) -> (b : bas, as)
               Just a -> (True : bas, a : as)
 
 newtype FieldTable = FieldTable {fieldTableMap :: Map FieldTableKey FieldTableValue}
@@ -305,6 +306,31 @@ parse5Bits :: Parser (Bit, Bit, Bit, Bit, Bit)
 parse5Bits = do
   [b1, b2, b3, b4, b5] <- parseBits 5
   pure (b1, b2, b3, b4, b5)
+
+-- | Parse 'n' property bits
+--
+-- This function only works for input 15 or fewer.
+-- TODO make it work for any number of arguments
+parsePropBits :: Word -> Parser [Bit]
+parsePropBits n = do
+  w <- Parse.anyWord16be
+  pure $ unpackPropBits n w
+
+unpackPropBits :: Word -> Word16 -> [Bit]
+unpackPropBits n = go n . (`div` 2)
+  where
+    -- Divide by two because the last bit is to indicate whether any more packed bits follow
+    -- but we don't support that at the moment
+
+    go :: Word -> Word16 -> [Bit]
+    go bitsLeft w
+      | bitsLeft <= 0 = []
+      | otherwise = odd w : go (pred bitsLeft) (w `div` 2)
+
+parse14PropBits :: Parser (Bit, Bit, Bit, Bit, Bit, Bit, Bit, Bit, Bit, Bit, Bit, Bit, Bit, Bit)
+parse14PropBits = do
+  [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14] <- parsePropBits 14
+  pure (b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14)
 
 -- | Build bits, packed into octets
 --

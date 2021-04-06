@@ -23,7 +23,7 @@ in
       hlint.enable = true;
       ormolu.enable = true;
       generate-amqp = {
-        enable = true;
+        enable = true; # Turn this to False while working on the generator.
         name = "generate amqp client code from spec";
         entry = "${amqp-generator-wrapped} spec/amqp0-9-1.extended.xml";
         types = [ "text" ];

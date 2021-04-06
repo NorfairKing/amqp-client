@@ -57,6 +57,9 @@ instance IsArgument FieldTable where
   toArgument = ArgumentFieldTable
   parseArgument = parseFieldTable
 
+parsePropArgument :: IsArgument a => Bool -> Parser (Maybe a)
+parsePropArgument b = if b then Just <$> parseArgument else pure Nothing
+
 class IsMethod a where
   methodClassId :: Proxy a -> ClassId
   methodMethodId :: Proxy a -> MethodId

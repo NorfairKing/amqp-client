@@ -16,7 +16,7 @@ instance Validity ConnectionContentHeader
 
 instance IsContentHeader ConnectionContentHeader where
   contentHeaderClassId (Proxy) = 10
-  parseContentHeaderArguments = undefined
+  parseContentHeaderArguments = do pure ConnectionContentHeader
 
 data ChannelContentHeader
   = ChannelContentHeader
@@ -26,7 +26,7 @@ instance Validity ChannelContentHeader
 
 instance IsContentHeader ChannelContentHeader where
   contentHeaderClassId (Proxy) = 20
-  parseContentHeaderArguments = undefined
+  parseContentHeaderArguments = do pure ChannelContentHeader
 
 data ExchangeContentHeader
   = ExchangeContentHeader
@@ -36,7 +36,7 @@ instance Validity ExchangeContentHeader
 
 instance IsContentHeader ExchangeContentHeader where
   contentHeaderClassId (Proxy) = 40
-  parseContentHeaderArguments = undefined
+  parseContentHeaderArguments = do pure ExchangeContentHeader
 
 data QueueContentHeader
   = QueueContentHeader
@@ -46,7 +46,7 @@ instance Validity QueueContentHeader
 
 instance IsContentHeader QueueContentHeader where
   contentHeaderClassId (Proxy) = 50
-  parseContentHeaderArguments = undefined
+  parseContentHeaderArguments = do pure QueueContentHeader
 
 data BasicContentHeader = BasicContentHeader
   { basicContentHeaderContentType :: !(Maybe ShortString),
@@ -70,7 +70,54 @@ instance Validity BasicContentHeader
 
 instance IsContentHeader BasicContentHeader where
   contentHeaderClassId (Proxy) = 60
-  parseContentHeaderArguments = undefined
+  parseContentHeaderArguments = do
+    ( basicContentHeaderContentTypeBit,
+      basicContentHeaderContentEncodingBit,
+      basicContentHeaderHeadersBit,
+      basicContentHeaderDeliveryModeBit,
+      basicContentHeaderPriorityBit,
+      basicContentHeaderCorrelationIdBit,
+      basicContentHeaderReplyToBit,
+      basicContentHeaderExpirationBit,
+      basicContentHeaderMessageIdBit,
+      basicContentHeaderTimestampBit,
+      basicContentHeaderTypeBit,
+      basicContentHeaderUserIdBit,
+      basicContentHeaderAppIdBit,
+      basicContentHeaderReservedBit
+      ) <-
+      parse14PropBits
+    basicContentHeaderContentTypeParsed <- parsePropArgument basicContentHeaderContentTypeBit
+    basicContentHeaderContentEncodingParsed <- parsePropArgument basicContentHeaderContentEncodingBit
+    basicContentHeaderHeadersParsed <- parsePropArgument basicContentHeaderHeadersBit
+    basicContentHeaderDeliveryModeParsed <- parsePropArgument basicContentHeaderDeliveryModeBit
+    basicContentHeaderPriorityParsed <- parsePropArgument basicContentHeaderPriorityBit
+    basicContentHeaderCorrelationIdParsed <- parsePropArgument basicContentHeaderCorrelationIdBit
+    basicContentHeaderReplyToParsed <- parsePropArgument basicContentHeaderReplyToBit
+    basicContentHeaderExpirationParsed <- parsePropArgument basicContentHeaderExpirationBit
+    basicContentHeaderMessageIdParsed <- parsePropArgument basicContentHeaderMessageIdBit
+    basicContentHeaderTimestampParsed <- parsePropArgument basicContentHeaderTimestampBit
+    basicContentHeaderTypeParsed <- parsePropArgument basicContentHeaderTypeBit
+    basicContentHeaderUserIdParsed <- parsePropArgument basicContentHeaderUserIdBit
+    basicContentHeaderAppIdParsed <- parsePropArgument basicContentHeaderAppIdBit
+    basicContentHeaderReservedParsed <- parsePropArgument basicContentHeaderReservedBit
+    pure
+      BasicContentHeader
+        { basicContentHeaderContentType = basicContentHeaderContentTypeParsed,
+          basicContentHeaderContentEncoding = basicContentHeaderContentEncodingParsed,
+          basicContentHeaderHeaders = basicContentHeaderHeadersParsed,
+          basicContentHeaderDeliveryMode = basicContentHeaderDeliveryModeParsed,
+          basicContentHeaderPriority = basicContentHeaderPriorityParsed,
+          basicContentHeaderCorrelationId = basicContentHeaderCorrelationIdParsed,
+          basicContentHeaderReplyTo = basicContentHeaderReplyToParsed,
+          basicContentHeaderExpiration = basicContentHeaderExpirationParsed,
+          basicContentHeaderMessageId = basicContentHeaderMessageIdParsed,
+          basicContentHeaderTimestamp = basicContentHeaderTimestampParsed,
+          basicContentHeaderType = basicContentHeaderTypeParsed,
+          basicContentHeaderUserId = basicContentHeaderUserIdParsed,
+          basicContentHeaderAppId = basicContentHeaderAppIdParsed,
+          basicContentHeaderReserved = basicContentHeaderReservedParsed
+        }
 
 data TxContentHeader = TxContentHeader deriving (Show, Eq, Generic)
 
@@ -78,7 +125,7 @@ instance Validity TxContentHeader
 
 instance IsContentHeader TxContentHeader where
   contentHeaderClassId (Proxy) = 90
-  parseContentHeaderArguments = undefined
+  parseContentHeaderArguments = do pure TxContentHeader
 
 data ConfirmContentHeader
   = ConfirmContentHeader
@@ -88,4 +135,4 @@ instance Validity ConfirmContentHeader
 
 instance IsContentHeader ConfirmContentHeader where
   contentHeaderClassId (Proxy) = 85
-  parseContentHeaderArguments = undefined
+  parseContentHeaderArguments = do pure ConfirmContentHeader

@@ -726,9 +726,6 @@ classContentHeaderTypeDecs m@AMQP.Class {..} =
 mkContentHeaderTypeName :: Text -> Name
 mkContentHeaderTypeName className = mkHaskellTypeName $ T.intercalate "-" [className, "content", "header"]
 
-genParseContentArguments :: AMQP.Class -> Clause
-genParseContentArguments AMQP.Class {..} = Clause [] (NormalB (VarE (mkName "undefined"))) []
-
 classContentHeaderPropertyBangType :: Text -> AMQP.Field -> VarBangType
 classContentHeaderPropertyBangType className AMQP.Field {..} =
   ( mkContentHeaderFieldTypeName className fieldName,
@@ -741,3 +738,64 @@ classContentHeaderPropertyBangType className AMQP.Field {..} =
 
 mkContentHeaderFieldTypeName :: Text -> Text -> Name
 mkContentHeaderFieldTypeName className fieldName = mkHaskellVarName $ T.intercalate "-" [className, "content", "header", fieldName]
+
+mkContentHeaderFieldTypeBitName :: Text -> Text -> Name
+mkContentHeaderFieldTypeBitName className fieldName = mkHaskellVarName (T.intercalate "-" [className, "content", "header", fieldName, "bit"])
+
+mkContentHeaderFieldTypeVarName :: Text -> Text -> Name
+mkContentHeaderFieldTypeVarName className fieldName = mkHaskellVarName (T.intercalate "-" [className, "content", "header", fieldName, "parsed"])
+
+parseNPropBitsFunctionName :: Int -> Name
+parseNPropBitsFunctionName n = mkName $ concat ["parse", show n, "PropBits"]
+
+genParseContentArguments :: AMQP.Class -> Clause
+genParseContentArguments AMQP.Class {..} =
+  Clause
+    []
+    ( NormalB
+        ( DoE $
+            concat
+              [ [ BindS
+                    (TupP (map (\Field {..} -> VarP (mkContentHeaderFieldTypeBitName className fieldName)) classContentProperties))
+                    (VarE (parseNPropBitsFunctionName (length classContentProperties)))
+                  | not (null classContentProperties)
+                ],
+                mapMaybe
+                  ( \case
+                      NonBitField Field {..} ->
+                        Just $
+                          BindS
+                            (VarP (mkContentHeaderFieldTypeVarName className fieldName))
+                            ( AppE
+                                (VarE (mkName "parsePropArgument"))
+                                ( VarE (mkContentHeaderFieldTypeBitName className fieldName)
+                                )
+                            )
+                      BitFields _ -> Nothing
+                  )
+                  (groupFields classContentProperties),
+                [ NoBindS
+                    ( AppE
+                        (VarE (mkName "pure"))
+                        ( if null classContentProperties -- No need for the extra braces.
+                            then ConE (mkContentHeaderTypeName className)
+                            else
+                              RecConE
+                                (mkContentHeaderTypeName className)
+                                ( map
+                                    ( \Field {..} ->
+                                        ( mkContentHeaderFieldTypeName className fieldName,
+                                          VarE
+                                            ( mkContentHeaderFieldTypeVarName className fieldName
+                                            )
+                                        )
+                                    )
+                                    classContentProperties
+                                )
+                        )
+                    )
+                ]
+              ]
+        )
+    )
+    []

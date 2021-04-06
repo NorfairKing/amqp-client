@@ -61,3 +61,54 @@ spec = do
           exampleConnectionContentHeader
       it "outputs the same as before for this example" $
         pureGoldenByteStringBuilderFile "test_resources/content-header/connection.dat" (buildGivenContentHeader exampleConnectionContentHeader)
+
+  describe "parseGivenContentHeader" $ do
+    describe "BasicContentHeader" $ do
+      let emptyBasicContentHeader =
+            BasicContentHeader
+              { basicContentHeaderContentType = Nothing,
+                basicContentHeaderContentEncoding = Nothing,
+                basicContentHeaderHeaders = Nothing,
+                basicContentHeaderDeliveryMode = Nothing,
+                basicContentHeaderPriority = Nothing,
+                basicContentHeaderCorrelationId = Nothing,
+                basicContentHeaderReplyTo = Nothing,
+                basicContentHeaderExpiration = Nothing,
+                basicContentHeaderMessageId = Nothing,
+                basicContentHeaderTimestamp = Nothing,
+                basicContentHeaderType = Nothing,
+                basicContentHeaderUserId = Nothing,
+                basicContentHeaderAppId = Nothing,
+                basicContentHeaderReserved = Nothing
+              }
+      it "roundtrips on the empty example" $
+        roundtripsFor
+          buildGivenContentHeader
+          parseGivenContentHeader
+          emptyBasicContentHeader
+      it "outputs the same as before for the empty example" $
+        pureGoldenByteStringBuilderFile "test_resources/content-header/basic/empty.dat" (buildGivenContentHeader emptyBasicContentHeader)
+      let exampleBasicContentHeader =
+            BasicContentHeader
+              { basicContentHeaderContentType = Just "type",
+                basicContentHeaderContentEncoding = Just "encoding",
+                basicContentHeaderHeaders = Just emptyFieldTable,
+                basicContentHeaderDeliveryMode = Just 4,
+                basicContentHeaderPriority = Just 1,
+                basicContentHeaderCorrelationId = Just "correlation",
+                basicContentHeaderReplyTo = Just "reply-to",
+                basicContentHeaderExpiration = Just "expiration",
+                basicContentHeaderMessageId = Just "message-id",
+                basicContentHeaderTimestamp = Nothing,
+                basicContentHeaderType = Just "type",
+                basicContentHeaderUserId = Just "user-id",
+                basicContentHeaderAppId = Just "app-id",
+                basicContentHeaderReserved = Just ""
+              }
+      it "roundtrips on the example example" $
+        roundtripsFor
+          buildGivenContentHeader
+          parseGivenContentHeader
+          exampleBasicContentHeader
+      it "outputs the same as before for the example example" $
+        pureGoldenByteStringBuilderFile "test_resources/content-header/basic/example.dat" (buildGivenContentHeader exampleBasicContentHeader)

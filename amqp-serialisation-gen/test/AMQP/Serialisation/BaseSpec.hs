@@ -2,17 +2,12 @@
 
 module AMQP.Serialisation.BaseSpec (spec) where
 
-import AMQP.Serialisation
 import AMQP.Serialisation.Base
-import AMQP.Serialisation.Frame
 import AMQP.Serialisation.Frame.Gen ()
 import AMQP.Serialisation.Gen ()
-import AMQP.Serialisation.Generated.Methods
 import AMQP.Serialisation.Methods.Gen ()
 import AMQP.Serialisation.TestUtils
-import Control.Monad
 import qualified Data.Attoparsec.ByteString as Attoparsec
-import Data.Char as Char
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
