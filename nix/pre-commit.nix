@@ -15,6 +15,13 @@ in
       nixpkgs-fmt.enable = true;
       hlint.enable = true;
       ormolu.enable = true;
+      generate-amqp = {
+        enable = true;
+        name = "generate amqp client code from spec";
+        entry = "amqp-generator spec/amqp0-9-1.extended.xml";
+        types = [ "text" ];
+        pass_filenames = false;
+      };
     };
   };
 }

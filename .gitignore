@@ -3,3 +3,4 @@
 stack.yaml.lock
 result*
 *.dump
+.pre-commit-config.yaml
