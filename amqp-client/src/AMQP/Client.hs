@@ -189,8 +189,8 @@ exchangeDeclare Channel {..} name ExchangeSettings = do
           exchangeDeclareType = "direct",
           exchangeDeclarePassive = False,
           exchangeDeclareDurable = True,
-          exchangeDeclareReserved2 = False,
-          exchangeDeclareReserved3 = False,
+          exchangeDeclareAutoDelete = False,
+          exchangeDeclareInternal = False,
           exchangeDeclareNoWait = False,
           exchangeDeclareArguments = emptyFieldTable
         }
