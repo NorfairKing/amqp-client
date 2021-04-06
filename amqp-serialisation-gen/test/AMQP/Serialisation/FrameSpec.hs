@@ -121,3 +121,7 @@ spec = do
   describe "parseContentBodyFrame" $ do
     it "roundtrips on with buildContentBodyFrame" $ do
       roundtrips (uncurry buildContentBodyFrame) parseContentBodyFrame
+
+  describe "parseHeartbeatFrame" $ do
+    it "can parse the heartbeats that we send" $
+      roundtrips (const buildHeartbeatFrame) parseHeartbeatFrame

@@ -215,3 +215,23 @@ contentBodyToRawFrame chan ContentBody {..} =
 
 buildContentBodyFrame :: ChannelNumber -> ContentBody -> ByteString.Builder
 buildContentBodyFrame chan cb = buildRawFrame $ contentBodyToRawFrame chan cb
+
+parseHeartbeatFrame :: Parser ()
+parseHeartbeatFrame = do
+  RawFrame {..} <- parseRawFrame
+  case rawFrameType of
+    HeartbeatFrameType -> do
+      when (rawFrameChannel /= 0) $ fail $ unwords ["Supposed heartbeat frame had a channel of", show rawFrameChannel, "instead of 0"]
+      pure ()
+    ft -> fail $ unwords ["Got a frame of type", show ft, "instead of a heartbeat frame."]
+
+heartbeatFrame :: RawFrame
+heartbeatFrame =
+  RawFrame
+    { rawFrameType = HeartbeatFrameType,
+      rawFrameChannel = 0,
+      rawFramePayload = SB.empty
+    }
+
+buildHeartbeatFrame :: ByteString.Builder
+buildHeartbeatFrame = buildRawFrame heartbeatFrame
