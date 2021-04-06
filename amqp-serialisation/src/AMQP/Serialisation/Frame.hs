@@ -133,3 +133,12 @@ parseMethodFramePayloadHelper func = label "Method Payload" $ do
   cid <- label "ClassId" Parse.anyWord16be
   mid <- label "MethodId" Parse.anyWord16be
   func cid mid
+
+buildGivenContentHeader :: IsContentHeader a => a -> ByteString.Builder
+buildGivenContentHeader a = undefined
+
+parseGivenContentHeader :: IsContentHeader a => Parser a
+parseGivenContentHeader = label "Content Header" $ do
+  cid <- label "ClassId" Parse.anyWord16be
+  label "weight" $ void $ Parse.word16be 0
+  label "properties" parseContentHeaderArguments
