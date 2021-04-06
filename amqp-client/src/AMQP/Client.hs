@@ -20,9 +20,8 @@ import qualified Data.ByteString as SB
 import Data.ByteString.Builder as ByteString (Builder)
 import qualified Data.ByteString.Builder as SBB
 import qualified Data.ByteString.Lazy as LB
-import Data.IntMap (IntMap)
-import qualified Data.IntMap as IM
 import Data.List
+import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text.Encoding as TE
@@ -70,7 +69,7 @@ data Connection = Connection
     connectionMaximumFrameSize :: !LongUInt,
     connectionHeartbeatInterval :: !ShortUInt,
     connectionMessageQueue :: !(TQueue ConnectionMessage),
-    connectionChannels :: !(TVar (IntMap Channel))
+    connectionChannels :: !(TVar (Map ChannelNumber Channel))
   }
   deriving (Generic)
 
@@ -93,17 +92,18 @@ data HandleResult = NotHandled | HandledButNotDone | HandledAndDone
   deriving (Generic)
 
 channelOpen :: MonadUnliftIO m => Connection -> m Channel
-channelOpen conn = do
-  let number = 1 -- TODO choose an open index for a new open channel.
+channelOpen conn@Connection {..} = do
+  let number = 1 :: ChannelNumber -- TODO choose an open index for a new open channel.
   ChannelOpenOk {} <- synchronouslyRequestByItself conn number ChannelOpen {channelOpenReserved1 = ""}
   messageQueue <- newTQueueIO
-  -- TODO add queue to the connection's known queues
-  pure $
-    Channel
-      { channelConnection = conn,
-        channelNumber = number,
-        channelMessageQueue = messageQueue
-      }
+  let c =
+        Channel
+          { channelConnection = conn,
+            channelNumber = number,
+            channelMessageQueue = messageQueue
+          }
+  atomically $ modifyTVar' connectionChannels (M.insert number c)
+  pure c
 
 chanHasMessage :: MonadIO m => Channel -> m Bool
 chanHasMessage Channel {..} = atomically $ not <$> isEmptyTQueue channelMessageQueue
@@ -342,7 +342,7 @@ withConnection ConnectionSettings {..} callback = do
         Right coo -> pure coo
 
       messageQueue <- newTQueueIO
-      channelVar <- newTVarIO IM.empty
+      channelVar <- newTVarIO M.empty
       let amqpConnection =
             Connection
               { connectionNetworkConnection = networkConnection,
