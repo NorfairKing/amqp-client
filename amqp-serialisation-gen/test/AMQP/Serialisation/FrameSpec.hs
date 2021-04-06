@@ -117,3 +117,7 @@ spec = do
           (channelNumber, exampleBasicContentHeader)
       it "outputs the same as before for the example example" $
         pureGoldenByteStringBuilderFile "test_resources/content-header/basic/example.dat" (buildGivenContentHeaderFrame channelNumber exampleBasicContentHeader)
+
+  describe "parseContentBodyFrame" $ do
+    it "roundtrips on with buildContentBodyFrame" $ do
+      roundtrips (uncurry buildContentBodyFrame) parseContentBodyFrame

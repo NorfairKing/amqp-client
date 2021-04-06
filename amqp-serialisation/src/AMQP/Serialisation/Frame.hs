@@ -183,10 +183,35 @@ buildGivenContentHeaderFrame chan a =
   buildRawFrame $ givenContentHeaderFrameToRawFrame chan a
 
 parseGivenContentHeaderFrame :: IsContentHeader a => Parser (ChannelNumber, ContentHeaderFrame a)
-parseGivenContentHeaderFrame = label "ContentHeader Frame" $ do
+parseGivenContentHeaderFrame = label "Content Header Frame" $ do
   RawFrame {..} <- parseRawFrame
   case rawFrameType of
     ContentHeaderFrameType -> case parseOnly parseGivenContentHeaderFramePayload rawFramePayload of
       Left err -> fail err
       Right r -> pure (rawFrameChannel, r)
     ft -> fail $ unwords ["Got a frame of type", show ft, "instead of a content header frame."]
+
+newtype ContentBody = ContentBody
+  { contentBodyPayload :: ByteString
+  }
+  deriving (Show, Eq, Generic)
+
+instance Validity ContentBody
+
+parseContentBodyFrame :: Parser (ChannelNumber, ContentBody)
+parseContentBodyFrame = label "Content Body Frame" $ do
+  RawFrame {..} <- parseRawFrame
+  case rawFrameType of
+    ContentBodyFrameType -> pure (rawFrameChannel, ContentBody {contentBodyPayload = rawFramePayload})
+    ft -> fail $ unwords ["Got a frame of type", show ft, "instead of a content body frame."]
+
+contentBodyToRawFrame :: ChannelNumber -> ContentBody -> RawFrame
+contentBodyToRawFrame chan ContentBody {..} =
+  RawFrame
+    { rawFrameType = ContentBodyFrameType,
+      rawFrameChannel = chan,
+      rawFramePayload = contentBodyPayload
+    }
+
+buildContentBodyFrame :: ChannelNumber -> ContentBody -> ByteString.Builder
+buildContentBodyFrame chan cb = buildRawFrame $ contentBodyToRawFrame chan cb

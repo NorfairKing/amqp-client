@@ -20,3 +20,7 @@ instance GenValid RawFrame where
 instance GenValid a => GenValid (ContentHeaderFrame a) where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
+instance GenValid ContentBody where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering

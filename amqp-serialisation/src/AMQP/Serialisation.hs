@@ -119,5 +119,6 @@ buildContentHeaderFrame chan m =
 data FramePayload
   = MethodPayload !Method
   | ContentHeaderPayload !(ContentHeaderFrame ContentHeader)
+  | ContentBodyPayload !ContentBody
   | HeartbeatPayload
   deriving (Show, Eq, Generic)
