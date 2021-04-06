@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE LambdaCase #-}
 
 module AMQP.Serialisation.Generated.Content where
 
@@ -156,19 +155,19 @@ instance Validity ContentHeader
 
 -- | Turn a 'ContentHeader' into a 'ByteString.Builder'.
 buildContentHeaderFramePayload ::
-  ContentHeader ->
+  ContentHeaderFrame ContentHeader ->
   ByteString.Builder
-buildContentHeaderFramePayload = \case
-  ContentHeaderConnection ch -> buildGivenContentHeaderFramePayload ch
-  ContentHeaderChannel ch -> buildGivenContentHeaderFramePayload ch
-  ContentHeaderExchange ch -> buildGivenContentHeaderFramePayload ch
-  ContentHeaderQueue ch -> buildGivenContentHeaderFramePayload ch
-  ContentHeaderBasic ch -> buildGivenContentHeaderFramePayload ch
-  ContentHeaderTx ch -> buildGivenContentHeaderFramePayload ch
-  ContentHeaderConfirm ch -> buildGivenContentHeaderFramePayload ch
+buildContentHeaderFramePayload chf = case contentHeaderFrameProperties chf of
+  ContentHeaderConnection ch -> buildGivenContentHeaderFramePayload (ch <$ chf)
+  ContentHeaderChannel ch -> buildGivenContentHeaderFramePayload (ch <$ chf)
+  ContentHeaderExchange ch -> buildGivenContentHeaderFramePayload (ch <$ chf)
+  ContentHeaderQueue ch -> buildGivenContentHeaderFramePayload (ch <$ chf)
+  ContentHeaderBasic ch -> buildGivenContentHeaderFramePayload (ch <$ chf)
+  ContentHeaderTx ch -> buildGivenContentHeaderFramePayload (ch <$ chf)
+  ContentHeaderConfirm ch -> buildGivenContentHeaderFramePayload (ch <$ chf)
 
 -- | Parse a 'ContentHeader' frame payload.
-parseContentHeaderFramePayload :: Parser ContentHeader
+parseContentHeaderFramePayload :: Parser (ContentHeaderFrame ContentHeader)
 parseContentHeaderFramePayload =
   parseContentHeaderFramePayloadHelper
     ( \cid -> case cid of

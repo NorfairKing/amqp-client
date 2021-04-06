@@ -681,8 +681,7 @@ genGeneratorInstance className Method {..} =
 genGeneratedContentModule :: AMQPSpec -> Doc
 genGeneratedContentModule AMQPSpec {..} =
   vcat
-    [ text "{-# LANGUAGE LambdaCase #-}",
-      text "{-# LANGUAGE DeriveGeneric #-}",
+    [ text "{-# LANGUAGE DeriveGeneric #-}",
       text "module AMQP.Serialisation.Generated.Content where",
       text "",
       text "import GHC.Generics (Generic)",
