@@ -1,7 +1,14 @@
 let
   sources = import ./sources.nix;
   nix-pre-commit-hooks = import sources.pre-commit-hooks;
-
+in
+{ pkgs ? import sources.nixpkgs { }
+}:
+let
+  amqp-generator-wrapped = pkgs.writeShellScript "amqp-generator-wrapped" ''
+    PATH="${nix-pre-commit-hooks.ormolu}/bin/:$PATH"
+    exec ${pkgs.haskellPackages.amqp-generator}/bin/amqp-generator $@
+  '';
 in
 {
   tools = with nix-pre-commit-hooks; [
@@ -18,7 +25,7 @@ in
       generate-amqp = {
         enable = true;
         name = "generate amqp client code from spec";
-        entry = "amqp-generator spec/amqp0-9-1.extended.xml";
+        entry = "${amqp-generator-wrapped} spec/amqp0-9-1.extended.xml";
         types = [ "text" ];
         pass_filenames = false;
       };

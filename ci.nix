@@ -24,5 +24,5 @@ let
 in
 {
   release = pkgs.amqpRelease;
-  pre-commit-check = (import ./nix/pre-commit.nix).check;
+  pre-commit-check = (import ./nix/pre-commit.nix { inherit pkgs; }).check;
 } // builtins.mapAttrs mkReleaseForVersion versions
