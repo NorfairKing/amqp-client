@@ -134,8 +134,13 @@ parseMethodFramePayloadHelper func = label "Method Payload" $ do
   mid <- label "MethodId" Parse.anyWord16be
   func cid mid
 
-buildGivenContentHeader :: IsContentHeader a => a -> ByteString.Builder
-buildGivenContentHeader a = undefined
+buildGivenContentHeader :: forall a. IsContentHeader a => a -> ByteString.Builder
+buildGivenContentHeader a =
+  mconcat
+    [ buildShortUInt (contentHeaderClassId (Proxy :: Proxy a)),
+      buildShortUInt 0,
+      buildPropertyArguments $ buildContentHeaderArguments a
+    ]
 
 parseGivenContentHeader :: IsContentHeader a => Parser a
 parseGivenContentHeader = label "Content Header" $ do

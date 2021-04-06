@@ -75,6 +75,20 @@ buildArguments = go
       ArgumentBit b -> goBits (b : acc) as
       _ -> buildBits (reverse acc) <> go (a : as)
 
+buildPropertyArguments :: [Maybe Argument] -> ByteString.Builder
+buildPropertyArguments = uncurry render . go
+  where
+    render :: [Bit] -> [Argument] -> ByteString.Builder
+    render bs as = buildPropBits bs <> buildArguments as
+    go :: [Maybe Argument] -> ([Bit], [Argument])
+    go = \case
+      [] -> ([], [])
+      (ma : mas) ->
+        let (bas, as) = go mas
+         in case ma of
+              Nothing -> (False : bas, as)
+              Just a -> (True : bas, a : as)
+
 newtype FieldTable = FieldTable {fieldTableMap :: Map FieldTableKey FieldTableValue}
   deriving (Show, Eq, Generic)
 
@@ -308,6 +322,27 @@ packBits = go
 
 bitToWord8 :: Bit -> Word8
 bitToWord8 = \case
+  True -> 1
+  False -> 0
+
+-- | Build bits, packed into short uints
+--
+-- This function only works for input list sizes 16 or smaller
+-- TODO make it work for any number of arguments.
+buildPropBits :: [Bit] -> ByteString.Builder
+buildPropBits = SBB.word16BE . packPropBits
+
+packPropBits :: [Bit] -> Word16
+packPropBits =
+  -- The last (least significant) bit indicates the presence of another word, which we don't support, so we just multiply by 2 to unset that bit
+  (* 2) . go
+  where
+    go :: [Bit] -> Word16
+    go [] = 0
+    go (b : bs) = 2 * go bs + bitToWord16 b
+
+bitToWord16 :: Bit -> Word16
+bitToWord16 = \case
   True -> 1
   False -> 0
 

@@ -6,6 +6,7 @@ import AMQP.Serialisation.Base
 import AMQP.Serialisation.Frame
 import AMQP.Serialisation.Frame.Gen ()
 import AMQP.Serialisation.Gen ()
+import AMQP.Serialisation.Generated.Content
 import AMQP.Serialisation.Generated.Methods
 import AMQP.Serialisation.Methods.Gen ()
 import AMQP.Serialisation.TestUtils
@@ -49,3 +50,14 @@ spec = do
           (channelNumber, exampleQueueDeclare)
       it "outputs the same as before for this example" $
         pureGoldenByteStringBuilderFile "test_resources/method-frame/queue-declare.dat" (buildGivenMethodFrame channelNumber exampleQueueDeclare)
+
+  describe "parseGivenContentHeader" $ do
+    describe "ConnectionContentHeader" $ do
+      let exampleConnectionContentHeader = ConnectionContentHeader
+      it "roundtrips on this example" $
+        roundtripsFor
+          buildGivenContentHeader
+          parseGivenContentHeader
+          exampleConnectionContentHeader
+      it "outputs the same as before for this example" $
+        pureGoldenByteStringBuilderFile "test_resources/content-header/connection.dat" (buildGivenContentHeader exampleConnectionContentHeader)
