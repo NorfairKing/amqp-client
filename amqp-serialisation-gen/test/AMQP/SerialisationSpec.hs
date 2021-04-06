@@ -42,6 +42,10 @@ spec = do
           forAllValid $ \cn ->
             roundtripsWithFloat (buildContentHeaderFrame cn) parseContentHeaderFrame
 
+      describe "parseFrame" $
+        it "can parse whataver 'buildFrame' builds'" $
+          roundtripsWithFloat buildFrame parseFrame
+
   describe "parseConnectionStartMethodFramePayload" $
     it "can parse the example that we got from the rabbitmq server" $ do
       payload <- SB.readFile "test_resources/connection-start.dat"

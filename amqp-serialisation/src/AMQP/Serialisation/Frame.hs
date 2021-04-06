@@ -205,8 +205,8 @@ parseContentBodyFrame = label "Content Body Frame" $ do
     ContentBodyFrameType -> pure (rawFrameChannel, ContentBody {contentBodyPayload = rawFramePayload})
     ft -> fail $ unwords ["Got a frame of type", show ft, "instead of a content body frame."]
 
-contentBodyToRawFrame :: ChannelNumber -> ContentBody -> RawFrame
-contentBodyToRawFrame chan ContentBody {..} =
+contentBodyRawFrame :: ChannelNumber -> ContentBody -> RawFrame
+contentBodyRawFrame chan ContentBody {..} =
   RawFrame
     { rawFrameType = ContentBodyFrameType,
       rawFrameChannel = chan,
@@ -214,7 +214,7 @@ contentBodyToRawFrame chan ContentBody {..} =
     }
 
 buildContentBodyFrame :: ChannelNumber -> ContentBody -> ByteString.Builder
-buildContentBodyFrame chan cb = buildRawFrame $ contentBodyToRawFrame chan cb
+buildContentBodyFrame chan cb = buildRawFrame $ contentBodyRawFrame chan cb
 
 parseHeartbeatFrame :: Parser ()
 parseHeartbeatFrame = do
@@ -225,8 +225,8 @@ parseHeartbeatFrame = do
       pure ()
     ft -> fail $ unwords ["Got a frame of type", show ft, "instead of a heartbeat frame."]
 
-heartbeatFrame :: RawFrame
-heartbeatFrame =
+heartbeatRawFrame :: RawFrame
+heartbeatRawFrame =
   RawFrame
     { rawFrameType = HeartbeatFrameType,
       rawFrameChannel = 0,
@@ -234,4 +234,4 @@ heartbeatFrame =
     }
 
 buildHeartbeatFrame :: ByteString.Builder
-buildHeartbeatFrame = buildRawFrame heartbeatFrame
+buildHeartbeatFrame = buildRawFrame heartbeatRawFrame

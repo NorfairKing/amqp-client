@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -84,14 +85,16 @@ parseMethodFrame = label "Method Frame" $ do
             show rf
           ]
 
+methodRawFrame :: ChannelNumber -> Method -> RawFrame
+methodRawFrame chan m =
+  RawFrame
+    { rawFrameType = MethodFrameType,
+      rawFrameChannel = chan,
+      rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildMethodFramePayload m
+    }
+
 buildMethodFrame :: ChannelNumber -> Method -> ByteString.Builder
-buildMethodFrame chan m =
-  buildRawFrame $
-    RawFrame
-      { rawFrameType = MethodFrameType,
-        rawFrameChannel = chan,
-        rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildMethodFramePayload m
-      }
+buildMethodFrame chan m = buildRawFrame $ methodRawFrame chan m
 
 parseContentHeaderFrame :: Parser (ContentHeaderFrame ContentHeader)
 parseContentHeaderFrame = label "Content Header Frame" $ do
@@ -107,18 +110,44 @@ parseContentHeaderFrame = label "Content Header Frame" $ do
             show rf
           ]
 
-buildContentHeaderFrame :: ChannelNumber -> ContentHeaderFrame ContentHeader -> ByteString.Builder
-buildContentHeaderFrame chan m =
-  buildRawFrame $
-    RawFrame
-      { rawFrameType = ContentHeaderFrameType,
-        rawFrameChannel = chan,
-        rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildContentHeaderFramePayload m
-      }
+contentHeaderRawFrame :: ChannelNumber -> ContentHeaderFrame ContentHeader -> RawFrame
+contentHeaderRawFrame chan chf =
+  RawFrame
+    { rawFrameType = ContentHeaderFrameType,
+      rawFrameChannel = chan,
+      rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildContentHeaderFramePayload chf
+    }
 
-data FramePayload
-  = MethodPayload !Method
-  | ContentHeaderPayload !(ContentHeaderFrame ContentHeader)
-  | ContentBodyPayload !ContentBody
+buildContentHeaderFrame :: ChannelNumber -> ContentHeaderFrame ContentHeader -> ByteString.Builder
+buildContentHeaderFrame chan chf = buildRawFrame $ contentHeaderRawFrame chan chf
+
+data Frame
+  = MethodPayload !ChannelNumber !Method
+  | ContentHeaderPayload !ChannelNumber !(ContentHeaderFrame ContentHeader)
+  | ContentBodyPayload !ChannelNumber !ContentBody
   | HeartbeatPayload
   deriving (Show, Eq, Generic)
+
+instance Validity Frame
+
+parseFrame :: Parser Frame
+parseFrame = do
+  RawFrame {..} <- parseRawFrame
+  let parser = case rawFrameType of
+        MethodFrameType -> MethodPayload rawFrameChannel <$> parseMethodFramePayload
+        ContentHeaderFrameType -> ContentHeaderPayload rawFrameChannel <$> parseContentHeaderFramePayload
+        ContentBodyFrameType -> pure $ ContentBodyPayload rawFrameChannel $ ContentBody {contentBodyPayload = rawFramePayload}
+        HeartbeatFrameType -> pure HeartbeatPayload
+  case parseOnly parser rawFramePayload of
+    Left err -> fail err
+    Right f -> pure f
+
+buildFrame :: Frame -> ByteString.Builder
+buildFrame = buildRawFrame . frameToRawFrame
+
+frameToRawFrame :: Frame -> RawFrame
+frameToRawFrame = \case
+  MethodPayload cn m -> methodRawFrame cn m
+  ContentHeaderPayload cn chf -> contentHeaderRawFrame cn chf
+  ContentBodyPayload cn cb -> contentBodyRawFrame cn cb
+  HeartbeatPayload -> heartbeatRawFrame
