@@ -28,8 +28,8 @@ import GHC.Generics (Generic)
 
 data FrameType
   = MethodFrameType
-  | HeaderFrameType
-  | BodyFrameType
+  | ContentHeaderFrameType
+  | ContentBodyFrameType
   | HeartbeatFrameType
   deriving (Show, Eq, Generic, Enum, Bounded)
 
@@ -38,8 +38,8 @@ instance Validity FrameType
 buildFrameType :: FrameType -> ByteString.Builder
 buildFrameType = \case
   MethodFrameType -> SBB.word8 frameMethod
-  HeaderFrameType -> SBB.word8 frameHeader
-  BodyFrameType -> SBB.word8 frameBody
+  ContentHeaderFrameType -> SBB.word8 frameHeader
+  ContentBodyFrameType -> SBB.word8 frameBody
   -- QUESTION: The pdf says 4 but the spec says 8, which is it?
   -- ANSWER: We'll go with what the spec says.
   HeartbeatFrameType -> SBB.word8 frameHeartbeat
@@ -51,8 +51,8 @@ parseFrameType = label "FrameType" $ do
     w
     (fail ("Unknown frame type: " <> show w))
     [ (frameMethod, pure MethodFrameType),
-      (frameHeader, pure HeaderFrameType),
-      (frameBody, pure BodyFrameType),
+      (frameHeader, pure ContentHeaderFrameType),
+      (frameBody, pure ContentBodyFrameType),
       (frameHeartbeat, pure HeartbeatFrameType)
     ]
 
@@ -93,14 +93,6 @@ parseRawFrame = label "RawFrame" $ do
   void $ Parse.word8 frameEnd
   pure RawFrame {..}
 
-givenMethodFrameToRawFrame :: forall a. IsMethod a => ChannelNumber -> a -> RawFrame
-givenMethodFrameToRawFrame chan a =
-  RawFrame
-    { rawFrameType = MethodFrameType,
-      rawFrameChannel = chan,
-      rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildGivenMethodFramePayload a
-    }
-
 buildGivenMethodFramePayload :: forall a. IsMethod a => a -> ByteString.Builder
 buildGivenMethodFramePayload a =
   mconcat
@@ -108,6 +100,14 @@ buildGivenMethodFramePayload a =
       buildShortUInt (methodMethodId (Proxy :: Proxy a)),
       buildArguments (buildMethodArguments a)
     ]
+
+givenMethodFrameToRawFrame :: forall a. IsMethod a => ChannelNumber -> a -> RawFrame
+givenMethodFrameToRawFrame chan a =
+  RawFrame
+    { rawFrameType = MethodFrameType,
+      rawFrameChannel = chan,
+      rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildGivenMethodFramePayload a
+    }
 
 buildGivenMethodFrame :: forall a. IsMethod a => ChannelNumber -> a -> ByteString.Builder
 buildGivenMethodFrame chan a =
@@ -132,18 +132,44 @@ parseMethodFramePayloadHelper :: (ClassId -> MethodId -> Parser a) -> Parser a
 parseMethodFramePayloadHelper func = label "Method Payload" $ do
   cid <- label "ClassId" Parse.anyWord16be
   mid <- label "MethodId" Parse.anyWord16be
-  func cid mid
+  label "Arguments" $ func cid mid
 
-buildGivenContentHeader :: forall a. IsContentHeader a => a -> ByteString.Builder
-buildGivenContentHeader a =
+buildGivenContentHeaderFramePayload :: forall a. IsContentHeader a => a -> ByteString.Builder
+buildGivenContentHeaderFramePayload a =
   mconcat
     [ buildShortUInt (contentHeaderClassId (Proxy :: Proxy a)),
       buildShortUInt 0,
       buildPropertyArguments $ buildContentHeaderArguments a
     ]
 
-parseGivenContentHeader :: forall a. IsContentHeader a => Parser a
-parseGivenContentHeader = label "Content Header" $ do
+parseGivenContentHeaderFramePayload :: forall a. IsContentHeader a => Parser a
+parseGivenContentHeaderFramePayload = label "Content Header" $ do
   label "ClassId" $ void $ Parse.word16be $ contentHeaderClassId (Proxy :: Proxy a)
   label "weight" $ void $ Parse.word16be 0
   label "properties" parseContentHeaderArguments
+
+parseContentHeaderFramePayloadHelper :: (ClassId -> Parser a) -> Parser a
+parseContentHeaderFramePayloadHelper func = label "Content Header Payload" $ do
+  cid <- label "ClassId" Parse.anyWord16be
+  label "Properties" $ func cid
+
+givenContentHeaderFrameToRawFrame :: forall a. IsContentHeader a => ChannelNumber -> a -> RawFrame
+givenContentHeaderFrameToRawFrame chan a =
+  RawFrame
+    { rawFrameType = ContentHeaderFrameType,
+      rawFrameChannel = chan,
+      rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildGivenContentHeaderFramePayload a
+    }
+
+buildGivenContentHeaderFrame :: forall a. IsContentHeader a => ChannelNumber -> a -> ByteString.Builder
+buildGivenContentHeaderFrame chan a =
+  buildRawFrame $ givenContentHeaderFrameToRawFrame chan a
+
+parseGivenContentHeaderFrame :: IsContentHeader a => Parser (ChannelNumber, a)
+parseGivenContentHeaderFrame = label "ContentHeader Frame" $ do
+  RawFrame {..} <- parseRawFrame
+  case rawFrameType of
+    ContentHeaderFrameType -> case parseOnly parseGivenContentHeaderFramePayload rawFramePayload of
+      Left err -> fail err
+      Right r -> pure (rawFrameChannel, r)
+    ft -> fail $ unwords ["Got a frame of type", show ft, "instead of a content header frame."]

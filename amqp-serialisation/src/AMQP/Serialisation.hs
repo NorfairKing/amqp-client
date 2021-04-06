@@ -93,6 +93,29 @@ buildMethodFrame chan m =
         rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildMethodFramePayload m
       }
 
+parseContentHeaderFrame :: Parser ContentHeader
+parseContentHeaderFrame = label "Content Header Frame" $ do
+  rf@RawFrame {..} <- parseRawFrame
+  case rawFrameType of
+    ContentHeaderFrameType -> case parseOnly parseContentHeaderFramePayload rawFramePayload of
+      Left err -> fail err
+      Right r -> pure r
+    ft ->
+      fail $
+        unlines
+          [ unwords ["Unable to parse content header because the frame type was not content header but ", show ft],
+            show rf
+          ]
+
+buildContentHeaderFrame :: ChannelNumber -> ContentHeader -> ByteString.Builder
+buildContentHeaderFrame chan m =
+  buildRawFrame $
+    RawFrame
+      { rawFrameType = ContentHeaderFrameType,
+        rawFrameChannel = chan,
+        rawFramePayload = LB.toStrict $ SBB.toLazyByteString $ buildContentHeaderFramePayload m
+      }
+
 data FramePayload
   = MethodPayload !Method
   | ContentHeaderPayload !ContentHeader

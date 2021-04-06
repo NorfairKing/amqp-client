@@ -4,6 +4,7 @@ module AMQP.SerialisationSpec (spec) where
 
 import AMQP.Serialisation
 import AMQP.Serialisation.Base
+import AMQP.Serialisation.Content.Gen ()
 import AMQP.Serialisation.Frame
 import AMQP.Serialisation.Gen ()
 import AMQP.Serialisation.Generated.Methods
@@ -27,10 +28,18 @@ spec = do
     it "can parse whatever 'buildProtocolHeader' builds'" $
       roundtrips buildProtocolHeader parseProtocolHeader
 
-  describe "parseMethodFrame" $
-    it "can parse whatever 'buildMethodFrame' builds'" $
-      forAllValid $ \cn ->
-        roundtripsWithFloat (buildMethodFrame cn) parseMethodFrame
+  -- Important tests with lots of cases
+  modifyMaxSuccess (* 10) $
+    modifyMaxSize (* 10) $ do
+      describe "parseMethodFrame" $
+        it "can parse whatever 'buildMethodFrame' builds'" $
+          forAllValid $ \cn ->
+            roundtripsWithFloat (buildMethodFrame cn) parseMethodFrame
+
+      describe "parseContentHeaderFrame" $
+        it "can parse whatever 'buildContentHeaderFrame' builds'" $
+          forAllValid $ \cn ->
+            roundtrips (buildContentHeaderFrame cn) parseContentHeaderFrame
 
   describe "parseConnectionStartMethodFramePayload" $
     it "can parse the example that we got from the rabbitmq server" $ do

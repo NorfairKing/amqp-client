@@ -14,302 +14,6 @@ import Data.Proxy
 import Data.Validity
 import GHC.Generics (Generic)
 
--- | A sum type of all the methods
-data Method
-  = MethodConnectionStart !ConnectionStart
-  | MethodConnectionStartOk !ConnectionStartOk
-  | MethodConnectionSecure !ConnectionSecure
-  | MethodConnectionSecureOk !ConnectionSecureOk
-  | MethodConnectionTune !ConnectionTune
-  | MethodConnectionTuneOk !ConnectionTuneOk
-  | MethodConnectionOpen !ConnectionOpen
-  | MethodConnectionOpenOk !ConnectionOpenOk
-  | MethodConnectionClose !ConnectionClose
-  | MethodConnectionCloseOk !ConnectionCloseOk
-  | MethodConnectionBlocked !ConnectionBlocked
-  | MethodConnectionUnblocked !ConnectionUnblocked
-  | MethodConnectionUpdateSecret !ConnectionUpdateSecret
-  | MethodConnectionUpdateSecretOk !ConnectionUpdateSecretOk
-  | MethodChannelOpen !ChannelOpen
-  | MethodChannelOpenOk !ChannelOpenOk
-  | MethodChannelFlow !ChannelFlow
-  | MethodChannelFlowOk !ChannelFlowOk
-  | MethodChannelClose !ChannelClose
-  | MethodChannelCloseOk !ChannelCloseOk
-  | MethodExchangeDeclare !ExchangeDeclare
-  | MethodExchangeDeclareOk !ExchangeDeclareOk
-  | MethodExchangeDelete !ExchangeDelete
-  | MethodExchangeDeleteOk !ExchangeDeleteOk
-  | MethodExchangeBind !ExchangeBind
-  | MethodExchangeBindOk !ExchangeBindOk
-  | MethodExchangeUnbind !ExchangeUnbind
-  | MethodExchangeUnbindOk !ExchangeUnbindOk
-  | MethodQueueDeclare !QueueDeclare
-  | MethodQueueDeclareOk !QueueDeclareOk
-  | MethodQueueBind !QueueBind
-  | MethodQueueBindOk !QueueBindOk
-  | MethodQueueUnbind !QueueUnbind
-  | MethodQueueUnbindOk !QueueUnbindOk
-  | MethodQueuePurge !QueuePurge
-  | MethodQueuePurgeOk !QueuePurgeOk
-  | MethodQueueDelete !QueueDelete
-  | MethodQueueDeleteOk !QueueDeleteOk
-  | MethodBasicQos !BasicQos
-  | MethodBasicQosOk !BasicQosOk
-  | MethodBasicConsume !BasicConsume
-  | MethodBasicConsumeOk !BasicConsumeOk
-  | MethodBasicCancel !BasicCancel
-  | MethodBasicCancelOk !BasicCancelOk
-  | MethodBasicPublish !BasicPublish
-  | MethodBasicReturn !BasicReturn
-  | MethodBasicDeliver !BasicDeliver
-  | MethodBasicGet !BasicGet
-  | MethodBasicGetOk !BasicGetOk
-  | MethodBasicGetEmpty !BasicGetEmpty
-  | MethodBasicAck !BasicAck
-  | MethodBasicReject !BasicReject
-  | MethodBasicRecoverAsync !BasicRecoverAsync
-  | MethodBasicRecover !BasicRecover
-  | MethodBasicRecoverOk !BasicRecoverOk
-  | MethodBasicNack !BasicNack
-  | MethodTxSelect !TxSelect
-  | MethodTxSelectOk !TxSelectOk
-  | MethodTxCommit !TxCommit
-  | MethodTxCommitOk !TxCommitOk
-  | MethodTxRollback !TxRollback
-  | MethodTxRollbackOk !TxRollbackOk
-  | MethodConfirmSelect !ConfirmSelect
-  | MethodConfirmSelectOk !ConfirmSelectOk
-  deriving (Show, Eq, Generic)
-
-instance Validity Method
-
--- | A type class of things that could be in a method frame
-class FromMethod a where
-  fromMethod :: Method -> Maybe a
-
--- | Turn a 'Method' into a 'ByteString.Builder'.
-buildMethodFramePayload :: Method -> ByteString.Builder
-buildMethodFramePayload = \case
-  MethodConnectionStart m -> buildGivenMethodFramePayload m
-  MethodConnectionStartOk m -> buildGivenMethodFramePayload m
-  MethodConnectionSecure m -> buildGivenMethodFramePayload m
-  MethodConnectionSecureOk m -> buildGivenMethodFramePayload m
-  MethodConnectionTune m -> buildGivenMethodFramePayload m
-  MethodConnectionTuneOk m -> buildGivenMethodFramePayload m
-  MethodConnectionOpen m -> buildGivenMethodFramePayload m
-  MethodConnectionOpenOk m -> buildGivenMethodFramePayload m
-  MethodConnectionClose m -> buildGivenMethodFramePayload m
-  MethodConnectionCloseOk m -> buildGivenMethodFramePayload m
-  MethodConnectionBlocked m -> buildGivenMethodFramePayload m
-  MethodConnectionUnblocked m -> buildGivenMethodFramePayload m
-  MethodConnectionUpdateSecret m -> buildGivenMethodFramePayload m
-  MethodConnectionUpdateSecretOk m -> buildGivenMethodFramePayload m
-  MethodChannelOpen m -> buildGivenMethodFramePayload m
-  MethodChannelOpenOk m -> buildGivenMethodFramePayload m
-  MethodChannelFlow m -> buildGivenMethodFramePayload m
-  MethodChannelFlowOk m -> buildGivenMethodFramePayload m
-  MethodChannelClose m -> buildGivenMethodFramePayload m
-  MethodChannelCloseOk m -> buildGivenMethodFramePayload m
-  MethodExchangeDeclare m -> buildGivenMethodFramePayload m
-  MethodExchangeDeclareOk m -> buildGivenMethodFramePayload m
-  MethodExchangeDelete m -> buildGivenMethodFramePayload m
-  MethodExchangeDeleteOk m -> buildGivenMethodFramePayload m
-  MethodExchangeBind m -> buildGivenMethodFramePayload m
-  MethodExchangeBindOk m -> buildGivenMethodFramePayload m
-  MethodExchangeUnbind m -> buildGivenMethodFramePayload m
-  MethodExchangeUnbindOk m -> buildGivenMethodFramePayload m
-  MethodQueueDeclare m -> buildGivenMethodFramePayload m
-  MethodQueueDeclareOk m -> buildGivenMethodFramePayload m
-  MethodQueueBind m -> buildGivenMethodFramePayload m
-  MethodQueueBindOk m -> buildGivenMethodFramePayload m
-  MethodQueueUnbind m -> buildGivenMethodFramePayload m
-  MethodQueueUnbindOk m -> buildGivenMethodFramePayload m
-  MethodQueuePurge m -> buildGivenMethodFramePayload m
-  MethodQueuePurgeOk m -> buildGivenMethodFramePayload m
-  MethodQueueDelete m -> buildGivenMethodFramePayload m
-  MethodQueueDeleteOk m -> buildGivenMethodFramePayload m
-  MethodBasicQos m -> buildGivenMethodFramePayload m
-  MethodBasicQosOk m -> buildGivenMethodFramePayload m
-  MethodBasicConsume m -> buildGivenMethodFramePayload m
-  MethodBasicConsumeOk m -> buildGivenMethodFramePayload m
-  MethodBasicCancel m -> buildGivenMethodFramePayload m
-  MethodBasicCancelOk m -> buildGivenMethodFramePayload m
-  MethodBasicPublish m -> buildGivenMethodFramePayload m
-  MethodBasicReturn m -> buildGivenMethodFramePayload m
-  MethodBasicDeliver m -> buildGivenMethodFramePayload m
-  MethodBasicGet m -> buildGivenMethodFramePayload m
-  MethodBasicGetOk m -> buildGivenMethodFramePayload m
-  MethodBasicGetEmpty m -> buildGivenMethodFramePayload m
-  MethodBasicAck m -> buildGivenMethodFramePayload m
-  MethodBasicReject m -> buildGivenMethodFramePayload m
-  MethodBasicRecoverAsync m -> buildGivenMethodFramePayload m
-  MethodBasicRecover m -> buildGivenMethodFramePayload m
-  MethodBasicRecoverOk m -> buildGivenMethodFramePayload m
-  MethodBasicNack m -> buildGivenMethodFramePayload m
-  MethodTxSelect m -> buildGivenMethodFramePayload m
-  MethodTxSelectOk m -> buildGivenMethodFramePayload m
-  MethodTxCommit m -> buildGivenMethodFramePayload m
-  MethodTxCommitOk m -> buildGivenMethodFramePayload m
-  MethodTxRollback m -> buildGivenMethodFramePayload m
-  MethodTxRollbackOk m -> buildGivenMethodFramePayload m
-  MethodConfirmSelect m -> buildGivenMethodFramePayload m
-  MethodConfirmSelectOk m -> buildGivenMethodFramePayload m
-
--- | Parse a 'Method' frame payload.
-parseMethodFramePayload :: Parser Method
-parseMethodFramePayload =
-  parseMethodFramePayloadHelper
-    ( \cid mid -> case cid of
-        10 -> case mid of
-          10 -> MethodConnectionStart <$> parseMethodArguments
-          11 -> MethodConnectionStartOk <$> parseMethodArguments
-          20 -> MethodConnectionSecure <$> parseMethodArguments
-          21 -> MethodConnectionSecureOk <$> parseMethodArguments
-          30 -> MethodConnectionTune <$> parseMethodArguments
-          31 -> MethodConnectionTuneOk <$> parseMethodArguments
-          40 -> MethodConnectionOpen <$> parseMethodArguments
-          41 -> MethodConnectionOpenOk <$> parseMethodArguments
-          50 -> MethodConnectionClose <$> parseMethodArguments
-          51 -> MethodConnectionCloseOk <$> parseMethodArguments
-          60 -> MethodConnectionBlocked <$> parseMethodArguments
-          61 -> MethodConnectionUnblocked <$> parseMethodArguments
-          70 -> MethodConnectionUpdateSecret <$> parseMethodArguments
-          71 -> MethodConnectionUpdateSecretOk <$> parseMethodArguments
-          _ -> fail ("Unknown method id for class 'connection' (10)" ++ show mid)
-        20 -> case mid of
-          10 -> MethodChannelOpen <$> parseMethodArguments
-          11 -> MethodChannelOpenOk <$> parseMethodArguments
-          20 -> MethodChannelFlow <$> parseMethodArguments
-          21 -> MethodChannelFlowOk <$> parseMethodArguments
-          40 -> MethodChannelClose <$> parseMethodArguments
-          41 -> MethodChannelCloseOk <$> parseMethodArguments
-          _ -> fail ("Unknown method id for class 'channel' (20)" ++ show mid)
-        40 -> case mid of
-          10 -> MethodExchangeDeclare <$> parseMethodArguments
-          11 -> MethodExchangeDeclareOk <$> parseMethodArguments
-          20 -> MethodExchangeDelete <$> parseMethodArguments
-          21 -> MethodExchangeDeleteOk <$> parseMethodArguments
-          30 -> MethodExchangeBind <$> parseMethodArguments
-          31 -> MethodExchangeBindOk <$> parseMethodArguments
-          40 -> MethodExchangeUnbind <$> parseMethodArguments
-          51 -> MethodExchangeUnbindOk <$> parseMethodArguments
-          _ -> fail ("Unknown method id for class 'exchange' (40)" ++ show mid)
-        50 -> case mid of
-          10 -> MethodQueueDeclare <$> parseMethodArguments
-          11 -> MethodQueueDeclareOk <$> parseMethodArguments
-          20 -> MethodQueueBind <$> parseMethodArguments
-          21 -> MethodQueueBindOk <$> parseMethodArguments
-          50 -> MethodQueueUnbind <$> parseMethodArguments
-          51 -> MethodQueueUnbindOk <$> parseMethodArguments
-          30 -> MethodQueuePurge <$> parseMethodArguments
-          31 -> MethodQueuePurgeOk <$> parseMethodArguments
-          40 -> MethodQueueDelete <$> parseMethodArguments
-          41 -> MethodQueueDeleteOk <$> parseMethodArguments
-          _ -> fail ("Unknown method id for class 'queue' (50)" ++ show mid)
-        60 -> case mid of
-          10 -> MethodBasicQos <$> parseMethodArguments
-          11 -> MethodBasicQosOk <$> parseMethodArguments
-          20 -> MethodBasicConsume <$> parseMethodArguments
-          21 -> MethodBasicConsumeOk <$> parseMethodArguments
-          30 -> MethodBasicCancel <$> parseMethodArguments
-          31 -> MethodBasicCancelOk <$> parseMethodArguments
-          40 -> MethodBasicPublish <$> parseMethodArguments
-          50 -> MethodBasicReturn <$> parseMethodArguments
-          60 -> MethodBasicDeliver <$> parseMethodArguments
-          70 -> MethodBasicGet <$> parseMethodArguments
-          71 -> MethodBasicGetOk <$> parseMethodArguments
-          72 -> MethodBasicGetEmpty <$> parseMethodArguments
-          80 -> MethodBasicAck <$> parseMethodArguments
-          90 -> MethodBasicReject <$> parseMethodArguments
-          100 -> MethodBasicRecoverAsync <$> parseMethodArguments
-          110 -> MethodBasicRecover <$> parseMethodArguments
-          111 -> MethodBasicRecoverOk <$> parseMethodArguments
-          120 -> MethodBasicNack <$> parseMethodArguments
-          _ -> fail ("Unknown method id for class 'basic' (60)" ++ show mid)
-        90 -> case mid of
-          10 -> MethodTxSelect <$> parseMethodArguments
-          11 -> MethodTxSelectOk <$> parseMethodArguments
-          20 -> MethodTxCommit <$> parseMethodArguments
-          21 -> MethodTxCommitOk <$> parseMethodArguments
-          30 -> MethodTxRollback <$> parseMethodArguments
-          31 -> MethodTxRollbackOk <$> parseMethodArguments
-          _ -> fail ("Unknown method id for class 'tx' (90)" ++ show mid)
-        85 -> case mid of
-          10 -> MethodConfirmSelect <$> parseMethodArguments
-          11 -> MethodConfirmSelectOk <$> parseMethodArguments
-          _ -> fail ("Unknown method id for class 'confirm' (85)" ++ show mid)
-        _ -> fail ("Unknown class id" ++ show cid)
-    )
-
--- | Check if a 'Method' is synchronous.
-methodIsSynchronous :: Method -> Bool
-methodIsSynchronous = \case
-  MethodConnectionStart _ -> methodSynchronous (Proxy :: Proxy ConnectionStart)
-  MethodConnectionStartOk _ -> methodSynchronous (Proxy :: Proxy ConnectionStartOk)
-  MethodConnectionSecure _ -> methodSynchronous (Proxy :: Proxy ConnectionSecure)
-  MethodConnectionSecureOk _ -> methodSynchronous (Proxy :: Proxy ConnectionSecureOk)
-  MethodConnectionTune _ -> methodSynchronous (Proxy :: Proxy ConnectionTune)
-  MethodConnectionTuneOk _ -> methodSynchronous (Proxy :: Proxy ConnectionTuneOk)
-  MethodConnectionOpen _ -> methodSynchronous (Proxy :: Proxy ConnectionOpen)
-  MethodConnectionOpenOk _ -> methodSynchronous (Proxy :: Proxy ConnectionOpenOk)
-  MethodConnectionClose _ -> methodSynchronous (Proxy :: Proxy ConnectionClose)
-  MethodConnectionCloseOk _ -> methodSynchronous (Proxy :: Proxy ConnectionCloseOk)
-  MethodConnectionBlocked _ -> methodSynchronous (Proxy :: Proxy ConnectionBlocked)
-  MethodConnectionUnblocked _ -> methodSynchronous (Proxy :: Proxy ConnectionUnblocked)
-  MethodConnectionUpdateSecret _ -> methodSynchronous (Proxy :: Proxy ConnectionUpdateSecret)
-  MethodConnectionUpdateSecretOk _ -> methodSynchronous (Proxy :: Proxy ConnectionUpdateSecretOk)
-  MethodChannelOpen _ -> methodSynchronous (Proxy :: Proxy ChannelOpen)
-  MethodChannelOpenOk _ -> methodSynchronous (Proxy :: Proxy ChannelOpenOk)
-  MethodChannelFlow _ -> methodSynchronous (Proxy :: Proxy ChannelFlow)
-  MethodChannelFlowOk _ -> methodSynchronous (Proxy :: Proxy ChannelFlowOk)
-  MethodChannelClose _ -> methodSynchronous (Proxy :: Proxy ChannelClose)
-  MethodChannelCloseOk _ -> methodSynchronous (Proxy :: Proxy ChannelCloseOk)
-  MethodExchangeDeclare _ -> methodSynchronous (Proxy :: Proxy ExchangeDeclare)
-  MethodExchangeDeclareOk _ -> methodSynchronous (Proxy :: Proxy ExchangeDeclareOk)
-  MethodExchangeDelete _ -> methodSynchronous (Proxy :: Proxy ExchangeDelete)
-  MethodExchangeDeleteOk _ -> methodSynchronous (Proxy :: Proxy ExchangeDeleteOk)
-  MethodExchangeBind _ -> methodSynchronous (Proxy :: Proxy ExchangeBind)
-  MethodExchangeBindOk _ -> methodSynchronous (Proxy :: Proxy ExchangeBindOk)
-  MethodExchangeUnbind _ -> methodSynchronous (Proxy :: Proxy ExchangeUnbind)
-  MethodExchangeUnbindOk _ -> methodSynchronous (Proxy :: Proxy ExchangeUnbindOk)
-  MethodQueueDeclare _ -> methodSynchronous (Proxy :: Proxy QueueDeclare)
-  MethodQueueDeclareOk _ -> methodSynchronous (Proxy :: Proxy QueueDeclareOk)
-  MethodQueueBind _ -> methodSynchronous (Proxy :: Proxy QueueBind)
-  MethodQueueBindOk _ -> methodSynchronous (Proxy :: Proxy QueueBindOk)
-  MethodQueueUnbind _ -> methodSynchronous (Proxy :: Proxy QueueUnbind)
-  MethodQueueUnbindOk _ -> methodSynchronous (Proxy :: Proxy QueueUnbindOk)
-  MethodQueuePurge _ -> methodSynchronous (Proxy :: Proxy QueuePurge)
-  MethodQueuePurgeOk _ -> methodSynchronous (Proxy :: Proxy QueuePurgeOk)
-  MethodQueueDelete _ -> methodSynchronous (Proxy :: Proxy QueueDelete)
-  MethodQueueDeleteOk _ -> methodSynchronous (Proxy :: Proxy QueueDeleteOk)
-  MethodBasicQos _ -> methodSynchronous (Proxy :: Proxy BasicQos)
-  MethodBasicQosOk _ -> methodSynchronous (Proxy :: Proxy BasicQosOk)
-  MethodBasicConsume _ -> methodSynchronous (Proxy :: Proxy BasicConsume)
-  MethodBasicConsumeOk _ -> methodSynchronous (Proxy :: Proxy BasicConsumeOk)
-  MethodBasicCancel _ -> methodSynchronous (Proxy :: Proxy BasicCancel)
-  MethodBasicCancelOk _ -> methodSynchronous (Proxy :: Proxy BasicCancelOk)
-  MethodBasicPublish _ -> methodSynchronous (Proxy :: Proxy BasicPublish)
-  MethodBasicReturn _ -> methodSynchronous (Proxy :: Proxy BasicReturn)
-  MethodBasicDeliver _ -> methodSynchronous (Proxy :: Proxy BasicDeliver)
-  MethodBasicGet _ -> methodSynchronous (Proxy :: Proxy BasicGet)
-  MethodBasicGetOk _ -> methodSynchronous (Proxy :: Proxy BasicGetOk)
-  MethodBasicGetEmpty _ -> methodSynchronous (Proxy :: Proxy BasicGetEmpty)
-  MethodBasicAck _ -> methodSynchronous (Proxy :: Proxy BasicAck)
-  MethodBasicReject _ -> methodSynchronous (Proxy :: Proxy BasicReject)
-  MethodBasicRecoverAsync _ -> methodSynchronous (Proxy :: Proxy BasicRecoverAsync)
-  MethodBasicRecover _ -> methodSynchronous (Proxy :: Proxy BasicRecover)
-  MethodBasicRecoverOk _ -> methodSynchronous (Proxy :: Proxy BasicRecoverOk)
-  MethodBasicNack _ -> methodSynchronous (Proxy :: Proxy BasicNack)
-  MethodTxSelect _ -> methodSynchronous (Proxy :: Proxy TxSelect)
-  MethodTxSelectOk _ -> methodSynchronous (Proxy :: Proxy TxSelectOk)
-  MethodTxCommit _ -> methodSynchronous (Proxy :: Proxy TxCommit)
-  MethodTxCommitOk _ -> methodSynchronous (Proxy :: Proxy TxCommitOk)
-  MethodTxRollback _ -> methodSynchronous (Proxy :: Proxy TxRollback)
-  MethodTxRollbackOk _ -> methodSynchronous (Proxy :: Proxy TxRollbackOk)
-  MethodConfirmSelect _ -> methodSynchronous (Proxy :: Proxy ConfirmSelect)
-  MethodConfirmSelectOk _ -> methodSynchronous (Proxy :: Proxy ConfirmSelectOk)
-
 -- * The @connection@ class
 
 -- The connection class provides methods for a client to establish a network connection to
@@ -2385,3 +2089,299 @@ instance FromMethod ConfirmSelectOk where
   fromMethod = \case
     MethodConfirmSelectOk m -> Just m
     _ -> Nothing
+
+-- | A sum type of all the methods
+data Method
+  = MethodConnectionStart !ConnectionStart
+  | MethodConnectionStartOk !ConnectionStartOk
+  | MethodConnectionSecure !ConnectionSecure
+  | MethodConnectionSecureOk !ConnectionSecureOk
+  | MethodConnectionTune !ConnectionTune
+  | MethodConnectionTuneOk !ConnectionTuneOk
+  | MethodConnectionOpen !ConnectionOpen
+  | MethodConnectionOpenOk !ConnectionOpenOk
+  | MethodConnectionClose !ConnectionClose
+  | MethodConnectionCloseOk !ConnectionCloseOk
+  | MethodConnectionBlocked !ConnectionBlocked
+  | MethodConnectionUnblocked !ConnectionUnblocked
+  | MethodConnectionUpdateSecret !ConnectionUpdateSecret
+  | MethodConnectionUpdateSecretOk !ConnectionUpdateSecretOk
+  | MethodChannelOpen !ChannelOpen
+  | MethodChannelOpenOk !ChannelOpenOk
+  | MethodChannelFlow !ChannelFlow
+  | MethodChannelFlowOk !ChannelFlowOk
+  | MethodChannelClose !ChannelClose
+  | MethodChannelCloseOk !ChannelCloseOk
+  | MethodExchangeDeclare !ExchangeDeclare
+  | MethodExchangeDeclareOk !ExchangeDeclareOk
+  | MethodExchangeDelete !ExchangeDelete
+  | MethodExchangeDeleteOk !ExchangeDeleteOk
+  | MethodExchangeBind !ExchangeBind
+  | MethodExchangeBindOk !ExchangeBindOk
+  | MethodExchangeUnbind !ExchangeUnbind
+  | MethodExchangeUnbindOk !ExchangeUnbindOk
+  | MethodQueueDeclare !QueueDeclare
+  | MethodQueueDeclareOk !QueueDeclareOk
+  | MethodQueueBind !QueueBind
+  | MethodQueueBindOk !QueueBindOk
+  | MethodQueueUnbind !QueueUnbind
+  | MethodQueueUnbindOk !QueueUnbindOk
+  | MethodQueuePurge !QueuePurge
+  | MethodQueuePurgeOk !QueuePurgeOk
+  | MethodQueueDelete !QueueDelete
+  | MethodQueueDeleteOk !QueueDeleteOk
+  | MethodBasicQos !BasicQos
+  | MethodBasicQosOk !BasicQosOk
+  | MethodBasicConsume !BasicConsume
+  | MethodBasicConsumeOk !BasicConsumeOk
+  | MethodBasicCancel !BasicCancel
+  | MethodBasicCancelOk !BasicCancelOk
+  | MethodBasicPublish !BasicPublish
+  | MethodBasicReturn !BasicReturn
+  | MethodBasicDeliver !BasicDeliver
+  | MethodBasicGet !BasicGet
+  | MethodBasicGetOk !BasicGetOk
+  | MethodBasicGetEmpty !BasicGetEmpty
+  | MethodBasicAck !BasicAck
+  | MethodBasicReject !BasicReject
+  | MethodBasicRecoverAsync !BasicRecoverAsync
+  | MethodBasicRecover !BasicRecover
+  | MethodBasicRecoverOk !BasicRecoverOk
+  | MethodBasicNack !BasicNack
+  | MethodTxSelect !TxSelect
+  | MethodTxSelectOk !TxSelectOk
+  | MethodTxCommit !TxCommit
+  | MethodTxCommitOk !TxCommitOk
+  | MethodTxRollback !TxRollback
+  | MethodTxRollbackOk !TxRollbackOk
+  | MethodConfirmSelect !ConfirmSelect
+  | MethodConfirmSelectOk !ConfirmSelectOk
+  deriving (Show, Eq, Generic)
+
+instance Validity Method
+
+-- | A type class of things that could be in a method frame
+class FromMethod a where
+  fromMethod :: Method -> Maybe a
+
+-- | Turn a 'Method' into a 'ByteString.Builder'.
+buildMethodFramePayload :: Method -> ByteString.Builder
+buildMethodFramePayload = \case
+  MethodConnectionStart m -> buildGivenMethodFramePayload m
+  MethodConnectionStartOk m -> buildGivenMethodFramePayload m
+  MethodConnectionSecure m -> buildGivenMethodFramePayload m
+  MethodConnectionSecureOk m -> buildGivenMethodFramePayload m
+  MethodConnectionTune m -> buildGivenMethodFramePayload m
+  MethodConnectionTuneOk m -> buildGivenMethodFramePayload m
+  MethodConnectionOpen m -> buildGivenMethodFramePayload m
+  MethodConnectionOpenOk m -> buildGivenMethodFramePayload m
+  MethodConnectionClose m -> buildGivenMethodFramePayload m
+  MethodConnectionCloseOk m -> buildGivenMethodFramePayload m
+  MethodConnectionBlocked m -> buildGivenMethodFramePayload m
+  MethodConnectionUnblocked m -> buildGivenMethodFramePayload m
+  MethodConnectionUpdateSecret m -> buildGivenMethodFramePayload m
+  MethodConnectionUpdateSecretOk m -> buildGivenMethodFramePayload m
+  MethodChannelOpen m -> buildGivenMethodFramePayload m
+  MethodChannelOpenOk m -> buildGivenMethodFramePayload m
+  MethodChannelFlow m -> buildGivenMethodFramePayload m
+  MethodChannelFlowOk m -> buildGivenMethodFramePayload m
+  MethodChannelClose m -> buildGivenMethodFramePayload m
+  MethodChannelCloseOk m -> buildGivenMethodFramePayload m
+  MethodExchangeDeclare m -> buildGivenMethodFramePayload m
+  MethodExchangeDeclareOk m -> buildGivenMethodFramePayload m
+  MethodExchangeDelete m -> buildGivenMethodFramePayload m
+  MethodExchangeDeleteOk m -> buildGivenMethodFramePayload m
+  MethodExchangeBind m -> buildGivenMethodFramePayload m
+  MethodExchangeBindOk m -> buildGivenMethodFramePayload m
+  MethodExchangeUnbind m -> buildGivenMethodFramePayload m
+  MethodExchangeUnbindOk m -> buildGivenMethodFramePayload m
+  MethodQueueDeclare m -> buildGivenMethodFramePayload m
+  MethodQueueDeclareOk m -> buildGivenMethodFramePayload m
+  MethodQueueBind m -> buildGivenMethodFramePayload m
+  MethodQueueBindOk m -> buildGivenMethodFramePayload m
+  MethodQueueUnbind m -> buildGivenMethodFramePayload m
+  MethodQueueUnbindOk m -> buildGivenMethodFramePayload m
+  MethodQueuePurge m -> buildGivenMethodFramePayload m
+  MethodQueuePurgeOk m -> buildGivenMethodFramePayload m
+  MethodQueueDelete m -> buildGivenMethodFramePayload m
+  MethodQueueDeleteOk m -> buildGivenMethodFramePayload m
+  MethodBasicQos m -> buildGivenMethodFramePayload m
+  MethodBasicQosOk m -> buildGivenMethodFramePayload m
+  MethodBasicConsume m -> buildGivenMethodFramePayload m
+  MethodBasicConsumeOk m -> buildGivenMethodFramePayload m
+  MethodBasicCancel m -> buildGivenMethodFramePayload m
+  MethodBasicCancelOk m -> buildGivenMethodFramePayload m
+  MethodBasicPublish m -> buildGivenMethodFramePayload m
+  MethodBasicReturn m -> buildGivenMethodFramePayload m
+  MethodBasicDeliver m -> buildGivenMethodFramePayload m
+  MethodBasicGet m -> buildGivenMethodFramePayload m
+  MethodBasicGetOk m -> buildGivenMethodFramePayload m
+  MethodBasicGetEmpty m -> buildGivenMethodFramePayload m
+  MethodBasicAck m -> buildGivenMethodFramePayload m
+  MethodBasicReject m -> buildGivenMethodFramePayload m
+  MethodBasicRecoverAsync m -> buildGivenMethodFramePayload m
+  MethodBasicRecover m -> buildGivenMethodFramePayload m
+  MethodBasicRecoverOk m -> buildGivenMethodFramePayload m
+  MethodBasicNack m -> buildGivenMethodFramePayload m
+  MethodTxSelect m -> buildGivenMethodFramePayload m
+  MethodTxSelectOk m -> buildGivenMethodFramePayload m
+  MethodTxCommit m -> buildGivenMethodFramePayload m
+  MethodTxCommitOk m -> buildGivenMethodFramePayload m
+  MethodTxRollback m -> buildGivenMethodFramePayload m
+  MethodTxRollbackOk m -> buildGivenMethodFramePayload m
+  MethodConfirmSelect m -> buildGivenMethodFramePayload m
+  MethodConfirmSelectOk m -> buildGivenMethodFramePayload m
+
+-- | Parse a 'Method' frame payload.
+parseMethodFramePayload :: Parser Method
+parseMethodFramePayload =
+  parseMethodFramePayloadHelper
+    ( \cid mid -> case cid of
+        10 -> case mid of
+          10 -> MethodConnectionStart <$> parseMethodArguments
+          11 -> MethodConnectionStartOk <$> parseMethodArguments
+          20 -> MethodConnectionSecure <$> parseMethodArguments
+          21 -> MethodConnectionSecureOk <$> parseMethodArguments
+          30 -> MethodConnectionTune <$> parseMethodArguments
+          31 -> MethodConnectionTuneOk <$> parseMethodArguments
+          40 -> MethodConnectionOpen <$> parseMethodArguments
+          41 -> MethodConnectionOpenOk <$> parseMethodArguments
+          50 -> MethodConnectionClose <$> parseMethodArguments
+          51 -> MethodConnectionCloseOk <$> parseMethodArguments
+          60 -> MethodConnectionBlocked <$> parseMethodArguments
+          61 -> MethodConnectionUnblocked <$> parseMethodArguments
+          70 -> MethodConnectionUpdateSecret <$> parseMethodArguments
+          71 -> MethodConnectionUpdateSecretOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class 'connection' (10)" ++ show mid)
+        20 -> case mid of
+          10 -> MethodChannelOpen <$> parseMethodArguments
+          11 -> MethodChannelOpenOk <$> parseMethodArguments
+          20 -> MethodChannelFlow <$> parseMethodArguments
+          21 -> MethodChannelFlowOk <$> parseMethodArguments
+          40 -> MethodChannelClose <$> parseMethodArguments
+          41 -> MethodChannelCloseOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class 'channel' (20)" ++ show mid)
+        40 -> case mid of
+          10 -> MethodExchangeDeclare <$> parseMethodArguments
+          11 -> MethodExchangeDeclareOk <$> parseMethodArguments
+          20 -> MethodExchangeDelete <$> parseMethodArguments
+          21 -> MethodExchangeDeleteOk <$> parseMethodArguments
+          30 -> MethodExchangeBind <$> parseMethodArguments
+          31 -> MethodExchangeBindOk <$> parseMethodArguments
+          40 -> MethodExchangeUnbind <$> parseMethodArguments
+          51 -> MethodExchangeUnbindOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class 'exchange' (40)" ++ show mid)
+        50 -> case mid of
+          10 -> MethodQueueDeclare <$> parseMethodArguments
+          11 -> MethodQueueDeclareOk <$> parseMethodArguments
+          20 -> MethodQueueBind <$> parseMethodArguments
+          21 -> MethodQueueBindOk <$> parseMethodArguments
+          50 -> MethodQueueUnbind <$> parseMethodArguments
+          51 -> MethodQueueUnbindOk <$> parseMethodArguments
+          30 -> MethodQueuePurge <$> parseMethodArguments
+          31 -> MethodQueuePurgeOk <$> parseMethodArguments
+          40 -> MethodQueueDelete <$> parseMethodArguments
+          41 -> MethodQueueDeleteOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class 'queue' (50)" ++ show mid)
+        60 -> case mid of
+          10 -> MethodBasicQos <$> parseMethodArguments
+          11 -> MethodBasicQosOk <$> parseMethodArguments
+          20 -> MethodBasicConsume <$> parseMethodArguments
+          21 -> MethodBasicConsumeOk <$> parseMethodArguments
+          30 -> MethodBasicCancel <$> parseMethodArguments
+          31 -> MethodBasicCancelOk <$> parseMethodArguments
+          40 -> MethodBasicPublish <$> parseMethodArguments
+          50 -> MethodBasicReturn <$> parseMethodArguments
+          60 -> MethodBasicDeliver <$> parseMethodArguments
+          70 -> MethodBasicGet <$> parseMethodArguments
+          71 -> MethodBasicGetOk <$> parseMethodArguments
+          72 -> MethodBasicGetEmpty <$> parseMethodArguments
+          80 -> MethodBasicAck <$> parseMethodArguments
+          90 -> MethodBasicReject <$> parseMethodArguments
+          100 -> MethodBasicRecoverAsync <$> parseMethodArguments
+          110 -> MethodBasicRecover <$> parseMethodArguments
+          111 -> MethodBasicRecoverOk <$> parseMethodArguments
+          120 -> MethodBasicNack <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class 'basic' (60)" ++ show mid)
+        90 -> case mid of
+          10 -> MethodTxSelect <$> parseMethodArguments
+          11 -> MethodTxSelectOk <$> parseMethodArguments
+          20 -> MethodTxCommit <$> parseMethodArguments
+          21 -> MethodTxCommitOk <$> parseMethodArguments
+          30 -> MethodTxRollback <$> parseMethodArguments
+          31 -> MethodTxRollbackOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class 'tx' (90)" ++ show mid)
+        85 -> case mid of
+          10 -> MethodConfirmSelect <$> parseMethodArguments
+          11 -> MethodConfirmSelectOk <$> parseMethodArguments
+          _ -> fail ("Unknown method id for class 'confirm' (85)" ++ show mid)
+        _ -> fail ("Unknown class id" ++ show cid)
+    )
+
+-- | Check if a 'Method' is synchronous.
+methodIsSynchronous :: Method -> Bool
+methodIsSynchronous = \case
+  MethodConnectionStart _ -> methodSynchronous (Proxy :: Proxy ConnectionStart)
+  MethodConnectionStartOk _ -> methodSynchronous (Proxy :: Proxy ConnectionStartOk)
+  MethodConnectionSecure _ -> methodSynchronous (Proxy :: Proxy ConnectionSecure)
+  MethodConnectionSecureOk _ -> methodSynchronous (Proxy :: Proxy ConnectionSecureOk)
+  MethodConnectionTune _ -> methodSynchronous (Proxy :: Proxy ConnectionTune)
+  MethodConnectionTuneOk _ -> methodSynchronous (Proxy :: Proxy ConnectionTuneOk)
+  MethodConnectionOpen _ -> methodSynchronous (Proxy :: Proxy ConnectionOpen)
+  MethodConnectionOpenOk _ -> methodSynchronous (Proxy :: Proxy ConnectionOpenOk)
+  MethodConnectionClose _ -> methodSynchronous (Proxy :: Proxy ConnectionClose)
+  MethodConnectionCloseOk _ -> methodSynchronous (Proxy :: Proxy ConnectionCloseOk)
+  MethodConnectionBlocked _ -> methodSynchronous (Proxy :: Proxy ConnectionBlocked)
+  MethodConnectionUnblocked _ -> methodSynchronous (Proxy :: Proxy ConnectionUnblocked)
+  MethodConnectionUpdateSecret _ -> methodSynchronous (Proxy :: Proxy ConnectionUpdateSecret)
+  MethodConnectionUpdateSecretOk _ -> methodSynchronous (Proxy :: Proxy ConnectionUpdateSecretOk)
+  MethodChannelOpen _ -> methodSynchronous (Proxy :: Proxy ChannelOpen)
+  MethodChannelOpenOk _ -> methodSynchronous (Proxy :: Proxy ChannelOpenOk)
+  MethodChannelFlow _ -> methodSynchronous (Proxy :: Proxy ChannelFlow)
+  MethodChannelFlowOk _ -> methodSynchronous (Proxy :: Proxy ChannelFlowOk)
+  MethodChannelClose _ -> methodSynchronous (Proxy :: Proxy ChannelClose)
+  MethodChannelCloseOk _ -> methodSynchronous (Proxy :: Proxy ChannelCloseOk)
+  MethodExchangeDeclare _ -> methodSynchronous (Proxy :: Proxy ExchangeDeclare)
+  MethodExchangeDeclareOk _ -> methodSynchronous (Proxy :: Proxy ExchangeDeclareOk)
+  MethodExchangeDelete _ -> methodSynchronous (Proxy :: Proxy ExchangeDelete)
+  MethodExchangeDeleteOk _ -> methodSynchronous (Proxy :: Proxy ExchangeDeleteOk)
+  MethodExchangeBind _ -> methodSynchronous (Proxy :: Proxy ExchangeBind)
+  MethodExchangeBindOk _ -> methodSynchronous (Proxy :: Proxy ExchangeBindOk)
+  MethodExchangeUnbind _ -> methodSynchronous (Proxy :: Proxy ExchangeUnbind)
+  MethodExchangeUnbindOk _ -> methodSynchronous (Proxy :: Proxy ExchangeUnbindOk)
+  MethodQueueDeclare _ -> methodSynchronous (Proxy :: Proxy QueueDeclare)
+  MethodQueueDeclareOk _ -> methodSynchronous (Proxy :: Proxy QueueDeclareOk)
+  MethodQueueBind _ -> methodSynchronous (Proxy :: Proxy QueueBind)
+  MethodQueueBindOk _ -> methodSynchronous (Proxy :: Proxy QueueBindOk)
+  MethodQueueUnbind _ -> methodSynchronous (Proxy :: Proxy QueueUnbind)
+  MethodQueueUnbindOk _ -> methodSynchronous (Proxy :: Proxy QueueUnbindOk)
+  MethodQueuePurge _ -> methodSynchronous (Proxy :: Proxy QueuePurge)
+  MethodQueuePurgeOk _ -> methodSynchronous (Proxy :: Proxy QueuePurgeOk)
+  MethodQueueDelete _ -> methodSynchronous (Proxy :: Proxy QueueDelete)
+  MethodQueueDeleteOk _ -> methodSynchronous (Proxy :: Proxy QueueDeleteOk)
+  MethodBasicQos _ -> methodSynchronous (Proxy :: Proxy BasicQos)
+  MethodBasicQosOk _ -> methodSynchronous (Proxy :: Proxy BasicQosOk)
+  MethodBasicConsume _ -> methodSynchronous (Proxy :: Proxy BasicConsume)
+  MethodBasicConsumeOk _ -> methodSynchronous (Proxy :: Proxy BasicConsumeOk)
+  MethodBasicCancel _ -> methodSynchronous (Proxy :: Proxy BasicCancel)
+  MethodBasicCancelOk _ -> methodSynchronous (Proxy :: Proxy BasicCancelOk)
+  MethodBasicPublish _ -> methodSynchronous (Proxy :: Proxy BasicPublish)
+  MethodBasicReturn _ -> methodSynchronous (Proxy :: Proxy BasicReturn)
+  MethodBasicDeliver _ -> methodSynchronous (Proxy :: Proxy BasicDeliver)
+  MethodBasicGet _ -> methodSynchronous (Proxy :: Proxy BasicGet)
+  MethodBasicGetOk _ -> methodSynchronous (Proxy :: Proxy BasicGetOk)
+  MethodBasicGetEmpty _ -> methodSynchronous (Proxy :: Proxy BasicGetEmpty)
+  MethodBasicAck _ -> methodSynchronous (Proxy :: Proxy BasicAck)
+  MethodBasicReject _ -> methodSynchronous (Proxy :: Proxy BasicReject)
+  MethodBasicRecoverAsync _ -> methodSynchronous (Proxy :: Proxy BasicRecoverAsync)
+  MethodBasicRecover _ -> methodSynchronous (Proxy :: Proxy BasicRecover)
+  MethodBasicRecoverOk _ -> methodSynchronous (Proxy :: Proxy BasicRecoverOk)
+  MethodBasicNack _ -> methodSynchronous (Proxy :: Proxy BasicNack)
+  MethodTxSelect _ -> methodSynchronous (Proxy :: Proxy TxSelect)
+  MethodTxSelectOk _ -> methodSynchronous (Proxy :: Proxy TxSelectOk)
+  MethodTxCommit _ -> methodSynchronous (Proxy :: Proxy TxCommit)
+  MethodTxCommitOk _ -> methodSynchronous (Proxy :: Proxy TxCommitOk)
+  MethodTxRollback _ -> methodSynchronous (Proxy :: Proxy TxRollback)
+  MethodTxRollbackOk _ -> methodSynchronous (Proxy :: Proxy TxRollbackOk)
+  MethodConfirmSelect _ -> methodSynchronous (Proxy :: Proxy ConfirmSelect)
+  MethodConfirmSelectOk _ -> methodSynchronous (Proxy :: Proxy ConfirmSelectOk)

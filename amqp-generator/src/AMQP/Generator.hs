@@ -43,6 +43,7 @@ generateFrom inPath = do
           ("amqp-serialisation/src/AMQP/Serialisation/Generated/DomainTypes.hs", genGeneratedTypesModule spec),
           ("amqp-serialisation/src/AMQP/Serialisation/Generated/Methods.hs", genGeneratedMethodsModule spec),
           ("amqp-serialisation-gen/src/AMQP/Serialisation/Generated/Methods/Gen.hs", genGeneratedGeneratorsModule spec),
+          ("amqp-serialisation-gen/src/AMQP/Serialisation/Generated/Content/Gen.hs", genGeneratedContentGeneratorsModule spec),
           ("amqp-serialisation/src/AMQP/Serialisation/Generated/Content.hs", genGeneratedContentModule spec)
         ]
   forM_ modules $ \(path, m) -> do
@@ -150,8 +151,8 @@ genGeneratedMethodsModule AMQP.AMQPSpec {..} =
       text "import Data.Proxy",
       text "import Data.Validity",
       text "",
-      genMethodSumType amqpSpecClasses, -- TODO move this back down when we finish the parsing code
-      genClassesTypesDoc amqpSpecClasses
+      genClassesTypesDoc amqpSpecClasses,
+      genMethodSumType amqpSpecClasses
     ]
 
 genHaddocks :: Text -> Maybe AMQP.Doc -> Doc
@@ -680,12 +681,16 @@ genGeneratorInstance className Method {..} =
 genGeneratedContentModule :: AMQPSpec -> Doc
 genGeneratedContentModule AMQPSpec {..} =
   vcat
-    [ text "{-# LANGUAGE DeriveGeneric #-}",
+    [ text "{-# LANGUAGE LambdaCase #-}",
+      text "{-# LANGUAGE DeriveGeneric #-}",
       text "module AMQP.Serialisation.Generated.Content where",
       text "",
       text "import GHC.Generics (Generic)",
       text "import Data.Proxy",
       text "import Data.Validity",
+      text "import Data.ByteString.Builder as ByteString (Builder)",
+      text "import Data.Attoparsec.ByteString as Parse",
+      text "import AMQP.Serialisation.Frame",
       text "import AMQP.Serialisation.Argument",
       text "import AMQP.Serialisation.Base",
       genGeneratedContentHeaderTypesDoc amqpSpecClasses,
@@ -805,7 +810,11 @@ genGeneratedContentHeaderSumTypeDoc :: [AMQP.Class] -> Doc
 genGeneratedContentHeaderSumTypeDoc cs =
   vcat
     [ haddockIntro "A sum type of all the content headers",
-      ppr_list $ contentHeaderSumTypeDecs cs
+      ppr_list $ contentHeaderSumTypeDecs cs,
+      haddockIntro "Turn a 'ContentHeader' into a 'ByteString.Builder'.",
+      ppr_list $ genBuildContentHeaderSumTypeFunction cs,
+      haddockIntro "Parse a 'ContentHeader' frame payload.",
+      ppr_list $ genParseContentHeaderSumTypeFunction cs
     ]
 
 contentHeaderSumTypeDecs :: [AMQP.Class] -> [Dec]
@@ -840,3 +849,111 @@ classContentHeaderSumTypeConstructors AMQP.Class {..} =
 
 mkClassContentHeaderSumTypeConstructorName :: Text -> Name
 mkClassContentHeaderSumTypeConstructorName className = mkHaskellTypeName $ T.intercalate "-" ["content", "header", className]
+
+genBuildContentHeaderSumTypeFunction :: [AMQP.Class] -> [Dec]
+genBuildContentHeaderSumTypeFunction cs =
+  let n = mkName "buildContentHeaderFramePayload"
+   in [ SigD n (AppT (AppT ArrowT (ConT (mkName "ContentHeader"))) (ConT (mkName "ByteString.Builder"))),
+        FunD
+          n
+          [ Clause
+              []
+              ( NormalB
+                  ( LamCaseE
+                      ( flip map cs $ \Class {..} ->
+                          let varName = mkName "ch"
+                           in Match
+                                ( ConP
+                                    (mkClassContentHeaderSumTypeConstructorName className)
+                                    [VarP varName]
+                                )
+                                ( NormalB
+                                    ( AppE
+                                        (VarE (mkName "buildGivenContentHeaderFramePayload"))
+                                        (VarE varName)
+                                    )
+                                )
+                                []
+                      )
+                  )
+              )
+              []
+          ]
+      ]
+
+genParseContentHeaderSumTypeFunction :: [AMQP.Class] -> [Dec]
+genParseContentHeaderSumTypeFunction cs =
+  let n = mkName "parseContentHeaderFramePayload"
+   in [ SigD n (AppT (ConT (mkName "Parser")) (ConT (mkName "ContentHeader"))),
+        FunD
+          n
+          [ Clause
+              []
+              ( NormalB
+                  ( AppE
+                      ( VarE
+                          ( mkName "parseContentHeaderFramePayloadHelper"
+                          )
+                      )
+                      ( let classIdVar = mkName "cid"
+                         in LamE
+                              [VarP classIdVar]
+                              ( CaseE
+                                  (VarE classIdVar)
+                                  ( map parseSumFunctionContentHeaderMatchForClass cs
+                                      ++ [matchFailedMatch "class id" classIdVar]
+                                  )
+                              )
+                      )
+                  )
+              )
+              []
+          ]
+      ]
+
+parseSumFunctionContentHeaderMatchForClass :: AMQP.Class -> Match
+parseSumFunctionContentHeaderMatchForClass AMQP.Class {..} =
+  Match
+    (LitP (IntegerL (toInteger classIndex)))
+    ( NormalB
+        ( InfixE
+            (Just (VarE (mkClassContentHeaderSumTypeConstructorName className)))
+            (VarE (mkName "<$>"))
+            (Just (VarE (mkName "parseContentHeaderArguments")))
+        )
+    )
+    []
+
+genGeneratedContentGeneratorsModule :: AMQPSpec -> Doc
+genGeneratedContentGeneratorsModule AMQPSpec {..} =
+  vcat
+    [ text "{-# OPTIONS_GHC -fno-warn-orphans #-}",
+      text "module AMQP.Serialisation.Generated.Content.Gen where",
+      text "",
+      text "import Data.GenValidity",
+      text "import AMQP.Serialisation.Generated.Content",
+      text "import AMQP.Serialisation.Base.Gen ()",
+      text "",
+      genContentGeneratorsDoc amqpSpecClasses
+    ]
+
+genContentGeneratorsDoc :: [AMQP.Class] -> Doc
+genContentGeneratorsDoc cs =
+  ppr_list $ concatMap genContentGeneratorInstances cs
+
+genContentGeneratorInstances :: AMQP.Class -> [Dec]
+genContentGeneratorInstances AMQP.Class {..} =
+  [ InstanceD
+      Nothing
+      []
+      (AppT (ConT (mkName "GenValid")) (ConT (mkContentHeaderTypeName className)))
+      [ FunD
+          (mkName "genValid")
+          [ Clause [] (NormalB (VarE (mkName "genValidStructurallyWithoutExtraChecking"))) []
+          ],
+        FunD
+          (mkName "shrinkValid")
+          [ Clause [] (NormalB (VarE (mkName "shrinkValidStructurallyWithoutExtraFiltering"))) []
+          ]
+      ]
+  ]

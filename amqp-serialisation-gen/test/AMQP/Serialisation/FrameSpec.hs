@@ -3,6 +3,7 @@
 module AMQP.Serialisation.FrameSpec (spec) where
 
 import AMQP.Serialisation.Base
+import AMQP.Serialisation.Content.Gen ()
 import AMQP.Serialisation.Frame
 import AMQP.Serialisation.Frame.Gen ()
 import AMQP.Serialisation.Gen ()
@@ -53,17 +54,19 @@ spec = do
 
   describe "parseGivenContentHeader" $ do
     describe "ConnectionContentHeader" $ do
+      let channelNumber = 42
       let exampleConnectionContentHeader = ConnectionContentHeader
       it "roundtrips on this example" $
         roundtripsFor
-          buildGivenContentHeader
-          parseGivenContentHeader
-          exampleConnectionContentHeader
+          (uncurry buildGivenContentHeaderFrame)
+          parseGivenContentHeaderFrame
+          (channelNumber, exampleConnectionContentHeader)
       it "outputs the same as before for this example" $
-        pureGoldenByteStringBuilderFile "test_resources/content-header/connection.dat" (buildGivenContentHeader exampleConnectionContentHeader)
+        pureGoldenByteStringBuilderFile "test_resources/content-header/connection.dat" (buildGivenContentHeaderFrame channelNumber exampleConnectionContentHeader)
 
   describe "parseGivenContentHeader" $ do
     describe "BasicContentHeader" $ do
+      let channelNumber = 42
       let emptyBasicContentHeader =
             BasicContentHeader
               { basicContentHeaderContentType = Nothing,
@@ -83,11 +86,11 @@ spec = do
               }
       it "roundtrips on the empty example" $
         roundtripsFor
-          buildGivenContentHeader
-          parseGivenContentHeader
-          emptyBasicContentHeader
+          (uncurry buildGivenContentHeaderFrame)
+          parseGivenContentHeaderFrame
+          (channelNumber, emptyBasicContentHeader)
       it "outputs the same as before for the empty example" $
-        pureGoldenByteStringBuilderFile "test_resources/content-header/basic/empty.dat" (buildGivenContentHeader emptyBasicContentHeader)
+        pureGoldenByteStringBuilderFile "test_resources/content-header/basic/empty.dat" (buildGivenContentHeaderFrame channelNumber emptyBasicContentHeader)
       let exampleBasicContentHeader =
             BasicContentHeader
               { basicContentHeaderContentType = Just "type",
@@ -107,8 +110,8 @@ spec = do
               }
       it "roundtrips on the example example" $
         roundtripsFor
-          buildGivenContentHeader
-          parseGivenContentHeader
-          exampleBasicContentHeader
+          (uncurry buildGivenContentHeaderFrame)
+          parseGivenContentHeaderFrame
+          (channelNumber, exampleBasicContentHeader)
       it "outputs the same as before for the example example" $
-        pureGoldenByteStringBuilderFile "test_resources/content-header/basic/example.dat" (buildGivenContentHeader exampleBasicContentHeader)
+        pureGoldenByteStringBuilderFile "test_resources/content-header/basic/example.dat" (buildGivenContentHeaderFrame channelNumber exampleBasicContentHeader)

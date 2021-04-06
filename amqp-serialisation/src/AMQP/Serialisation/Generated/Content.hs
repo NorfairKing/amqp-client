@@ -1,9 +1,13 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE LambdaCase #-}
 
 module AMQP.Serialisation.Generated.Content where
 
 import AMQP.Serialisation.Argument
 import AMQP.Serialisation.Base
+import AMQP.Serialisation.Frame
+import Data.Attoparsec.ByteString as Parse
+import Data.ByteString.Builder as ByteString (Builder)
 import Data.Proxy
 import Data.Validity
 import GHC.Generics (Generic)
@@ -149,3 +153,31 @@ data ContentHeader
   deriving (Show, Eq, Generic)
 
 instance Validity ContentHeader
+
+-- | Turn a 'ContentHeader' into a 'ByteString.Builder'.
+buildContentHeaderFramePayload ::
+  ContentHeader ->
+  ByteString.Builder
+buildContentHeaderFramePayload = \case
+  ContentHeaderConnection ch -> buildGivenContentHeaderFramePayload ch
+  ContentHeaderChannel ch -> buildGivenContentHeaderFramePayload ch
+  ContentHeaderExchange ch -> buildGivenContentHeaderFramePayload ch
+  ContentHeaderQueue ch -> buildGivenContentHeaderFramePayload ch
+  ContentHeaderBasic ch -> buildGivenContentHeaderFramePayload ch
+  ContentHeaderTx ch -> buildGivenContentHeaderFramePayload ch
+  ContentHeaderConfirm ch -> buildGivenContentHeaderFramePayload ch
+
+-- | Parse a 'ContentHeader' frame payload.
+parseContentHeaderFramePayload :: Parser ContentHeader
+parseContentHeaderFramePayload =
+  parseContentHeaderFramePayloadHelper
+    ( \cid -> case cid of
+        10 -> ContentHeaderConnection <$> parseContentHeaderArguments
+        20 -> ContentHeaderChannel <$> parseContentHeaderArguments
+        40 -> ContentHeaderExchange <$> parseContentHeaderArguments
+        50 -> ContentHeaderQueue <$> parseContentHeaderArguments
+        60 -> ContentHeaderBasic <$> parseContentHeaderArguments
+        90 -> ContentHeaderTx <$> parseContentHeaderArguments
+        85 -> ContentHeaderConfirm <$> parseContentHeaderArguments
+        _ -> fail ("Unknown class id" ++ show cid)
+    )
