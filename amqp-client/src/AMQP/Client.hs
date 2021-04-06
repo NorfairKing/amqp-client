@@ -58,6 +58,13 @@ data Connection = Connection
     -- When a synchronous request is sent, this mvar is always taken before the 'connectionLeftoversVar'.
     -- In this way, there can never be a deadlock because of these two @MVar@s alone.
     connectionSynchronousVar :: !(MVar ()),
+    -- | An mvar to wrap lock around sending contiguous data
+    --
+    -- When a synchronous request is sent, this mvar is always taken before connectionLeftoversVar and connectionSynchronousVar.
+    -- In this way, there can never be a deadlock because of these three @MVar@s alone.
+    --
+    -- Full whenever the connection is ready to send the next piece
+    connectionSenderVar :: !(MVar ()),
     connectionMaximumNumberOfChannels :: !ShortUInt,
     connectionMaximumFrameSize :: !LongUInt,
     connectionHeartbeatInterval :: !ShortUInt,
@@ -87,8 +94,9 @@ data HandleResult = NotHandled | HandledButNotDone | HandledAndDone
 channelOpen :: MonadUnliftIO m => Connection -> m Channel
 channelOpen conn@Connection {..} = do
   let number = 1 -- TODO choose an open index for a new open channel.
-  ChannelOpenOk {} <- synchronouslyRequest connectionNetworkConnection connectionLeftoversVar connectionSynchronousVar number ChannelOpen {channelOpenReserved1 = ""}
+  ChannelOpenOk {} <- synchronouslyRequestByItself conn number ChannelOpen {channelOpenReserved1 = ""}
   messageQueue <- newTQueueIO
+  -- TODO add queue to the connection's known queues
   pure $
     Channel
       { channelConnection = conn,
@@ -125,12 +133,9 @@ data Queue = Queue {queueName :: ShortString}
 
 queueDeclare :: MonadUnliftIO m => Channel -> QueueName -> QueueSettings -> m Queue
 queueDeclare Channel {..} name QueueSettings {..} = do
-  let Connection {..} = channelConnection
   QueueDeclareOk {..} <-
-    synchronouslyRequest
-      connectionNetworkConnection
-      connectionLeftoversVar
-      connectionSynchronousVar
+    synchronouslyRequestByItself
+      channelConnection
       channelNumber
       QueueDeclare
         { queueDeclareReserved1 = 0,
@@ -146,12 +151,9 @@ queueDeclare Channel {..} name QueueSettings {..} = do
 
 queueBind :: MonadUnliftIO m => Channel -> QueueName -> ExchangeName -> RoutingKey -> m ()
 queueBind Channel {..} queueName exchangeName routingKey = do
-  let Connection {..} = channelConnection
   QueueBindOk <-
-    synchronouslyRequest
-      connectionNetworkConnection
-      connectionLeftoversVar
-      connectionSynchronousVar
+    synchronouslyRequestByItself
+      channelConnection
       channelNumber
       QueueBind
         { queueBindReserved1 = 0,
@@ -176,12 +178,9 @@ data Exchange = Exchange
 
 exchangeDeclare :: MonadUnliftIO m => Channel -> ExchangeName -> ExchangeSettings -> m Exchange
 exchangeDeclare Channel {..} name ExchangeSettings = do
-  let Connection {..} = channelConnection
   ExchangeDeclareOk <-
-    synchronouslyRequest
-      connectionNetworkConnection
-      connectionLeftoversVar
-      connectionSynchronousVar
+    synchronouslyRequestByItself
+      channelConnection
       channelNumber
       ExchangeDeclare
         { exchangeDeclareReserved1 = 0,
@@ -217,9 +216,10 @@ withConnection ConnectionSettings {..} callback = do
     (liftIO . Network.connectionClose)
     $ \networkConnection -> do
       -- C: protocol-header
-      connectionPutBuilder networkConnection (buildProtocolHeader protocolHeader)
+      connectionSendBuilderWithoutLock networkConnection (buildProtocolHeader protocolHeader)
       leftoversVar <- newMVar SB.empty
       synchronousVar <- newMVar ()
+      senderVar <- newMVar ()
       -- S: START
       frame <- connectionParse networkConnection leftoversVar parseProtocolNegotiationResponse
       f <- case frame of
@@ -242,10 +242,14 @@ withConnection ConnectionSettings {..} callback = do
                 connectionStartOkLocale = ShortString ourLocale
               }
       -- C: START-OK
-      connectionPutBuilder networkConnection (buildGivenMethodFrame 0 connectionOk)
+      connectionSendBuilderWithoutLock networkConnection (buildGivenMethodFrame 0 connectionOk)
       -- TODO: Implement the challenge part of the protocol
       -- S: TUNE
-      ConnectionTune {..} <- waitForSynchronousMessage networkConnection leftoversVar
+      errOrTune <- connectionParse networkConnection leftoversVar $ snd <$> parseGivenMethodFrame
+      ConnectionTune {..} <- case errOrTune of
+        Left err -> throwIO $ ProtocolViolation $ "The server did not send a connection.tune frame: " <> err
+        Right ct -> pure ct
+
       -- QUESTION: do we want to negotiate down any of these?
       --
       -- NOTE: We can only negotiate down, so if we ever make these
@@ -260,7 +264,7 @@ withConnection ConnectionSettings {..} callback = do
                 connectionTuneOkHeartbeat = heartbeatInterval
               }
       -- C: TUNE-OK
-      connectionPutBuilder networkConnection (buildGivenMethodFrame 0 connectionTuneOk)
+      connectionSendBuilderWithoutLock networkConnection (buildGivenMethodFrame 0 connectionTuneOk)
 
       let connectionOpen =
             ConnectionOpen
@@ -269,8 +273,12 @@ withConnection ConnectionSettings {..} callback = do
                 connectionOpenReserved2 = False
               }
       -- C: OPEN
+      connectionSendBuilderWithoutLock networkConnection (buildGivenMethodFrame 0 connectionOpen)
       -- S: OPEN-OK
-      ConnectionOpenOk {} <- synchronouslyRequest networkConnection leftoversVar synchronousVar 0 connectionOpen
+      errOrOpenOk <- connectionParse networkConnection leftoversVar $ snd <$> parseGivenMethodFrame
+      ConnectionOpenOk {} <- case errOrOpenOk of
+        Left err -> throwIO $ ProtocolViolation $ "The server did not send a connection.open-ok frame: " <> err
+        Right coo -> pure coo
 
       messageQueue <- newTQueueIO
       channelVar <- newTVarIO IM.empty
@@ -279,6 +287,7 @@ withConnection ConnectionSettings {..} callback = do
               { connectionNetworkConnection = networkConnection,
                 connectionLeftoversVar = leftoversVar,
                 connectionSynchronousVar = synchronousVar,
+                connectionSenderVar = senderVar,
                 connectionMaximumNumberOfChannels = maxChannels,
                 connectionMaximumFrameSize = maxFrameSize,
                 connectionHeartbeatInterval = heartbeatInterval,
@@ -290,36 +299,42 @@ withConnection ConnectionSettings {..} callback = do
 -- | Send a synchronous method to the server and wait for a synchronous answer.
 --
 -- This implements the pseudo logic in section 2.2.2: Mapping AMQP to a middleware API
-synchronouslyRequest :: (MonadUnliftIO m, IsMethod a, SynchronousResponse a ~ b, FromMethod b) => Network.Connection -> MVar ByteString -> MVar () -> ChannelNumber -> a -> m b
-synchronouslyRequest conn leftoversVar synchronousVar cn a = withMVar synchronousVar $ \() -> do
-  connectionPutGivenMethod conn cn a
-  waitForSynchronousMessage conn leftoversVar
+--
+-- This method requires that the response grammar does not require any subsequent frames to be sent contiguously.
+synchronouslyRequestByItself :: (MonadUnliftIO m, IsMethod a, SynchronousResponse a ~ b, FromMethod b) => Connection -> ChannelNumber -> a -> m b
+synchronouslyRequestByItself conn@Connection {..} cn req = withMVar connectionSynchronousVar $ \() -> do
+  connectionSendGivenMethodByItself conn cn req
+  waitForSynchronousMethod conn
 
-waitForSynchronousMessage :: (MonadUnliftIO m, FromMethod b) => Network.Connection -> MVar ByteString -> m b
-waitForSynchronousMessage conn leftoversVar = go
+waitForSynchronousMethod :: (MonadUnliftIO m, FromMethod b) => Connection -> m b
+waitForSynchronousMethod Connection {..} = go
   where
     go = do
-      errOrRes <- connectionParseMethod conn leftoversVar
+      errOrRes <- connectionParseFrame connectionNetworkConnection connectionLeftoversVar
       case errOrRes of
         Left err -> throwIO $ ProtocolViolation err
-        Right r ->
-          if methodIsSynchronous r
-            then case fromMethod r of
-              Nothing -> case fromMethod r of
-                Nothing ->
-                  throwIO $
-                    ProtocolViolation $
-                      unwords
-                        [ "Expected a response method of type",
-                          "TODO generated name",
-                          "but got this method instead:",
-                          show r
-                        ]
-                Just closed -> throwIO $ ServerClosedAMQPConnectionUnexpectedly closed
-              Just m -> pure m
-            else do
-              -- TODO do something useful with this method, we probably don't just want to drop it.
-              go
+        Right f -> case f of
+          MethodPayload _ m ->
+            -- TODO we need to do something with the channel number
+            if methodIsSynchronous m
+              then case fromMethod m of
+                Nothing -> case fromMethod m of
+                  Nothing ->
+                    throwIO $
+                      ProtocolViolation $
+                        unwords
+                          [ "Expected a response method of type",
+                            "TODO generated name",
+                            "but got this method instead:",
+                            show m
+                          ]
+                  Just closed -> throwIO $ ServerClosedAMQPConnectionUnexpectedly closed
+                Just responseMethod -> pure responseMethod
+              else do
+                -- TODO do something useful with this method, we probably don't just want to drop it.
+                go
+          HeartbeatPayload -> go -- TODO we probably don't just want to ignore heartbeats
+          _ -> undefined -- TODO we need to do something with other frames.
 
 saslMechanismName :: SASLMechanism -> ByteString
 saslMechanismName = \case
@@ -345,14 +360,28 @@ plainSASLResponse username password =
             SBB.byteString $ TE.encodeUtf8 password
           ]
 
-connectionPutGivenMethod :: (IsMethod a, MonadIO m) => Network.Connection -> ChannelNumber -> a -> m ()
-connectionPutGivenMethod conn chan m = connectionPutBuilder conn (buildGivenMethodFrame chan m)
+-- | Send a method frame for the given method
+--
+-- Note that the method grammar must not involve any frames that need to be sent immediately afterwards.
+connectionSendGivenMethodByItself :: (IsMethod a, MonadUnliftIO m) => Connection -> ChannelNumber -> a -> m ()
+connectionSendGivenMethodByItself conn chan m = connectionSendBuilder conn $ buildGivenMethodFrame chan m
 
-connectionPutBuilder :: MonadIO m => Network.Connection -> ByteString.Builder -> m ()
-connectionPutBuilder conn b = liftIO $ mapM_ (Network.connectionPut conn) (LB.toChunks (SBB.toLazyByteString b))
+-- | Send raw 'ByteString.Builder's to the server
+--
+-- This function uses the 'connectionSenderVar' lock
+connectionSendBuilder :: MonadUnliftIO m => Connection -> ByteString.Builder -> m ()
+connectionSendBuilder Connection {..} b = withMVar connectionSenderVar $ \() -> do
+  connectionSendBuilderWithoutLock connectionNetworkConnection b
+
+connectionSendBuilderWithoutLock :: MonadIO m => Network.Connection -> ByteString.Builder -> m ()
+connectionSendBuilderWithoutLock conn b =
+  liftIO $ mapM_ (Network.connectionPut conn) (LB.toChunks (SBB.toLazyByteString b))
 
 connectionParseMethod :: (MonadUnliftIO m) => Network.Connection -> MVar ByteString -> m (Either String Method)
 connectionParseMethod conn leftoversVar = connectionParse conn leftoversVar parseMethodFrame
+
+connectionParseFrame :: (MonadUnliftIO m) => Network.Connection -> MVar ByteString -> m (Either String Frame)
+connectionParseFrame conn leftoversVar = connectionParse conn leftoversVar parseFrame
 
 connectionParse :: MonadUnliftIO m => Network.Connection -> MVar ByteString -> Attoparsec.Parser a -> m (Either String a)
 connectionParse conn leftoversVar parser = modifyMVar leftoversVar $ \leftovers -> do
@@ -397,7 +426,7 @@ waitToNoWait = \case
   Don'tWait -> True
 
 basicPublish :: MonadUnliftIO m => Channel -> ExchangeName -> RoutingKey -> Message -> m ()
-basicPublish _ _ _ _ = undefined
+basicPublish channel exchangeName routingKey message = undefined
 
 data Message = Message
   { messageBody :: ByteString

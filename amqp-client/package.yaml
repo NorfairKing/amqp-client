@@ -19,6 +19,7 @@ library:
     - network
     - stm
     - text
+    - time
     - unliftio
 
 tests:
