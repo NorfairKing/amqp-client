@@ -30,24 +30,18 @@ spec = rabbitMQSpec $ do
     pure () :: IO ()
   itWithLocalGuestConnection "can go through the tutorial steps" $ \conn -> do
     chan <- channelOpen conn
-    let myQueueName = "myQueueName"
-        myExchangeName = "myExchangeName"
-        myRoutingKey = "myRoutingKey"
-    _ <- queueDeclare chan myQueueName defaultQueueSettings
-    _ <- exchangeDeclare chan myExchangeName defaultExchangeSettings
-    queueBind chan myQueueName myExchangeName myRoutingKey
+    let myRoutingKey = "myRoutingKey"
+    myQueue <- queueDeclare chan "MyQueueName" defaultQueueSettings
+    myExchange <- exchangeDeclare chan "myExchangeName" defaultExchangeSettings
+    queueBind chan myQueue myExchange myRoutingKey
 
     let testBody = "hello world"
     let msg = newMessage testBody
     basicPublish
       chan
-      myExchangeName
+      myExchange
       myRoutingKey
       msg
 
-    m <-
-      basicGet
-        chan
-        myQueueName
-        NoAck
+    m <- basicGet chan myQueue NoAck
     m `shouldBe` Just msg

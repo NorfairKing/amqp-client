@@ -93,7 +93,7 @@ data HandleResult = NotHandled | HandledButNotDone | HandledAndDone
   deriving (Generic)
 
 channelOpen :: MonadUnliftIO m => Connection -> m Channel
-channelOpen conn@Connection {..} = do
+channelOpen conn = do
   let number = 1 -- TODO choose an open index for a new open channel.
   ChannelOpenOk {} <- synchronouslyRequestByItself conn number ChannelOpen {channelOpenReserved1 = ""}
   messageQueue <- newTQueueIO
@@ -129,7 +129,7 @@ defaultQueueSettings =
       queueSetArguments = emptyFieldTable
     }
 
-data Queue = Queue {queueName :: ShortString}
+data Queue = Queue {queueName :: QueueName}
   deriving (Show, Eq, Generic)
 
 queueDeclare :: MonadUnliftIO m => Channel -> QueueName -> QueueSettings -> m Queue
@@ -150,8 +150,8 @@ queueDeclare Channel {..} name QueueSettings {..} = do
         }
   pure Queue {queueName = queueDeclareOkQueue}
 
-queueBind :: MonadUnliftIO m => Channel -> QueueName -> ExchangeName -> RoutingKey -> m ()
-queueBind Channel {..} queueName exchangeName routingKey = do
+queueBind :: MonadUnliftIO m => Channel -> Queue -> Exchange -> RoutingKey -> m ()
+queueBind Channel {..} Queue {..} Exchange {..} routingKey = do
   QueueBindOk <-
     synchronouslyRequestByItself
       channelConnection
@@ -174,7 +174,7 @@ defaultExchangeSettings = ExchangeSettings
 data ExchangeSettings = ExchangeSettings
   deriving (Show, Eq, Generic)
 
-data Exchange = Exchange
+data Exchange = Exchange {exchangeName :: !ExchangeName}
   deriving (Show, Eq, Generic)
 
 exchangeDeclare :: MonadUnliftIO m => Channel -> ExchangeName -> ExchangeSettings -> m Exchange
@@ -194,10 +194,10 @@ exchangeDeclare Channel {..} name ExchangeSettings = do
           exchangeDeclareNoWait = False,
           exchangeDeclareArguments = emptyFieldTable
         }
-  pure Exchange
+  pure Exchange {exchangeName = name}
 
-basicGet :: MonadUnliftIO m => Channel -> QueueName -> Ack -> m (Maybe Message)
-basicGet Channel {..} queueName ack = withMVar (connectionSynchronousVar channelConnection) $ \() -> do
+basicGet :: MonadUnliftIO m => Channel -> Queue -> Ack -> m (Maybe Message)
+basicGet Channel {..} Queue {..} ack = withMVar (connectionSynchronousVar channelConnection) $ \() -> do
   let bg = BasicGet {basicGetReserved1 = 0, basicGetQueue = queueName, basicGetNoAck = ackToNoAck ack}
   connectionSendGivenMethodByItself channelConnection channelNumber bg
   bgr <- waitForSynchronousMethod channelConnection
@@ -215,8 +215,8 @@ basicGet Channel {..} queueName ack = withMVar (connectionSynchronousVar channel
             _ -> throwIO $ ProtocolViolation $ "Expected a content body, got this instead: " <> show frame
         _ -> throwIO $ ProtocolViolation $ "Expected a content header, got this instead: " <> show frame
 
-basicPublish :: MonadUnliftIO m => Channel -> ExchangeName -> RoutingKey -> Message -> m ()
-basicPublish Channel {..} exchangeName routingKey Message {..} = do
+basicPublish :: MonadUnliftIO m => Channel -> Exchange -> RoutingKey -> Message -> m ()
+basicPublish Channel {..} Exchange {..} routingKey Message {..} = do
   let bp =
         BasicPublish
           { basicPublishReserved1 = 0,
