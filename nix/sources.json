@@ -65,10 +65,10 @@
         "homepage": "",
         "owner": "NorfairKing",
         "repo": "sydtest",
-        "rev": "0fad471cee677a4018acbe1983385dfc9a1b49d2",
-        "sha256": "1wv82y02acggkc9i0lnm17nj7cs8lwi3043v470z3hsfc754rz9b",
+        "rev": "f085c6cb13d97ecc46641eac2a6f5c85b570308d",
+        "sha256": "0ybq1wwsa23pajmnsfpj99r090s0x3d2sk3j8ccgc1yaq1wjff7p",
         "type": "tarball",
-        "url": "https://github.com/NorfairKing/sydtest/archive/0fad471cee677a4018acbe1983385dfc9a1b49d2.tar.gz",
+        "url": "https://github.com/NorfairKing/sydtest/archive/f085c6cb13d97ecc46641eac2a6f5c85b570308d.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "validity": {

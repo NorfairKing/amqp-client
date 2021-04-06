@@ -5,8 +5,11 @@ module AMQP.ClientSpec (spec) where
 
 import AMQP.Client
 import AMQP.Client.TestUtils
+import Control.Monad
+import Data.GenValidity.ByteString ()
 import Test.Syd
 import Test.Syd.RabbitMQ
+import Test.Syd.Validity
 
 spec :: Spec
 spec = rabbitMQSpec $ do
@@ -45,3 +48,73 @@ spec = rabbitMQSpec $ do
 
     m <- basicGet chan myQueue NoAck
     m `shouldBe` Just msg
+
+  pending "can go through the tutorial steps with an empty message"
+  -- xitWithLocalGuestConnection "can go through the tutorial steps with an empty message" $ \conn -> do
+  --   chan <- channelOpen conn
+  --   let myRoutingKey = "myRoutingKey"
+  --   myQueue <- queueDeclare chan "MyQueueName" defaultQueueSettings
+  --   myExchange <- exchangeDeclare chan "myExchangeName" defaultExchangeSettings
+  --   queueBind chan myQueue myExchange myRoutingKey
+
+  --   let emptyTestBody = ""
+  --   let msg = newMessage emptyTestBody
+  --   basicPublish
+  --     chan
+  --     myExchange
+  --     myRoutingKey
+  --     msg
+
+  --   m <- basicGet chan myQueue NoAck
+  --   m `shouldBe` Just msg
+
+  itWithLocalGuestConnection "can send and recieve 100 hello world messages, one by one" $ \conn -> do
+    chan <- channelOpen conn
+    let myRoutingKey = "myRoutingKey"
+    myQueue <- queueDeclare chan "MyQueueName" defaultQueueSettings
+    myExchange <- exchangeDeclare chan "myExchangeName" defaultExchangeSettings
+    queueBind chan myQueue myExchange myRoutingKey
+
+    let testBody = "hello world"
+    replicateM_ 100 $ do
+      let msg = newMessage testBody
+      basicPublish
+        chan
+        myExchange
+        myRoutingKey
+        msg
+
+      m <- basicGet chan myQueue NoAck
+      m `shouldBe` Just msg
+
+  pending "can send and recieve 100 hello world messages, one by one"
+  pending "can send and recieve 100 hello world messages when first sending all of them"
+  pending "can send and recieve 100 hello world messages when sending and receiving in separate threads"
+
+  xitWithOuter "can go through the tutorial steps with any message body" $ \RabbitMQHandle {..} ->
+    forAllValid $ \testBody -> do
+      let settings =
+            ConnectionSettings
+              { connectionSettingHostName = "127.0.0.1",
+                connectionSettingPort = rabbitMQHandlePort,
+                connectionSettingSASLMechanism = PLAINMechanism "guest" "guest"
+              }
+      withConnection settings $ \conn -> do
+        chan <- channelOpen conn
+        let myRoutingKey = "myRoutingKey"
+        myQueue <- queueDeclare chan "MyQueueName" defaultQueueSettings
+        myExchange <- exchangeDeclare chan "myExchangeName" defaultExchangeSettings
+        queueBind chan myQueue myExchange myRoutingKey
+
+        let msg = newMessage testBody
+        basicPublish
+          chan
+          myExchange
+          myRoutingKey
+          msg
+
+        m <- basicGet chan myQueue NoAck
+        m `shouldBe` Just msg
+  pending "can send and recieve any number of test messages one by one"
+  pending "can send and recieve any number of messages when first sending all of them"
+  pending "can send and recieve any number of messages when sending and receiving in separate threads"

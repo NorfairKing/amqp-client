@@ -35,5 +35,7 @@ tests:
     - amqp-client
     - amqp-serialisation
     - bytestring
+    - genvalidity-bytestring
+    - genvalidity-sydtest
     - sydtest
     - sydtest-rabbitmq
