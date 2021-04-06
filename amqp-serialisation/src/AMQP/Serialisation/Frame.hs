@@ -145,12 +145,13 @@ buildGivenContentHeaderFramePayload a =
 parseGivenContentHeaderFramePayload :: forall a. IsContentHeader a => Parser a
 parseGivenContentHeaderFramePayload = label "Content Header" $ do
   label "ClassId" $ void $ Parse.word16be $ contentHeaderClassId (Proxy :: Proxy a)
-  label "weight" $ void $ Parse.word16be 0
-  label "properties" parseContentHeaderArguments
+  label "Weight" $ void $ Parse.word16be 0
+  label "Properties" parseContentHeaderArguments
 
 parseContentHeaderFramePayloadHelper :: (ClassId -> Parser a) -> Parser a
 parseContentHeaderFramePayloadHelper func = label "Content Header Payload" $ do
   cid <- label "ClassId" Parse.anyWord16be
+  label "Weight" $ void $ Parse.word16be 0
   label "Properties" $ func cid
 
 givenContentHeaderFrameToRawFrame :: forall a. IsContentHeader a => ChannelNumber -> a -> RawFrame

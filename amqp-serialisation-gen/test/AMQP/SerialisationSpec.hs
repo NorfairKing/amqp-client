@@ -39,7 +39,7 @@ spec = do
       describe "parseContentHeaderFrame" $
         it "can parse whatever 'buildContentHeaderFrame' builds'" $
           forAllValid $ \cn ->
-            roundtrips (buildContentHeaderFrame cn) parseContentHeaderFrame
+            roundtripsWithFloat (buildContentHeaderFrame cn) parseContentHeaderFrame
 
   describe "parseConnectionStartMethodFramePayload" $
     it "can parse the example that we got from the rabbitmq server" $ do
