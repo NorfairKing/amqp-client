@@ -8,6 +8,7 @@ module AMQP.Serialisation where
 
 import AMQP.Serialisation.Base
 import AMQP.Serialisation.Frame
+import AMQP.Serialisation.Generated.Content
 import AMQP.Serialisation.Generated.Methods
 import Control.Monad
 import Data.Attoparsec.ByteString as Parse
@@ -93,6 +94,7 @@ buildMethodFrame chan m =
       }
 
 data FramePayload
-  = MethodPayload Method
+  = MethodPayload !Method
+  | ContentHeaderPayload !ContentHeader
   | HeartbeatPayload
   deriving (Show, Eq, Generic)

@@ -688,7 +688,8 @@ genGeneratedContentModule AMQPSpec {..} =
       text "import Data.Validity",
       text "import AMQP.Serialisation.Argument",
       text "import AMQP.Serialisation.Base",
-      genGeneratedContentHeaderTypesDoc amqpSpecClasses
+      genGeneratedContentHeaderTypesDoc amqpSpecClasses,
+      genGeneratedContentHeaderSumTypeDoc amqpSpecClasses
     ]
 
 genGeneratedContentHeaderTypesDoc :: [AMQP.Class] -> Doc
@@ -799,3 +800,43 @@ genParseContentArguments AMQP.Class {..} =
         )
     )
     []
+
+genGeneratedContentHeaderSumTypeDoc :: [AMQP.Class] -> Doc
+genGeneratedContentHeaderSumTypeDoc cs =
+  vcat
+    [ haddockIntro "A sum type of all the content headers",
+      ppr_list $ contentHeaderSumTypeDecs cs
+    ]
+
+contentHeaderSumTypeDecs :: [AMQP.Class] -> [Dec]
+contentHeaderSumTypeDecs cs =
+  let n = mkName "ContentHeader"
+   in [ DataD
+          []
+          n
+          []
+          Nothing
+          (map classContentHeaderSumTypeConstructors cs)
+          [ DerivClause
+              Nothing
+              [ ConT (mkName "Show"),
+                ConT (mkName "Eq"),
+                ConT (mkName "Generic")
+              ]
+          ],
+        InstanceD
+          Nothing
+          []
+          (AppT (ConT (mkName "Validity")) (VarT n))
+          []
+      ]
+
+classContentHeaderSumTypeConstructors :: AMQP.Class -> Con
+classContentHeaderSumTypeConstructors AMQP.Class {..} =
+  NormalC
+    (mkClassContentHeaderSumTypeConstructorName className)
+    [ (Bang NoSourceUnpackedness SourceStrict, ConT (mkContentHeaderTypeName className))
+    ]
+
+mkClassContentHeaderSumTypeConstructorName :: Text -> Name
+mkClassContentHeaderSumTypeConstructorName className = mkHaskellTypeName $ T.intercalate "-" ["content", "header", className]

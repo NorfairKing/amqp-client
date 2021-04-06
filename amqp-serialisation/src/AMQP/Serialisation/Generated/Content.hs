@@ -136,3 +136,16 @@ instance Validity ConfirmContentHeader
 instance IsContentHeader ConfirmContentHeader where
   contentHeaderClassId (Proxy) = 85
   parseContentHeaderArguments = do pure ConfirmContentHeader
+
+-- | A sum type of all the content headers
+data ContentHeader
+  = ContentHeaderConnection !ConnectionContentHeader
+  | ContentHeaderChannel !ChannelContentHeader
+  | ContentHeaderExchange !ExchangeContentHeader
+  | ContentHeaderQueue !QueueContentHeader
+  | ContentHeaderBasic !BasicContentHeader
+  | ContentHeaderTx !TxContentHeader
+  | ContentHeaderConfirm !ConfirmContentHeader
+  deriving (Show, Eq, Generic)
+
+instance Validity ContentHeader
