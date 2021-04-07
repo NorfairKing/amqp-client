@@ -33,9 +33,33 @@ import UnliftIO
 data ConnectionSettings = ConnectionSettings
   { connectionSettingHostName :: !Socket.HostName,
     connectionSettingPort :: !Socket.PortNumber,
-    connectionSettingSASLMechanism :: !SASLMechanism
+    connectionSettingSASLMechanism :: !SASLMechanism,
+    -- | The proposed maximum size of AMQP frames sent between the server and the client.
+    --
+    -- Note that the protocol specifies that the server (not the client) first
+    -- proposes a maximum frame size.  The client can lower this maximum size
+    -- but not raise it. That means that this setting specifies the maximum
+    -- maximum frame size, but the actual maximum frame size could be lower,
+    -- depending on the server.
+    --
+    -- Also note that the server may still reject very large frames if it
+    -- cannot allocate the resources for it.
+    --
+    -- If 'Nothing', the client will take whatever the server proposed as the
+    -- maximum frame size.
+    connectionSettingMaximumFrameSize :: !(Maybe LongUInt)
   }
   deriving (Show, Eq, Generic)
+
+-- | Make the simplest 'ConnectionSettings'.
+--
+-- Note that these settings use default values that may not be appropriate for your application.
+-- For example, it uses 'PLAINMechanism "guest" "guest"' as its SASL Mechanism.
+mkConnectionSettings :: Socket.HostName -> Socket.PortNumber -> ConnectionSettings
+mkConnectionSettings connectionSettingHostName connectionSettingPort =
+  let connectionSettingMaximumFrameSize = Nothing
+      connectionSettingSASLMechanism = PLAINMechanism "guest" "guest"
+   in ConnectionSettings {..}
 
 data SASLMechanism
   = PLAINMechanism
@@ -316,7 +340,9 @@ withConnection ConnectionSettings {..} callback = do
       -- NOTE: We can only negotiate down, so if we ever make these
       -- configurable then we want to make sure of that.
       let maxChannels = connectionTuneChannelMax
-          maxFrameSize = connectionTuneFrameMax
+          maxFrameSize = case connectionSettingMaximumFrameSize of
+            Nothing -> connectionTuneFrameMax
+            Just clientSuggestedMaxFrameSize -> min connectionTuneFrameMax clientSuggestedMaxFrameSize
           heartbeatInterval = connectionTuneHeartbeat
       let connectionTuneOk =
             ConnectionTuneOk

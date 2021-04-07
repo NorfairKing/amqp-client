@@ -52,7 +52,8 @@ test-suite amqp-client-test
   build-tool-depends:
       sydtest-discover:sydtest-discover
   build-depends:
-      amqp-client
+      QuickCheck
+    , amqp-client
     , amqp-serialisation
     , base >=4.7 && <5
     , bytestring

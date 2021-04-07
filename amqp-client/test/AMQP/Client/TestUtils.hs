@@ -13,10 +13,5 @@ import Test.Syd.RabbitMQ
 itWithLocalGuestConnection :: String -> (Connection -> IO ()) -> TestDefM (RabbitMQHandle ': otherOuters) () ()
 itWithLocalGuestConnection s func =
   itWithOuter s $ \RabbitMQHandle {..} -> do
-    let settings =
-          ConnectionSettings
-            { connectionSettingHostName = "127.0.0.1",
-              connectionSettingPort = rabbitMQHandlePort,
-              connectionSettingSASLMechanism = PLAINMechanism "guest" "guest"
-            }
+    let settings = mkConnectionSettings "127.0.0.1" rabbitMQHandlePort
     withConnection settings $ \conn -> func conn
