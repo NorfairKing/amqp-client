@@ -12,6 +12,7 @@ pkgs.haskell.lib.buildStackProject {
     rabbitmq-server
   ] ++ pre-commit.tools;
   shellHook = ''
+    export TMPDIR=/tmp # Otherwise we can get into trouble with tmpfs getting full
     ${pre-commit.check.shellHook}
   '';
 }

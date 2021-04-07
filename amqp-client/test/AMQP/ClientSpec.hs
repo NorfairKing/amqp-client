@@ -197,13 +197,11 @@ spec = do
             queueBind chan myQueue myExchange myRoutingKey
 
             let msg = mkMessage testBody
-            print ("about to publish" :: String, msg)
             basicPublish
               chan
               myExchange
               myRoutingKey
               msg
 
-            print ("Trying to read the message" :: String)
             m <- basicGet chan myQueue NoAck
             m `shouldBe` Just msg
