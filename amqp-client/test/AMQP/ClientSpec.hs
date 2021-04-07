@@ -121,8 +121,25 @@ spec = do
         m <- basicGet chan myQueue NoAck
         m `shouldBe` Just msg
 
-    pending "can send and recieve 100 hello world messages, one by one"
-    pending "can send and recieve 100 hello world messages when first sending all of them"
+    itWithLocalGuestConnection "can send and recieve 100 hello world messages when first sending all of them" $ \conn -> do
+      chan <- channelOpen conn
+      let myRoutingKey = "myRoutingKey"
+      myQueue <- queueDeclare chan "MyQueueName" defaultQueueSettings
+      myExchange <- exchangeDeclare chan "myExchangeName" defaultExchangeSettings
+      queueBind chan myQueue myExchange myRoutingKey
+
+      let testBody = "hello world"
+      let msg = mkMessage testBody
+      replicateM_ 100 $
+        basicPublish
+          chan
+          myExchange
+          myRoutingKey
+          msg
+
+      replicateM_ 100 $ do
+        m <- basicGet chan myQueue NoAck
+        m `shouldBe` Just msg
     pending "can send and recieve 100 hello world messages when sending and receiving in separate threads"
 
     itWithOuter "can go through the tutorial steps with any message body" $ \RabbitMQHandle {..} ->
