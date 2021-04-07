@@ -240,7 +240,7 @@ basicGet Channel {..} Queue {..} ack = withMVar (connectionSynchronousVar channe
         _ -> throwIO $ ProtocolViolation $ "Expected a content header, got this instead: " <> show frame
 
 basicPublish :: MonadUnliftIO m => Channel -> Exchange -> RoutingKey -> Message -> m ()
-basicPublish Channel {..} Exchange {..} routingKey Message {..} = do
+basicPublish Channel {..} Exchange {..} routingKey msg@Message {..} = do
   let bp =
         BasicPublish
           { basicPublishReserved1 = 0,
@@ -249,7 +249,38 @@ basicPublish Channel {..} Exchange {..} routingKey Message {..} = do
             basicPublishMandatory = True,
             basicPublishImmediate = False
           }
-      chf =
+      ContentFrames chf cbs = messageToContentFrames (connectionMaximumFrameSize channelConnection) msg
+  connectionSendBuilder channelConnection $
+    mconcat $
+      buildFrame (MethodPayload channelNumber (MethodBasicPublish bp)) :
+      buildFrame (ContentHeaderPayload channelNumber chf) :
+      map (buildFrame . ContentBodyPayload channelNumber) cbs
+
+-- | An intermediate type to represent a 'Messag' as the frames that it will be rendered as.
+data ContentFrames
+  = ContentFrames
+      (ContentHeaderFrame ContentHeader)
+      [ContentBody]
+  deriving (Show, Eq, Generic)
+
+-- | Split an opaque message into 'ContentFrames'
+--
+-- This function takes the connection's maximum frame size as a first argument.
+--
+-- There is a 8 byte overhead for every frame that we send:
+--
+-- - 1 byte for the type
+-- - 2 bytes for the channel
+-- - 4 bytes for the size
+-- - 1 byte for the frame end
+--
+-- This function will therefore only work if the maximum frame size is greater
+-- than 8.  In reality this is not a problem because there are method frames
+-- much larger than 8 bytes that will already have been sent by the time this
+-- function can be used.
+messageToContentFrames :: LongUInt -> Message -> ContentFrames
+messageToContentFrames maximumFrameSize Message {..} =
+  let chf =
         ContentHeaderFrame
           { contentHeaderFrameBodySize = intToWord64 $ SB.length messageBody,
             contentHeaderFrameProperties =
@@ -271,14 +302,15 @@ basicPublish Channel {..} Exchange {..} routingKey Message {..} = do
                     basicContentHeaderReserved = Nothing
                   }
           }
-      cb = ContentBody {contentBodyPayload = messageBody}
-  -- TODO support payloads with multiple content body frames
-  connectionSendBuilder channelConnection $
-    mconcat
-      [ buildFrame $ MethodPayload channelNumber $ MethodBasicPublish bp,
-        buildFrame $ ContentHeaderPayload channelNumber chf,
-        buildFrame $ ContentBodyPayload channelNumber cb
-      ]
+   in ContentFrames chf $ go messageBody
+  where
+    maximumBodySize :: Int
+    maximumBodySize = word32ToInt $ maximumFrameSize - 8
+    go :: ByteString -> [ContentBody]
+    go sb
+      | SB.null sb = []
+      | SB.length sb <= maximumBodySize = [ContentBody {contentBodyPayload = sb}]
+      | otherwise = ContentBody {contentBodyPayload = SB.take maximumBodySize sb} : go (SB.drop maximumBodySize sb)
 
 -- | Set up (and clean up) a connection to the AMQP server.
 --
@@ -532,5 +564,5 @@ data Message = Message
   }
   deriving (Show, Eq, Generic)
 
-newMessage :: ByteString -> Message
-newMessage body = Message {messageBody = body}
+mkMessage :: ByteString -> Message
+mkMessage body = Message {messageBody = body}
