@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module AMQP.ClientSpec (spec) where
 
@@ -17,6 +18,10 @@ import Test.Syd
 import Test.Syd.RabbitMQ
 import Test.Syd.Validity
 
+instance GenValid Message where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
 spec :: Spec
 spec = do
   describe "messageToContentFrames" $ do
@@ -25,6 +30,16 @@ spec = do
       forAllValid $ \maximumSize -> do
         let ContentFrames _ cbs = messageToContentFrames maximumSize (mkMessage "")
         cbs `shouldBe` []
+
+    it "renders a message to frames that can be reconstructed to that message" $
+      forAll (max 9 <$> genValid) $ \maximumSize ->
+        forAllValid $ \msg ->
+          reconstructMessageFromContentFrames (messageToContentFrames maximumSize msg) `shouldBe` msg
+
+    it "renders this message that fits in one content body frame to one message" $ do
+      let ContentFrames _ cbs = messageToContentFrames 100 (mkMessage "hello world")
+      length cbs `shouldBe` 1
+
     it "renders a message to frames that are smaller than the maximum frame size" $
       forAllValid $ \channelNumber ->
         forAll (max 9 <$> genValid) $ \maximumSize ->
@@ -110,7 +125,7 @@ spec = do
     pending "can send and recieve 100 hello world messages when first sending all of them"
     pending "can send and recieve 100 hello world messages when sending and receiving in separate threads"
 
-    xitWithOuter "can go through the tutorial steps with any message body" $ \RabbitMQHandle {..} ->
+    itWithOuter "can go through the tutorial steps with any message body" $ \RabbitMQHandle {..} ->
       forAllValid $ \testBody -> do
         let settings = mkConnectionSettings "127.0.0.1" rabbitMQHandlePort
         withConnection settings $ \conn -> do
@@ -136,7 +151,7 @@ spec = do
       -- TODO also test what happens if the maximum frame size is smaller than some of the bigger method frames
       itWithOuter "can publish a message when the maximum frame size is smaller than the message" $ \RabbitMQHandle {..} -> do
         -- Big enough so that we don't get in throuble with method frames
-        let size = 512
+        let size = 4098
             genMessageBodyBiggerThanSize = sized $ \s -> do
               len <- choose (size, size + s)
               ws <- replicateM len genValid -- This isn't particularly fast, but that's fine.
@@ -164,7 +179,7 @@ spec = do
 
       itWithOuter "can send and recieve a message when the maximum frame size is smaller than the message" $ \RabbitMQHandle {..} -> do
         -- Big enough so that we don't get in throuble with method frames
-        let size = 512
+        let size = 4098
             genMessageBodyBiggerThanSize = sized $ \s -> do
               len <- choose (size, size + s)
               ws <- replicateM len genValid -- This isn't particularly fast, but that's fine.
@@ -182,11 +197,13 @@ spec = do
             queueBind chan myQueue myExchange myRoutingKey
 
             let msg = mkMessage testBody
+            print ("about to publish" :: String, msg)
             basicPublish
               chan
               myExchange
               myRoutingKey
               msg
 
+            print ("Trying to read the message" :: String)
             m <- basicGet chan myQueue NoAck
             m `shouldBe` Just msg

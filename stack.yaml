@@ -6,7 +6,7 @@ packages:
 - amqp-client
 extra-deps:
 - github: NorfairKing/sydtest
-  commit: f085c6cb13d97ecc46641eac2a6f5c85b570308d
+  commit: 83685ec68c3c167503ba8aee44000f2d8bb43a07
   subdirs:
   - sydtest
   - sydtest-discover

@@ -36,6 +36,7 @@ library
     , text
     , time
     , unliftio
+    , validity
   default-language: Haskell2010
 
 test-suite amqp-client-test

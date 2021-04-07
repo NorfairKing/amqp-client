@@ -21,6 +21,7 @@ library:
     - text
     - time
     - unliftio
+    - validity
 
 tests:
   amqp-client-test:

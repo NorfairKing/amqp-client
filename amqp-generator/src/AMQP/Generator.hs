@@ -302,7 +302,8 @@ genResponseSumTypeAndInstances className Method {..} =
                       )
                       methodResponses
                   )
-                  [],
+                  [DerivClause Nothing [ConT (mkName "Show"), ConT (mkName "Eq"), ConT (mkName "Generic")]],
+                InstanceD Nothing [] (AppT (ConT (mkName "Validity")) (VarT sumTypeName)) [],
                 InstanceD
                   Nothing
                   []

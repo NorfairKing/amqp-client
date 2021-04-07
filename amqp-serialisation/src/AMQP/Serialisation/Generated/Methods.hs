@@ -1631,6 +1631,9 @@ instance SynchronousRequest BasicGet where
 data BasicGetResponse
   = BasicGetResponseGetOk !BasicGetOk
   | BasicGetResponseGetEmpty !BasicGetEmpty
+  deriving (Show, Eq, Generic)
+
+instance Validity BasicGetResponse
 
 instance FromMethod BasicGetResponse where
   fromMethod = \case

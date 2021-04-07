@@ -25,6 +25,7 @@ import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text.Encoding as TE
+import Data.Validity
 import GHC.Generics (Generic)
 import qualified Network.Connection as Network
 import qualified Network.Socket as Socket
@@ -223,21 +224,34 @@ exchangeDeclare Channel {..} name ExchangeSettings = do
 basicGet :: MonadUnliftIO m => Channel -> Queue -> Ack -> m (Maybe Message)
 basicGet Channel {..} Queue {..} ack = withMVar (connectionSynchronousVar channelConnection) $ \() -> do
   let bg = BasicGet {basicGetReserved1 = 0, basicGetQueue = queueName, basicGetNoAck = ackToNoAck ack}
+  liftIO $ print ("sending basic.get request" :: String, bg)
   connectionSendGivenMethodByItself channelConnection channelNumber bg
+  liftIO $ print ("getting basic.get response" :: String)
   bgr <- waitForSynchronousMethod channelConnection
+  liftIO $ print bgr
   case bgr of
     BasicGetResponseGetEmpty BasicGetEmpty {} -> pure Nothing
     BasicGetResponseGetOk BasicGetOk {} -> do
-      frame <- connectionGetFrame channelConnection
-      case frame of
-        -- TODO deal with multiple channels
-        -- TODO deal with multi-body content
-        ContentHeaderPayload _ (ContentHeaderFrame _ _) -> do
-          frame2 <- connectionGetFrame channelConnection
-          case frame2 of
-            ContentBodyPayload _ ContentBody {..} -> pure $ Just $ Message {messageBody = contentBodyPayload}
-            _ -> throwIO $ ProtocolViolation $ "Expected a content body, got this instead: " <> show frame
-        _ -> throwIO $ ProtocolViolation $ "Expected a content header, got this instead: " <> show frame
+      let receiveContent = do
+            frame <- connectionGetFrame channelConnection
+            case frame of
+              -- TODO deal with multiple channels
+              ContentHeaderPayload _ chf@(ContentHeaderFrame bodySize _) -> do
+                liftIO $ print ("Got a content header for content of size" :: String, bodySize)
+                reconstructMessageFromContentFrames . ContentFrames chf <$> receiveContentBody bodySize
+              _ -> throwIO $ ProtocolViolation $ "Expected a content header, got this instead: " <> show frame
+          receiveContentBody :: MonadUnliftIO m => LongLongUInt -> m [ContentBody]
+          receiveContentBody bodySizeLeft
+            | bodySizeLeft <= 0 = pure []
+            | otherwise = do
+              frame <- connectionGetFrame channelConnection
+              case frame of
+                ContentBodyPayload _ cb@ContentBody {..} -> do
+                  liftIO $ print ("got a content body with size" :: String, SB.length contentBodyPayload)
+                  let sizeLeftAfterThisBody = bodySizeLeft - intToWord64 (SB.length contentBodyPayload)
+                  (cb :) <$> receiveContentBody sizeLeftAfterThisBody
+                _ -> throwIO $ ProtocolViolation $ "Expected a content body, got this instead: " <> show frame
+      Just <$> receiveContent
 
 basicPublish :: MonadUnliftIO m => Channel -> Exchange -> RoutingKey -> Message -> m ()
 basicPublish Channel {..} Exchange {..} routingKey msg@Message {..} = do
@@ -249,7 +263,10 @@ basicPublish Channel {..} Exchange {..} routingKey msg@Message {..} = do
             basicPublishMandatory = True,
             basicPublishImmediate = False
           }
-      ContentFrames chf cbs = messageToContentFrames (connectionMaximumFrameSize channelConnection) msg
+  liftIO $ print bp
+  let ContentFrames chf cbs = messageToContentFrames (connectionMaximumFrameSize channelConnection) msg
+  liftIO $ print chf
+  liftIO $ print cbs
   connectionSendBuilder channelConnection $
     mconcat $
       buildFrame (MethodPayload channelNumber (MethodBasicPublish bp)) :
@@ -312,6 +329,10 @@ messageToContentFrames maximumFrameSize Message {..} =
       | SB.length sb <= maximumBodySize = [ContentBody {contentBodyPayload = sb}]
       | otherwise = ContentBody {contentBodyPayload = SB.take maximumBodySize sb} : go (SB.drop maximumBodySize sb)
 
+-- TODO get rid of this concat somehow, it's slow. We can probably just use lazy bytestrings instead.
+reconstructMessageFromContentFrames :: ContentFrames -> Message
+reconstructMessageFromContentFrames (ContentFrames _ cbfs) = Message {messageBody = SB.concat $ map contentBodyPayload cbfs}
+
 -- | Set up (and clean up) a connection to the AMQP server.
 --
 -- If you don't know what 'MonadUnliftIO' is, you can just pretent it is 'IO'.
@@ -367,7 +388,9 @@ withConnection ConnectionSettings {..} callback = do
         Left err -> throwIO $ ProtocolViolation $ "The server did not send a connection.tune frame: " <> err
         Right ct -> pure ct
 
-      -- QUESTION: do we want to negotiate down any of these?
+      -- QUESTION: Do we want to negotiate down any of these?
+      -- ANSWER: Yes. You never know how high the server will set these so we
+      --         will negotiate down to an amount we know we can handle.
       --
       -- NOTE: We can only negotiate down, so if we ever make these
       -- configurable then we want to make sure of that.
@@ -376,6 +399,7 @@ withConnection ConnectionSettings {..} callback = do
             Nothing -> connectionTuneFrameMax
             Just clientSuggestedMaxFrameSize -> min connectionTuneFrameMax clientSuggestedMaxFrameSize
           heartbeatInterval = connectionTuneHeartbeat
+      liftIO $ print ("negotiating max frame size down to" :: String, maxFrameSize)
       let connectionTuneOk =
             ConnectionTuneOk
               { connectionTuneOkChannelMax = maxChannels,
@@ -430,6 +454,7 @@ waitForSynchronousMethod Connection {..} = go
   where
     go = do
       errOrRes <- connectionParseFrame connectionNetworkConnection connectionLeftoversVar
+      liftIO $ print errOrRes
       case errOrRes of
         Left err -> throwIO $ ProtocolViolation err
         Right f -> case f of
@@ -511,16 +536,16 @@ connectionParseFrame conn leftoversVar = connectionParse conn leftoversVar parse
 
 connectionParse :: MonadUnliftIO m => Network.Connection -> MVar ByteString -> Attoparsec.Parser a -> m (Either String a)
 connectionParse conn leftoversVar parser = modifyMVar leftoversVar $ \leftovers -> do
-  result <- liftIO $ Attoparsec.parseWith (Network.connectionGet conn chunkSize) parser leftovers
+  let connectionGetPiece = do
+        c <- Network.connectionGetChunk conn
+        print c
+        pure c
+  result <- liftIO $ Attoparsec.parseWith connectionGetPiece parser leftovers
   pure $ case result of
     (Attoparsec.Done newLeftovers r) -> (newLeftovers, Right r)
     (Attoparsec.Fail newLeftovers [] msg) -> (newLeftovers, Left msg)
     (Attoparsec.Fail newLeftovers ctxs msg) -> (newLeftovers, Left (intercalate " > " ctxs ++ ": " ++ msg))
     (Attoparsec.Partial _) -> (leftovers, Left "Result: incomplete input. This should not happen because we use 'parseWith'")
-
--- | How many bytes to read at a time, at most
-chunkSize :: Int
-chunkSize = 4098
 
 ourLocale :: ByteString
 ourLocale = "en_US"
@@ -563,6 +588,8 @@ data Message = Message
   { messageBody :: ByteString
   }
   deriving (Show, Eq, Generic)
+
+instance Validity Message
 
 mkMessage :: ByteString -> Message
 mkMessage body = Message {messageBody = body}
