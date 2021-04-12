@@ -24,8 +24,25 @@ library:
     - validity
 
 tests:
-  amqp-client-test:
+  amqp-client-pure-test:
     main: Spec.hs
+    build-tools: sydtest-discover
+    source-dirs: pure-test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - QuickCheck
+    - amqp-client
+    - amqp-serialisation
+    - bytestring
+    - genvalidity-bytestring
+    - genvalidity-sydtest
+    - sydtest
+
+  amqp-client-test:
+    main: Main.hs
     build-tools: sydtest-discover
     source-dirs: test
     ghc-options:

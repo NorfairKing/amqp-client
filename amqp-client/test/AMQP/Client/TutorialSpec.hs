@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module AMQP.Client.TutorialSpec (spec) where
@@ -8,8 +9,8 @@ import Data.GenValidity.ByteString ()
 import Test.Syd
 import Test.Syd.RabbitMQ
 
-spec :: Spec
-spec = rabbitMQSpec $ do
+spec :: TestDefM '[RabbitMQHandle] () ()
+spec = do
   itWithLocalGuestConnection "can go through the tutorial steps" $ \conn -> do
     chan <- channelOpen conn
     let myRoutingKey = "myRoutingKey"

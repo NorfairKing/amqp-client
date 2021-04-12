@@ -39,14 +39,37 @@ library
     , validity
   default-language: Haskell2010
 
-test-suite amqp-client-test
+test-suite amqp-client-pure-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
+  other-modules:
+      AMQP.ClientSpec
+      Paths_amqp_client
+  hs-source-dirs:
+      pure-test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:
+      sydtest-discover:sydtest-discover
+  build-depends:
+      QuickCheck
+    , amqp-client
+    , amqp-serialisation
+    , base >=4.7 && <5
+    , bytestring
+    , genvalidity-bytestring
+    , genvalidity-sydtest
+    , sydtest
+  default-language: Haskell2010
+
+test-suite amqp-client-test
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
   other-modules:
       AMQP.Client.SpecificationSpec
       AMQP.Client.TestUtils
       AMQP.Client.TutorialSpec
       AMQP.ClientSpec
+      Spec
       Paths_amqp_client
   hs-source-dirs:
       test

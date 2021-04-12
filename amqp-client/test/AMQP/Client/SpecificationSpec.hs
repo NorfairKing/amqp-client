@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- | This module contains the tests for the relevant occurrences of "test scenario" in the AMQP specification.
@@ -12,8 +13,8 @@ import Test.Syd
 import Test.Syd.RabbitMQ
 import Text.Printf
 
-spec :: Spec
-spec = rabbitMQSpec $ do
+spec :: TestDefM '[RabbitMQHandle] () ()
+spec =
   describe "1.6 Class exchange" $ do
     pending "Client attempts to declare an exchange with each of these standard types: fanout, direct"
     pending "Client attempts to declare an exchange with each of these standard types: topic, headers"
