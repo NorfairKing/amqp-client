@@ -1,4 +1,3 @@
-{ pkgs ? import ./nix/pkgs.nix { } }:
 let
   sources = import ./nix/sources.nix;
 
@@ -23,6 +22,6 @@ let
 
 in
 {
-  release = pkgs.amqpRelease;
-  pre-commit-check = (import ./nix/pre-commit.nix { inherit pkgs; }).check;
+  release = import ./default.nix;
+  pre-commit-check = (import ./nix/pre-commit.nix { }).check;
 } // builtins.mapAttrs mkReleaseForVersion versions

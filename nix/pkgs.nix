@@ -2,6 +2,7 @@
     url = "https://github.com/NixOS/nixpkgs";
     rev = "35b3a1f43a9621a88e906a839f99d8252500152b"; # Keep this up-to-date with the LTS in stack.yaml
   })
+, extraOverlays ? [ ]
 }:
 let
   sources = import ./sources.nix;
@@ -21,7 +22,7 @@ let
           sydtest-overlay
           (final: previous: { inherit (import sources.gitignore { inherit (final) lib; }) gitignoreSource; })
           (import ./overlay.nix)
-        ];
+        ] ++ extraOverlays;
       config.allowUnfree = true;
     };
 in

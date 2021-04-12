@@ -27,7 +27,7 @@ with final.haskell.lib;
       "amqp-serialisation-gen" = amqpPkg "amqp-serialisation-gen";
       "amqp-client" = overrideCabal (amqpPkg "amqp-client") (old: {
         testDepends = (old.testDepends or [ ]) ++ [ final.rabbitmq-server ];
-        doCheck = false; # Something goes wrong with testing; the tests hang?
+        doCheck = final.amqp-client-tests or false; # Something goes wrong with testing; the tests hang?
       });
     };
 
@@ -52,7 +52,7 @@ with final.haskell.lib;
             )
             (
               self: super:
-                final.amqpPackages // { }
+                final.amqpPackages
             );
       }
     );
