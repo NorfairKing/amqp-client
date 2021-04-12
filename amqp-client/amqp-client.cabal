@@ -45,6 +45,7 @@ test-suite amqp-client-test
   other-modules:
       AMQP.Client.SpecificationSpec
       AMQP.Client.TestUtils
+      AMQP.Client.TutorialSpec
       AMQP.ClientSpec
       Paths_amqp_client
   hs-source-dirs:
